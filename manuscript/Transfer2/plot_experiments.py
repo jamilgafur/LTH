@@ -8,11 +8,6 @@ import numpy as np
 # Canonical architectures expected in the benchmark suite
 CANONICAL_MODELS = ['ConvNeXt', 'InceptionNet', 'MobileNet', 'RegNetX_400MF', 'VGG16', 'XceptionNet']
 
-ADV_ATTACKS = [
-    ('FGSM', 'delta_fgsm_imp', 'delta_fgsm_collapse', 'adv_acc_FGSM_unstructured', 'adv_acc_FGSM_collapsed'),
-    ('PGD', 'delta_pgd_imp', 'delta_pgd_collapse', 'adv_acc_PGD_unstructured', 'adv_acc_PGD_collapsed'),
-]
-
 def load_and_compute_deltas():
     """Reads CSVs, skips empty files, and computes hardware-normalized deltas."""
     csv_files = glob.glob("cka_results_*.csv")
@@ -107,6 +102,70 @@ def highlight_missing_models(ax, all_models, missing_models):
         else:
             tick.set_color('black')
 
+def draw_uni_bars(ax, df_fp32, df_quant, all_models, columns, labels, panel_title,
+                  zero_line=False, legend=False, df_annotations=None, anno_fmt="{val:.2f}"):
+    """Draws both universes' grouped bars on ONE axes: fp32 = solid, fp16 = hatched/alpha."""
+    from matplotlib.patches import Patch
+    rf = df_fp32.set_index('model').reindex(all_models)
+    rq = df_quant.set_index('model').reindex(all_models)
+
+    m, n = len(columns), len(all_models)
+    x = np.arange(n)
+    span = 0.84
+    bw = span / (2 * m)
+    colors = sns.color_palette('Set2', m)
+
+    for i, col in enumerate(columns):
+        for u, d in enumerate([rf, rq]):
+            pos = x + (2 * i + u - (2 * m - 1) / 2) * bw
+            if u == 0:
+                ax.bar(pos, d[col].values, width=bw, color=colors[i], edgecolor='black', linewidth=0.4)
+            else:
+                ax.bar(pos, d[col].values, width=bw, color=colors[i], alpha=0.55,
+                       hatch='///', edgecolor='#444444', linewidth=0.0)
+
+    # Per-universe MISSING half-spans; tick red only if missing in both universes
+    half = span / 2
+    miss_both = set()
+    for idx, model in enumerate(all_models):
+        missing = [rf.loc[model, columns].isna().all(), rq.loc[model, columns].isna().all()]
+        if all(missing):
+            miss_both.add(model)
+        for u, is_missing in enumerate(missing):
+            if is_missing:
+                lo = idx - half if u == 0 else idx
+                ax.axvspan(lo, lo + half, color='red', alpha=0.12, zorder=0)
+                ax.text(lo + half / 2, 0, 'MISSING', color='red', fontsize=7, fontweight='bold',
+                        ha='center', va='center', rotation=90, zorder=3)
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(all_models, rotation=45, ha='right')
+    plt.draw()
+    for tick, model in zip(ax.get_xticklabels(), all_models):
+        if model in miss_both:
+            tick.set_color('red')
+            tick.set_fontweight('bold')
+
+    if zero_line:
+        ax.axhline(0, color='black', linewidth=1.2, linestyle='--')
+    pad_shared_ylim(ax)
+
+    if df_annotations is not None:
+        interleaved = pd.concat([f for acol in df_annotations for f in (rf[acol], rq[acol])], axis=1)
+        annotate_bars(ax, interleaved, anno_fmt, fontsize=8)
+
+    if legend:
+        handles = [Patch(facecolor=colors[i], edgecolor='black', label=labels[i]) for i in range(m)]
+        handles += [Patch(facecolor='white', edgecolor='black', label='fp32 (control, solid)'),
+                    Patch(facecolor='white', edgecolor='#444444', hatch='///', alpha=0.55,
+                          label='fp16 (quant, hatched)')]
+        ax.legend(handles=handles, title='Modification / Universe',
+                  bbox_to_anchor=(1.02, 1), loc='upper left', fontsize=9)
+
+    ax.set_title(panel_title, fontsize=12, fontweight='bold')
+    ax.set_xlabel('Model', fontsize=11)
+    return rf, rq
+
 def draw_bar_panel(ax, df, all_models, columns, labels, panel_title, zero_line=False, legend=False):
     """Draws one universe's grouped bars into ax; returns the reindexed df for later annotation."""
     df_reindexed = df.set_index('model').reindex(all_models)
@@ -125,8 +184,8 @@ def draw_bar_panel(ax, df, all_models, columns, labels, panel_title, zero_line=F
     highlight_missing_models(ax, all_models, missing_models)
     return df_reindexed
 
-def annotate_bars(ax, df_anno, anno_fmt):
-    """Writes raw values on bars; call only after shared y-limits are final."""
+def annotate_bars(ax, df_anno, anno_fmt, fontsize=9):
+    """Writes raw values on bars; container order must match df column order."""
     # ax.containers = bar columns only; ax.patches also includes MISSING axvspans
     rects = [rect for container in ax.containers for rect in container]
     anno_vals = df_anno.values.flatten('F')
@@ -139,7 +198,7 @@ def annotate_bars(ax, df_anno, anno_fmt):
                     (p.get_x() + p.get_width() / 2., height),
                     ha='center', va='bottom' if height >= 0 else 'top',
                     xytext=xytext, textcoords='offset points',
-                    fontsize=9, fontweight='bold', color='#333333')
+                    fontsize=fontsize, fontweight='bold', color='#333333')
 
 def pad_shared_ylim(ax):
     """Pads the shared y-axis so bar annotations fit."""
@@ -149,78 +208,29 @@ def pad_shared_ylim(ax):
 
 def plot_universe_comparison(df_fp32, df_quant, all_models, columns, labels, title, ylabel, filename,
                              zero_line=False, df_annotations=None, anno_fmt="{val:.2f}"):
-    """Plots one metric as side-by-side fp32 vs fp16 subplots with a shared y-axis."""
-    fig, axes = plt.subplots(1, 2, figsize=(20, 7), sharey=True)
+    """Single-axes grouped bars: fp32 solid + fp16 hatched per method."""
+    fig, ax = plt.subplots(figsize=(16, 7))
     sns.set_theme(style="whitegrid")
-
-    dr_fp32 = draw_bar_panel(axes[0], df_fp32, all_models, columns, labels, 'fp32 (control)', zero_line)
-    dr_quant = draw_bar_panel(axes[1], df_quant, all_models, columns, labels, 'fp16 (quant)', zero_line, legend=True)
-
-    axes[0].set_ylabel(ylabel, fontsize=12)
-    pad_shared_ylim(axes[0])
-
-    if df_annotations is not None:
-        annotate_bars(axes[0], dr_fp32[df_annotations], anno_fmt)
-        annotate_bars(axes[1], dr_quant[df_annotations], anno_fmt)
-
-    axes[1].legend(title='Modification Type', bbox_to_anchor=(1.02, 1), loc='upper left')
-    fig.suptitle(title, fontsize=14, y=1.02)
-    plt.tight_layout()
-    plt.savefig(filename, bbox_inches='tight')
-    print(f"Saved '{filename}'")
-    plt.close()
-
-def plot_adversarial_universes(df_fp32, df_quant, all_models, title, ylabel, filename):
-    """2x2 grid: rows = FGSM/PGD attacks, columns = fp32/fp16 universes, shared y."""
-    fig, axes = plt.subplots(2, 2, figsize=(20, 13), sharey=True)
-    sns.set_theme(style="whitegrid")
-
-    universes = [('fp32 (control)', df_fp32), ('fp16 (quant)', df_quant)]
-    reindexed = {}
-    for r, (attack, imp_col, col_col, _, _) in enumerate(ADV_ATTACKS):
-        for c, (univ, d) in enumerate(universes):
-            ax = axes[r][c]
-            reindexed[(r, c)] = draw_bar_panel(
-                ax, d, all_models, [imp_col, col_col], ['IMP (Unstructured)', 'Collapsed'],
-                f"{attack} — {univ}", zero_line=True, legend=(r == 0 and c == 1))
-            if c == 0:
-                ax.set_ylabel(ylabel, fontsize=11)
-
-    pad_shared_ylim(axes[0][0])
-
-    for r, (_, _, _, anno_imp, anno_col) in enumerate(ADV_ATTACKS):
-        for c in range(2):
-            annotate_bars(axes[r][c], reindexed[(r, c)][[anno_imp, anno_col]], "{val:.1%}")
-
-    axes[0][1].legend(title='Modification Type', bbox_to_anchor=(1.02, 1), loc='upper left')
-    fig.suptitle(title, fontsize=16, y=1.0)
+    draw_uni_bars(ax, df_fp32, df_quant, all_models, columns, labels, title,
+                  zero_line=zero_line, legend=True, df_annotations=df_annotations, anno_fmt=anno_fmt)
+    ax.set_ylabel(ylabel, fontsize=12)
     plt.tight_layout()
     plt.savefig(filename, bbox_inches='tight')
     print(f"Saved '{filename}'")
     plt.close()
 
 def plot_grid(df_fp32, df_quant, all_models, rows, title, ylabels, filename):
-    """N-row x 2-col grid: cols = fp32/fp16 universes.
+    """N-row single-column grid; each axes merges fp32+fp16 (solid vs hatched).
     rows = list of (row_title, bar_cols, labels, anno_cols_or_None, anno_fmt, zero_line)."""
-    universes = [('fp32 (control)', df_fp32), ('fp16 (quant)', df_quant)]
-    fig, axes = plt.subplots(len(rows), 2, figsize=(20, 6 * len(rows) + 1), squeeze=False)
+    fig, axes = plt.subplots(len(rows), 1, figsize=(16, 6 * len(rows) + 1), squeeze=False)
     sns.set_theme(style="whitegrid")
 
-    reindexed = {}
-    for r, (row_title, cols, labels, _, _, zero_line) in enumerate(rows):
-        for c, (univ, d) in enumerate(universes):
-            ax = axes[r][c]
-            reindexed[(r, c)] = draw_bar_panel(ax, d, all_models, cols, labels, f"{row_title} — {univ}",
-                                               zero_line=zero_line, legend=(r == 0 and c == 1))
-            ax.set_ylabel(ylabels[r], fontsize=11)
-            pad_shared_ylim(ax)
+    for r, (row_title, cols, labels, anno_cols, anno_fmt, zero_line) in enumerate(rows):
+        ax = axes[r][0]
+        draw_uni_bars(ax, df_fp32, df_quant, all_models, cols, labels, row_title,
+                      zero_line=zero_line, legend=(r == 0), df_annotations=anno_cols, anno_fmt=anno_fmt)
+        ax.set_ylabel(ylabels[r], fontsize=11)
 
-    for r, (_, _, _, anno_cols, anno_fmt, _) in enumerate(rows):
-        if anno_cols:
-            for c in range(2):
-                annotate_bars(axes[r][c], reindexed[(r, c)][anno_cols], anno_fmt)
-
-    axes[0][1].legend(title='Modification Type', bbox_to_anchor=(1.02, 1), loc='upper left')
     fig.suptitle(title, fontsize=15, y=1.0)
     plt.tight_layout()
     plt.savefig(filename, bbox_inches='tight')
@@ -235,28 +245,42 @@ SCATTER_METHODS = [
 
 def plot_scatter_universes(df_fp32, df_quant, all_models, title, xlabel, ylabel, filename,
                            pareto=False, diagonal=False):
-    """1x2 universe scatter: accuracy on y; x = FLOPs reduction % (pareto) or original accuracy."""
-    fig, axes = plt.subplots(1, 2, figsize=(18, 8), sharey=True)
+    """Single-axes scatter: color = method; filled = fp32, open = fp16."""
+    from matplotlib.lines import Line2D
+    fig, ax = plt.subplots(figsize=(14, 8))
     sns.set_theme(style="whitegrid")
     colors = sns.color_palette('Set2', 3)
 
-    for ax, (univ, d) in zip(axes, [('fp32 (control)', df_fp32), ('fp16 (quant)', df_quant)]):
+    for d, filled in [(df_fp32, True), (df_quant, False)]:
         for (label, acc_col, flops_col), color in zip(SCATTER_METHODS, colors):
             sub = d.dropna(subset=[acc_col])
             x = sub[flops_col] * 100 if pareto else sub['acc_original_after']
             pts = pd.DataFrame({'x': x, 'y': sub[acc_col]}).dropna()
             if pts.empty:
                 continue
-            ax.scatter(pts['x'], pts['y'], label=label, alpha=0.85, s=70, color=color)
-            for xi, yi, mdl in zip(pts['x'], pts['y'], sub.loc[pts.index, 'model']):
-                ax.annotate(mdl, (xi, yi), textcoords='offset points', xytext=(4, 4), fontsize=8)
-        if diagonal:
-            ax.plot([0, 1.05], [0, 1.05], ls='--', color='black', lw=1)
-        ax.set_title(univ, fontsize=12, fontweight='bold')
-        ax.set_xlabel(xlabel, fontsize=12)
-    axes[0].set_ylabel(ylabel, fontsize=12)
-    axes[1].legend(title='Modification Type', bbox_to_anchor=(1.02, 1), loc='upper left')
-    fig.suptitle(title, fontsize=14, y=1.02)
+            if filled:
+                ax.scatter(pts['x'], pts['y'], alpha=0.85, s=70, color=color)
+            else:
+                ax.scatter(pts['x'], pts['y'], s=70, facecolors='none', edgecolors=color, linewidths=1.5)
+    # Label fp32 points only (fp16 sits at nearly the same coordinates)
+    for (label, acc_col, flops_col), color in zip(SCATTER_METHODS, colors):
+        sub = df_fp32.dropna(subset=[acc_col])
+        x = sub[flops_col] * 100 if pareto else sub['acc_original_after']
+        pts = pd.DataFrame({'x': x, 'y': sub[acc_col]}).dropna()
+        for xi, yi, mdl in zip(pts['x'], pts['y'], sub.loc[pts.index, 'model']):
+            ax.annotate(mdl, (xi, yi), textcoords='offset points', xytext=(4, 4), fontsize=8)
+
+    if diagonal:
+        ax.plot([0, 1.05], [0, 1.05], ls='--', color='black', lw=1)
+    handles = [Line2D([], [], marker='o', color='w', markerfacecolor=c, markersize=9, label=l)
+               for (l, _, _), c in zip(SCATTER_METHODS, colors)]
+    handles += [Line2D([], [], marker='o', color='w', markerfacecolor='#888888', markersize=9, label='fp32 (control, filled)'),
+                Line2D([], [], marker='o', color='w', markerfacecolor='white', markeredgecolor='#888888',
+                       markeredgewidth=1.5, markersize=9, label='fp16 (quant, open)')]
+    ax.legend(handles=handles, title='Modification / Universe', bbox_to_anchor=(1.02, 1), loc='upper left')
+    ax.set_title(title, fontsize=12, fontweight='bold')
+    ax.set_xlabel(xlabel, fontsize=12)
+    ax.set_ylabel(ylabel, fontsize=12)
     plt.tight_layout()
     plt.savefig(filename, bbox_inches='tight')
     print(f"Saved '{filename}'")
@@ -290,27 +314,36 @@ def plot_ptq_penalty(df_fp32, df_quant, all_models, title, filename):
     plt.close()
 
 def plot_budget_transfer(df, all_models, dataset, filename):
-    """Accuracy delta of the collapsed arm across (pre, post) budgets, lines per model."""
+    """Accuracy delta of the collapsed arm across (pre, post) budgets; solid = fp32, dashed = fp16."""
+    from matplotlib.lines import Line2D
     d = df[df['dataset'] == dataset]
     configs = sorted(set(zip(d['pre_epochs'], d['post_epochs'])))
     xlabels = [f"pre{p}/post{q}" for p, q in configs]
 
-    fig, axes = plt.subplots(1, 2, figsize=(16, 7), sharey=True)
+    fig, ax = plt.subplots(figsize=(10, 7))
     sns.set_theme(style="whitegrid")
-    for ax, (univ, dd) in zip(axes, [('fp32 (control)', d[~d['quant']]), ('fp16 (quant)', d[d['quant']])]):
-        for model in all_models:
+    colors = sns.color_palette('tab10', len(all_models))
+    handles = []
+    for model, color in zip(all_models, colors):
+        plotted = False
+        for dd, ls in [(d[~d['quant']], '-'), (d[d['quant']], '--')]:
             sub = dd[dd['model'] == model].set_index(['pre_epochs', 'post_epochs']).reindex(configs)
             if sub['delta_acc_collapse'].notna().sum() == 0:
                 continue
-            ax.plot(range(len(configs)), sub['delta_acc_collapse'], marker='o', label=model)
-        ax.set_xticks(range(len(configs)))
-        ax.set_xticklabels(xlabels)
-        ax.axhline(0, color='black', linewidth=1.2, linestyle='--')
-        ax.set_title(univ, fontsize=12, fontweight='bold')
-        ax.set_xlabel('Budget (pre / post epochs)', fontsize=11)
-    axes[0].set_ylabel('Accuracy Delta (Collapsed vs Original)', fontsize=12)
-    axes[1].legend(title='Model', bbox_to_anchor=(1.02, 1), loc='upper left')
-    fig.suptitle(f'Budget Transfer — How pre/post split affects collapse accuracy\n({dataset})', fontsize=14, y=1.02)
+            ax.plot(range(len(configs)), sub['delta_acc_collapse'], marker='o', ls=ls,
+                    color=color, alpha=0.9 if ls == '-' else 0.7)
+            plotted = True
+        if plotted:
+            handles.append(Line2D([], [], ls='-', color=color, marker='o', label=model))
+    ax.set_xticks(range(len(configs)))
+    ax.set_xticklabels(xlabels)
+    ax.axhline(0, color='black', linewidth=1.2, linestyle='--')
+    handles += [Line2D([], [], ls='-', color='black', label='fp32 (control, solid)'),
+                Line2D([], [], ls='--', color='black', alpha=0.7, label='fp16 (quant, dashed)')]
+    ax.legend(handles=handles, title='Model / Universe', bbox_to_anchor=(1.02, 1), loc='upper left')
+    ax.set_ylabel('Accuracy Delta (Collapsed vs Original)', fontsize=12)
+    ax.set_xlabel('Budget (pre / post epochs)', fontsize=11)
+    ax.set_title(f'Budget Transfer — How pre/post split affects collapse accuracy\n({dataset})', fontsize=12)
     plt.tight_layout()
     plt.savefig(filename, bbox_inches='tight')
     print(f"Saved '{filename}'")
@@ -403,11 +436,18 @@ def main():
             anno_fmt="{val:.3f}"
         )
 
-        # Plot 4: Adversarial Robustness 2x2 grid (rows = attack, cols = universe)
-        plot_adversarial_universes(
+        # Plot 4: Adversarial Robustness (rows = attack, both universes merged per axes)
+        adv_ylabel = 'Accuracy Delta under Attack\n(Higher is Better)'
+        plot_grid(
             df_fp32=df_fp32, df_quant=df_quant, all_models=all_models,
+            rows=[
+                ('FGSM', ['delta_fgsm_imp', 'delta_fgsm_collapse'], ['IMP (Unstructured)', 'Collapsed'],
+                 ['adv_acc_FGSM_unstructured', 'adv_acc_FGSM_collapsed'], "{val:.1%}", True),
+                ('PGD', ['delta_pgd_imp', 'delta_pgd_collapse'], ['IMP (Unstructured)', 'Collapsed'],
+                 ['adv_acc_PGD_unstructured', 'adv_acc_PGD_collapsed'], "{val:.1%}", True),
+            ],
             title=f'Change in Adversarial Robustness{title_suffix}',
-            ylabel='Accuracy Delta under Attack\n(Higher is Better)',
+            ylabels=[adv_ylabel, adv_ylabel],
             filename=fname('plot_4_delta_adversarial')
         )
         
