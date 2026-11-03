@@ -35,13 +35,16 @@ def load_and_compute_deltas():
         
     df = pd.concat(df_list, ignore_index=True)
     df = df[df['model'] != 'model'].reset_index(drop=True)
-    # shortcut: rerun files can hold multiple rows per config; keep the last row, upgrade to a median if that starts mattering
-    df = df.drop_duplicates(subset=['dataset', 'quant', 'pre_epochs', 'post_epochs', 'model'], keep='last').reset_index(drop=True)
 
     # Convert numeric columns (excluding string metadata columns)
     num_cols = [col for col in df.columns if col not in ['model', 'dataset', 'model_before', 'gpu_name', 'quant']]
     for col in num_cols:
         df[col] = pd.to_numeric(df[col], errors='coerce')
+
+    # Median over rerun reps: per-GPU median drops single polluted power samples, then median across GPUs
+    g6 = ['dataset', 'quant', 'pre_epochs', 'post_epochs', 'model', 'gpu_name']
+    df = (df.groupby(g6, as_index=False).median(numeric_only=True)
+            .groupby(g6[:-1], as_index=False).median(numeric_only=True))
 
     df['pre_epochs'] = df['pre_epochs'].astype(int)
     df['post_epochs'] = df['post_epochs'].astype(int)
@@ -151,8 +154,20 @@ def draw_uni_bars(ax, df_fp32, df_quant, all_models, columns, labels, panel_titl
     pad_shared_ylim(ax)
 
     if df_annotations is not None:
-        interleaved = pd.concat([f for acol in df_annotations for f in (rf[acol], rq[acol])], axis=1)
-        annotate_bars(ax, interleaved, anno_fmt, fontsize=8)
+        # annotate fp32 bars only: fp16 values are near-duplicates and adjacent labels collide
+        fp32_rects = [rect for i, container in enumerate(ax.containers) if i % 2 == 0
+                      for rect in container]
+        anno_vals = pd.concat([rf[a] for a in df_annotations], axis=1).values.flatten('F')
+        for p, val in zip(fp32_rects, anno_vals):
+            height = p.get_height()
+            if pd.isna(val) or pd.isna(height) or height == 0:
+                continue
+            xytext = (0, 5) if height >= 0 else (0, -15)
+            ax.annotate(anno_fmt.format(val=val),
+                        (p.get_x() + p.get_width() / 2., height),
+                        ha='center', va='bottom' if height >= 0 else 'top',
+                        xytext=xytext, textcoords='offset points',
+                        fontsize=8, fontweight='bold', color='#333333')
 
     if legend:
         handles = [Patch(facecolor=colors[i], edgecolor='black', label=labels[i]) for i in range(m)]
@@ -385,7 +400,7 @@ def main():
     grouped = df.groupby(['dataset', 'pre_epochs', 'post_epochs'])
 
     for (dataset, pre, post), group_df in grouped:
-        outdir = os.path.join('plots', str(dataset))
+        outdir = os.path.join('plots', str(dataset), f"pre{pre}_post{post}")
         os.makedirs(outdir, exist_ok=True)
         print(f"\n--- Generating plots for {dataset} | Pre: {pre} | Post: {post} -> {outdir}/ ---")
 
@@ -395,7 +410,7 @@ def main():
         title_suffix = f"\n({dataset} | Pre: {pre}, Post: {post})"
 
         def fname(name):
-            return os.path.join(outdir, f"{name}_pre{pre}_post{post}.png")
+            return os.path.join(outdir, f"{name}.png")
 
         # Plot 1: Change in Task Accuracy
         plot_universe_comparison(
