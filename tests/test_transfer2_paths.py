@@ -31,9 +31,6 @@ def _load_transfer2_utils():
         _stub_module(name)
     if getattr(sys.modules["fvcore.nn"], "FlopCountAnalysis", None) is None:
         sys.modules["fvcore.nn"].FlopCountAnalysis = object  # placeholder, unused here
-    # utils.py does `from main import PowerTracker` (script-dir circular import);
-    # PowerTracker is unused by the discovery functions under test.
-    _stub_module("main").PowerTracker = object
 
     utils_path = Path(__file__).resolve().parents[1] / "manuscript" / "Transfer2" / "utils.py"
     spec = importlib.util.spec_from_file_location("transfer2_utils", utils_path)

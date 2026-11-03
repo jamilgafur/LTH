@@ -2,12 +2,9 @@ import os
 import glob
 import csv
 import io
-import re
 import json
 import time
-import threading
 import traceback
-import subprocess
 import argparse
 from copy import deepcopy
 
@@ -26,107 +23,7 @@ from pyPrune.models.MobileNet import MobileNet
 from utils import *
 
 from attacks import fgsm_attack, pgd_attack
-import measure_power_usage
-
-# =========================================================
-# Power and Energy Monitoring Context Manager
-# =========================================================
-
-class PowerTracker:
-    """
-    Context manager to track average power (Watts) and total energy (Joules)
-    using measure_power_usage.py parsers in a non-blocking background thread.
-    """
-    def __init__(self, device=None, interval_s: int = 1, max_watts: float = None):
-        self.device = device
-        self.interval_s = max(1, int(interval_s))
-        self.max_watts = max_watts
-        self.parser = None
-        self.proc = None
-        self.thread = None
-        self.stop_event = threading.Event()
-        self.start_time = None
-        self.elapsed_time = 0.0
-
-        if torch.cuda.is_available() and (device is None or device.type == "cuda"):
-            try:
-                self.parser = measure_power_usage.NvidiaSmiParser(max_watts=self.max_watts)
-            except Exception as e:
-                print(f"[WARN] Failed to initialize NvidiaSmiParser: {e}")
-                self.parser = None
-        else:
-            try:
-                self.parser = measure_power_usage.TurbostatParser(max_watts=self.max_watts)
-            except Exception as e:
-                print(f"[WARN] Failed to initialize TurbostatParser: {e}")
-                self.parser = None
-
-    def __enter__(self):
-        self.start()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.stop()
-
-    def _reader(self):
-        while not self.stop_event.is_set():
-            if self.proc and self.proc.stdout:
-                line = self.proc.stdout.readline()
-                if line:
-                    self.parser.parse(line)
-                else:
-                    break
-
-    def start(self):
-        self.start_time = time.time()
-        if self.parser:
-            try:
-                self.proc = self.parser.start_monitoring(self.interval_s)
-                self.thread = threading.Thread(target=self._reader, daemon=True)
-                self.thread.start()
-            except Exception as e:
-                print(f"[WARN] Could not spawn power monitoring process: {e}")
-                self.proc = None
-
-    def stop(self):
-        self.elapsed_time = time.time() - (self.start_time or time.time())
-        self.stop_event.set()
-        if self.proc:
-            try:
-                self.proc.terminate()
-                self.proc.kill()
-            except Exception:
-                pass
-        if self.thread and self.thread.is_alive():
-            self.thread.join(timeout=1.0)
-
-    def get_results(self):
-        if not self.parser:
-            return 0.0, 0.0, self.elapsed_time, None, None
-
-        avg_watts, _ = self.parser.get_results()
-        gpu_util = gpu_clock = None
-        if hasattr(self.parser, "get_extras"):
-            gpu_util, gpu_clock = self.parser.get_extras()
-
-        # Fallback for fast inference batches (isolated to assigned GPU)
-        if avg_watts == 0.0 and torch.cuda.is_available():
-            try:
-                gpu_id = os.environ.get("CUDA_VISIBLE_DEVICES", "0").split(",")[0]
-                res = subprocess.run(
-                    f"nvidia-smi -i {gpu_id} --query-gpu=power.draw,utilization.gpu,clocks.sm --format=csv,noheader,nounits".split(),
-                    capture_output=True, text=True, check=True
-                )
-                nums = [float(x) for x in re.findall(r"\d+\.?\d+", res.stdout)]
-                if nums:
-                    avg_watts = nums[0]
-                    gpu_util = nums[1] if len(nums) > 1 else None
-                    gpu_clock = nums[2] if len(nums) > 2 else None
-            except Exception:
-                pass
-
-        total_joules = avg_watts * self.elapsed_time
-        return float(avg_watts), float(total_joules), float(self.elapsed_time), gpu_util, gpu_clock
+from pyPrune.power import PowerTracker
 
 # =========================================================
 # Adversarial Attack Robustness
@@ -372,72 +269,19 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     structural_param_count = (sum(p.numel() for p in structural_model.parameters())
                               if structural_model is not None else None)
 
-    # 6. Evaluate Accuracy, Power Draw, and Energy Consumption (SEQUENTIAL GPU ALLOCATION)
-    print("\n[INFO] Evaluating model accuracy, power draw, and energy consumption...")
-    
-    print("       -> Evaluating Baseline")
-    model_before = model_before.to(device)
-    acc_before, power_before, energy_before, util_before, clock_before = evaluate_accuracy(
-        model_before, test_loader, device, power_interval=args.power_interval, quant=args.quant
-    )
-    model_before = model_before.to("cpu")
-    torch.cuda.empty_cache()
-    
-    if original_after_model is not None:
-        print("       -> Evaluating Original After Finetuning")
-        original_after_model = original_after_model.to(device)
-        acc_original, power_original, energy_original, util_original, clock_original = evaluate_accuracy(
-            original_after_model, test_loader, device, power_interval=args.power_interval, quant=args.quant
-        )
-        if acc_before > (acc_original + 0.20):
-            print(f"\n[CRITICAL WARNING] 'original_after_model' suffered catastrophic forgetting ({acc_original*100:.2f}%).")
-            print(f"[CRITICAL WARNING] Re-evaluating healthy 'model_before' ({acc_before*100:.2f}%) on warm cache as the true baseline...")
-            model_before = model_before.to(device)
-            acc_original, power_original, energy_original, util_original, clock_original = evaluate_accuracy(
-                model_before, test_loader, device, power_interval=args.power_interval, quant=args.quant
-            )
-            model_before = model_before.to("cpu")
-        original_after_model = original_after_model.to("cpu")
+    # 6-7. Measure accuracy/power/energy + benchmark efficiency, `args.reps` times.
+    # Acc/CKA/adversarial are deterministic; the reps give the noisy power/latency
+    # numbers enough depth for the plot-side median to reject bad samples.
+    reps = max(1, int(args.reps))
+    print(f"\n[INFO] Evaluating model accuracy, power draw, and energy consumption ({reps} rep(s))...")
+
+    def _eval_one(model, label):
+        print(f"       -> Evaluating {label}")
+        model = model.to(device)
+        res = evaluate_accuracy(model, test_loader, device, power_interval=args.power_interval, quant=args.quant)
+        model = model.to("cpu")
         torch.cuda.empty_cache()
-    else:
-        acc_original = power_original = energy_original = util_original = clock_original = None
-
-    print("       -> Evaluating Unstructured Pruned Model")
-    unstructured_pruning_model = unstructured_pruning_model.to(device)
-    acc_unstructured, power_unstructured, energy_unstructured, util_unstructured, clock_unstructured = evaluate_accuracy(
-        unstructured_pruning_model, test_loader, device, power_interval=args.power_interval, quant=args.quant
-    )
-    unstructured_pruning_model = unstructured_pruning_model.to("cpu")
-    torch.cuda.empty_cache()
-
-    print("       -> Evaluating Collapsed Model")
-    full_collapsed_model_ready = full_collapsed_model_ready.to(device)
-    acc_collapsed, power_collapsed, energy_collapsed, util_collapsed, clock_collapsed = evaluate_accuracy(
-        full_collapsed_model_ready, test_loader, device, power_interval=args.power_interval, quant=args.quant
-    )
-    full_collapsed_model_ready = full_collapsed_model_ready.to("cpu")
-    torch.cuda.empty_cache()
-
-    acc_structural = power_structural = energy_structural = float("nan")
-    util_structural = clock_structural = None
-    if structural_model is not None:
-        print("       -> Evaluating Structural L1 Pruned Model")
-        structural_model = structural_model.to(device)
-        acc_structural, power_structural, energy_structural, util_structural, clock_structural = evaluate_accuracy(
-            structural_model, test_loader, device, power_interval=args.power_interval, quant=args.quant
-        )
-        structural_model = structural_model.to("cpu")
-        torch.cuda.empty_cache()
-
-    if acc_original is not None:
-        print(f"[RESULT] Accuracy Original:     {acc_original:.4f} | Power: {power_original:.2f}W | Energy: {energy_original:.2f}J")
-    print(f"[RESULT] Accuracy Unstructured: {acc_unstructured:.4f} | Power: {power_unstructured:.2f}W | Energy: {energy_unstructured:.2f}J")
-    print(f"[RESULT] Accuracy Collapsed:    {acc_collapsed:.4f} | Power: {power_collapsed:.2f}W | Energy: {energy_collapsed:.2f}J")
-    if structural_model is not None:
-        print(f"[RESULT] Accuracy Structural:   {acc_structural:.4f} | Power: {power_structural:.2f}W | Energy: {energy_structural:.2f}J")
-
-    # 7. Benchmark Efficiency: FLOPs, Latency, Throughput, Memory (SEQUENTIAL GPU ALLOCATION)
-    print("\n[INFO] Benchmarking efficiency (FLOPs, latency, throughput, peak memory)...")
+        return res
 
     bench_variants = []
     if original_after_model is not None:
@@ -449,25 +293,65 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     if structural_model is not None:
         bench_variants.append(("structural", structural_model))
 
-    benchmarks = {}
-    for bench_name, bench_model in bench_variants:
-        bench_model = bench_model.to(device)
-        benchmarks[bench_name] = benchmark_model(bench_model, test_loader, device, num_batches=20, quant=args.quant)
-        bench_model = bench_model.to("cpu")
-        torch.cuda.empty_cache()
+    eval_reps, bench_reps = [], []
+    for rep in range(reps):
+        if reps > 1:
+            print(f"\n[INFO] === Measurement rep {rep + 1}/{reps} ===")
 
-    bench_original = benchmarks.get("original")
-    bench_unstructured = benchmarks["unstructured"]
-    bench_collapsed = benchmarks["collapsed"]
+        m = {"before": _eval_one(model_before, "Baseline")}
+        if original_after_model is not None:
+            m["original"] = _eval_one(original_after_model, "Original After Finetuning")
+            if rep == 0 and m["before"][0] > (m["original"][0] + 0.20):
+                print(f"\n[CRITICAL WARNING] 'original_after_model' suffered catastrophic forgetting ({m['original'][0]*100:.2f}%).")
+                print(f"[CRITICAL WARNING] Re-evaluating healthy 'model_before' ({m['before'][0]*100:.2f}%) on warm cache as the true baseline...")
+                m["original"] = _eval_one(model_before, "healthy 'model_before' (fallback baseline)")
+        else:
+            m["original"] = (None,) * 5
+        m["unstructured"] = _eval_one(unstructured_pruning_model, "Unstructured Pruned Model")
+        m["collapsed"] = _eval_one(full_collapsed_model_ready, "Collapsed Model")
+        if structural_model is not None:
+            m["structural"] = _eval_one(structural_model, "Structural L1 Pruned Model")
+        else:
+            m["structural"] = (float("nan"),) * 3 + (None, None)
+        eval_reps.append(m)
 
+        b = {}
+        for bench_name, bench_model in bench_variants:
+            bench_model = bench_model.to(device)
+            b[bench_name] = benchmark_model(bench_model, test_loader, device, num_batches=20, quant=args.quant)
+            bench_model = bench_model.to("cpu")
+            torch.cuda.empty_cache()
+        bench_reps.append(b)
+
+    # Console summary from rep 0 (per-rep numbers land as rows in the CSV)
+    m0, b0 = eval_reps[0], bench_reps[0]
+    acc_original, power_original, energy_original = m0["original"][:3]
+    acc_unstructured, power_unstructured, energy_unstructured = m0["unstructured"][:3]
+    acc_collapsed, power_collapsed, energy_collapsed = m0["collapsed"][:3]
+    acc_structural, power_structural, energy_structural = m0["structural"][:3]
+
+    def _fmt_power(value, unit):
+        return f"{value:.2f}{unit}" if value is not None else "N/A"
+
+    if acc_original is not None:
+        print(f"[RESULT] Accuracy Original:     {acc_original:.4f} | Power: {_fmt_power(power_original, 'W')} | Energy: {_fmt_power(energy_original, 'J')}")
+    print(f"[RESULT] Accuracy Unstructured: {acc_unstructured:.4f} | Power: {_fmt_power(power_unstructured, 'W')} | Energy: {_fmt_power(energy_unstructured, 'J')}")
+    print(f"[RESULT] Accuracy Collapsed:    {acc_collapsed:.4f} | Power: {_fmt_power(power_collapsed, 'W')} | Energy: {_fmt_power(energy_collapsed, 'J')}")
+    if structural_model is not None:
+        print(f"[RESULT] Accuracy Structural:   {acc_structural:.4f} | Power: {_fmt_power(power_structural, 'W')} | Energy: {_fmt_power(energy_structural, 'J')}")
+    if reps > 1:
+        print(f"[INFO] {reps} measurement reps completed; full per-rep values are rows in the CSV.")
+
+    # FLOPs/latency/throughput/memory prints from rep 0 (deterministic parts)
+    bench_original = b0.get("original")
     flops_original = bench_original["flops"] if bench_original is not None else None
-    flops_collapsed = bench_collapsed["flops"]
+    flops_collapsed = b0["collapsed"]["flops"]
     # IMP zeroes weights but keeps the dense graph: measured FLOPs should ~match the
     # original. flops_unstructured keeps the old theoretical column for back-compat.
     flops_unstructured = (flops_original * (1.0 - float(target_sparsity))
                           if flops_original is not None else None)
 
-    for bench_name, bench in benchmarks.items():
+    for bench_name, bench in b0.items():
         mem_str = f"{bench['peak_mem_mb']:.1f} MiB" if bench["peak_mem_mb"] is not None else "n/a (CPU)"
         print(
             f"[RESULT] {bench_name.capitalize():<12} "
@@ -624,76 +508,85 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     # 10. Compile Results
     gpu_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU"
 
-    def _bench_field(name, field):
-        b = benchmarks.get(name)
-        return b[field] if b is not None else None
+    def _bench_field(b, name, field):
+        v = b.get(name)
+        return v[field] if v is not None else None
 
-    result_dict = {
-        "model": model_name,
-        "dataset": dataset_name,
-        "gpu_name": gpu_name,
-        "pre_epochs": parse_epoch_tokens(model_before_path)[1],
-        "post_epochs": imp_epochs,
-        "model_before": model_before_path,
-        "intermediate_epoch": ckpt_epoch,
-        "acc_original_after": acc_original,
-        "acc_unstructured": acc_unstructured,
-        "acc_collapsed": acc_collapsed,
-        "power_watts_original": round(power_original, 2) if power_original is not None else None,
-        "energy_joules_original": round(energy_original, 2) if energy_original is not None else None,
-        "power_watts_unstructured": round(power_unstructured, 2),
-        "energy_joules_unstructured": round(energy_unstructured, 2),
-        "power_watts_collapsed": round(power_collapsed, 2),
-        "energy_joules_collapsed": round(energy_collapsed, 2),
-        "flops_original": float(flops_original) if flops_original is not None else None,
-        "flops_unstructured": float(flops_unstructured) if flops_unstructured is not None else None,
-        "flops_collapsed": float(flops_collapsed),
-        "flops_unstructured_measured": float(bench_unstructured["flops"]),
-        "latency_ms_original": _bench_field("original", "latency_ms"),
-        "latency_ms_unstructured": bench_unstructured["latency_ms"],
-        "latency_ms_collapsed": bench_collapsed["latency_ms"],
-        "throughput_imgs_original": _bench_field("original", "throughput_imgs"),
-        "throughput_imgs_unstructured": bench_unstructured["throughput_imgs"],
-        "throughput_imgs_collapsed": bench_collapsed["throughput_imgs"],
-        "peak_mem_mb_original": _bench_field("original", "peak_mem_mb"),
-        "peak_mem_mb_unstructured": bench_unstructured["peak_mem_mb"],
-        "peak_mem_mb_collapsed": bench_collapsed["peak_mem_mb"],
-        "feature_maps_mb_original": _bench_field("original", "feature_map_mb"),
-        "feature_maps_mb_unstructured": bench_unstructured["feature_map_mb"],
-        "feature_maps_mb_collapsed": bench_collapsed["feature_map_mb"],
-        "storage_mb_original": storage_mb.get("original"),
-        "storage_mb_unstructured": storage_mb["unstructured"],
-        "storage_mb_collapsed": storage_mb["collapsed"],
-        "cka_unstructured": cka_unstructured,
-        "cka_collapsed": cka_collapsed,
-        # Structural L1 baseline (None/NaN when torch-pruning is unavailable)
-        "acc_structural": acc_structural,
-        "power_watts_structural": (None if power_structural != power_structural else round(power_structural, 2)),
-        "energy_joules_structural": (None if energy_structural != energy_structural else round(energy_structural, 2)),
-        "flops_structural": _bench_field("structural", "flops"),
-        "latency_ms_structural": _bench_field("structural", "latency_ms"),
-        "throughput_imgs_structural": _bench_field("structural", "throughput_imgs"),
-        "peak_mem_mb_structural": _bench_field("structural", "peak_mem_mb"),
-        "feature_maps_mb_structural": _bench_field("structural", "feature_map_mb"),
-        "storage_mb_structural": storage_mb.get("structural"),
-        "cka_structural": cka_structural,
-        "params_structural": structural_param_count,
-        "sparsity_structural": (1.0 - structural_param_count / original_param_count)
-                               if structural_param_count is not None else None,
-        # SM utilization / clocks during the tracked eval — diagnostic for the
-        # "collapsed draws more power" effect; None on CPU.
-        "gpu_util_original": util_original,
-        "gpu_clock_mhz_original": clock_original,
-        "gpu_util_unstructured": util_unstructured,
-        "gpu_clock_mhz_unstructured": clock_unstructured,
-        "gpu_util_collapsed": util_collapsed,
-        "gpu_clock_mhz_collapsed": clock_collapsed,
-        "gpu_util_structural": util_structural,
-        "gpu_clock_mhz_structural": clock_structural,
-    }
-    result_dict.update(adv_metrics)
-    result_dict.update(analysis_metrics)
-    return result_dict
+    result_rows = []
+    for rep, (m, b) in enumerate(zip(eval_reps, bench_reps)):
+        acc_o, pow_o, eng_o, util_o, clk_o = m["original"]
+        acc_u, pow_u, eng_u, util_u, clk_u = m["unstructured"]
+        acc_c, pow_c, eng_c, util_c, clk_c = m["collapsed"]
+        acc_s, pow_s, eng_s, util_s, clk_s = m["structural"]
+
+        result_dict = {
+            "model": model_name,
+            "dataset": dataset_name,
+            "gpu_name": gpu_name,
+            "pre_epochs": parse_epoch_tokens(model_before_path)[1],
+            "post_epochs": imp_epochs,
+            "model_before": model_before_path,
+            "intermediate_epoch": ckpt_epoch,
+            "rep": rep,
+            "acc_original_after": acc_o,
+            "acc_unstructured": acc_u,
+            "acc_collapsed": acc_c,
+            "power_watts_original": round(pow_o, 2) if pow_o is not None else None,
+            "energy_joules_original": round(eng_o, 2) if eng_o is not None else None,
+            "power_watts_unstructured": round(pow_u, 2) if pow_u is not None else None,
+            "energy_joules_unstructured": round(eng_u, 2) if eng_u is not None else None,
+            "power_watts_collapsed": round(pow_c, 2) if pow_c is not None else None,
+            "energy_joules_collapsed": round(eng_c, 2) if eng_c is not None else None,
+            "flops_original": float(b["original"]["flops"]) if b.get("original") is not None else None,
+            "flops_unstructured": float(flops_unstructured) if flops_unstructured is not None else None,
+            "flops_collapsed": float(b["collapsed"]["flops"]),
+            "flops_unstructured_measured": float(b["unstructured"]["flops"]),
+            "latency_ms_original": _bench_field(b, "original", "latency_ms"),
+            "latency_ms_unstructured": b["unstructured"]["latency_ms"],
+            "latency_ms_collapsed": b["collapsed"]["latency_ms"],
+            "throughput_imgs_original": _bench_field(b, "original", "throughput_imgs"),
+            "throughput_imgs_unstructured": b["unstructured"]["throughput_imgs"],
+            "throughput_imgs_collapsed": b["collapsed"]["throughput_imgs"],
+            "peak_mem_mb_original": _bench_field(b, "original", "peak_mem_mb"),
+            "peak_mem_mb_unstructured": b["unstructured"]["peak_mem_mb"],
+            "peak_mem_mb_collapsed": b["collapsed"]["peak_mem_mb"],
+            "feature_maps_mb_original": _bench_field(b, "original", "feature_map_mb"),
+            "feature_maps_mb_unstructured": b["unstructured"]["feature_map_mb"],
+            "feature_maps_mb_collapsed": b["collapsed"]["feature_map_mb"],
+            "storage_mb_original": storage_mb.get("original"),
+            "storage_mb_unstructured": storage_mb["unstructured"],
+            "storage_mb_collapsed": storage_mb["collapsed"],
+            "cka_unstructured": cka_unstructured,
+            "cka_collapsed": cka_collapsed,
+            # Structural L1 baseline (None/NaN when torch-pruning is unavailable)
+            "acc_structural": acc_s,
+            "power_watts_structural": (None if pow_s is None or pow_s != pow_s else round(pow_s, 2)),
+            "energy_joules_structural": (None if eng_s is None or eng_s != eng_s else round(eng_s, 2)),
+            "flops_structural": _bench_field(b, "structural", "flops"),
+            "latency_ms_structural": _bench_field(b, "structural", "latency_ms"),
+            "throughput_imgs_structural": _bench_field(b, "structural", "throughput_imgs"),
+            "peak_mem_mb_structural": _bench_field(b, "structural", "peak_mem_mb"),
+            "feature_maps_mb_structural": _bench_field(b, "structural", "feature_map_mb"),
+            "storage_mb_structural": storage_mb.get("structural"),
+            "cka_structural": cka_structural,
+            "params_structural": structural_param_count,
+            "sparsity_structural": (1.0 - structural_param_count / original_param_count)
+                                   if structural_param_count is not None else None,
+            # SM utilization / clocks during the tracked eval — diagnostic for the
+            # "collapsed draws more power" effect; None on CPU.
+            "gpu_util_original": util_o,
+            "gpu_clock_mhz_original": clk_o,
+            "gpu_util_unstructured": util_u,
+            "gpu_clock_mhz_unstructured": clk_u,
+            "gpu_util_collapsed": util_c,
+            "gpu_clock_mhz_collapsed": clk_c,
+            "gpu_util_structural": util_s,
+            "gpu_clock_mhz_structural": clk_s,
+        }
+        result_dict.update(adv_metrics)
+        result_dict.update(analysis_metrics)
+        result_rows.append(result_dict)
+    return result_rows
 
 # =========================================================
 # Entry Point
@@ -706,7 +599,7 @@ def main():
     parser.add_argument("--post", type=int, default=None, help="post-collapse (finetune) epochs; derived from the checkpoint path when omitted")
     parser.add_argument("--dataset", required=True, help="Dataset name, e.g. Cifar10")
     parser.add_argument("--output", default="auto", help="Output CSV filename (set to 'auto' to avoid collisions)")
-    parser.add_argument("--power-interval", type=int, default=1, help="Query interval in seconds for power monitoring (default: 1)")
+    parser.add_argument("--power-interval", type=float, default=1, help="Query interval in seconds for power monitoring (default: 1; sub-second values down to 0.1 supported on NVIDIA)")
     parser.add_argument("--analysis", choices=["standard", "full"], default="standard",
                         help="'full' adds adversarial epsilon sweeps, calibration (ECE/MCE), OOD AUROC, "
                              "and corruption robustness (with --corruptions-dir). Default 'standard' keeps "
@@ -720,6 +613,12 @@ def main():
                              "(autocast inference, fp16 storage estimate). Results are written "
                              "to *_quant_*.csv. No retraining is involved — *_quant.pt files "
                              "(legacy QAT) are not read.")
+    parser.add_argument("--reps", type=int, default=1,
+                        help="Measurement repetitions for the accuracy/power/energy eval and the "
+                             "efficiency benchmark (sections 6-7). The CSV gets one row per rep "
+                             "(see the 'rep' column); deterministic steps (CKA, adversarial, "
+                             "calibration) run once. Use ~10 so plot-side medians can reject "
+                             "noisy power samples. Default 1 keeps historical behavior.")
     args = parser.parse_args()
 
     total_start_time = time.time()
@@ -766,8 +665,8 @@ def main():
         print("=" * 70)
 
         try:
-            result_metrics = process_checkpoint(model_before_path, checkpoints, args, device)
-            results.append(result_metrics)
+            result_rows = process_checkpoint(model_before_path, checkpoints, args, device)
+            results.extend(result_rows)
         except FileNotFoundError as e:
             if no_collapsed_artifact_planned(args, model_before_path):
                 # Discovery found no collapsible regions for this combo: record an

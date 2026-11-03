@@ -38,7 +38,7 @@ flowchart LR
 
 | Path | What it is | Docs |
 |---|---|---|
-| `pyPrune/` | The library: collapse engine, models, data loaders, heritage pruning framework | [pyPrune/README.md](pyPrune/README.md) |
+| `pyPrune/` | The library: collapse engine, models, data loaders, power measurement, heritage pruning framework | [pyPrune/README.md](pyPrune/README.md) |
 | `pyPrune/collapse/` | **Core contribution**: region discovery + structural collapse, model-agnostic | [pyPrune/collapse/README.md](pyPrune/collapse/README.md) |
 | `pyPrune/models/` | 9 architecture families (10 classes) with dataset presets | [pyPrune/models/README.md](pyPrune/models/README.md) |
 | `pyPrune/pruneMethods/` | Heritage pruning framework (Pruner/Trainer classes) | [pyPrune/pruneMethods/README.md](pyPrune/pruneMethods/README.md) |
@@ -133,11 +133,12 @@ These three conventions keep every artifact findable and every universe collisio
 python -m pytest tests/ --ignore=tests/test_pruning.py -q
 ```
 
-53 tests cover: collapse mechanics & idempotent patching (`test_collapse.py`),
+62 tests cover: collapse mechanics & idempotent patching (`test_collapse.py`),
 representational-change probing & scorers (`test_change_stats.py`), scorer wiring & artifact
 inheritance (`test_scorer_wiring.py`), Transfer2 path resolution (`test_transfer2_paths.py`),
-analysis math — AUROC/ECE/corruptions/benchmarks (`test_transfer2_analysis.py`), and trainer
-smoke tests.
+analysis math — AUROC/ECE/corruptions/benchmarks (`test_transfer2_analysis.py`), power
+measurement — parser math, sampler commands, zero-sample contract (`test_power.py`), and
+trainer smoke tests.
 
 > **Known issue:** `tests/test_pruning.py` refers to the removed `pyPrune.pruning` module
 > (the heritage IMP tutorial was superseded) and fails at collection; it is excluded above.

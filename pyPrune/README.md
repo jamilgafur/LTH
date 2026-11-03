@@ -2,15 +2,16 @@
 
 [← Back to top-level README](../README.md)
 
-Python package containing the structural collapse engine, model zoo, data loaders, and the
-heritage iterative-pruning framework this project grew out of. Installed as a normal package
-(`pip install -e .`).
+Python package containing the structural collapse engine, model zoo, data loaders, power
+measurement utilities, and the heritage iterative-pruning framework this project grew out
+of. Installed as a normal package (`pip install -e .`).
 
 ## Table of Contents
 
 - [Package layout](#package-layout)
 - [Public API: pyPrune.collapse](#public-api-pyprunecollapse)
 - [pyPrune.models](#pyprunemodels)
+- [pyPrune.power](#pyprunepower)
 - [pyPrune.utils](#pypruneutils)
 - [Heritage pruning framework](#heritage-pruning-framework)
 - [Where to go next](#where-to-go-next)
@@ -23,6 +24,7 @@ heritage iterative-pruning framework this project grew out of. Installed as a no
 | [`models/`](models/) | 9 architectures (VGG16 → ConvNeXt) with dataset presets and `one_batch` probes | [models/README.md](models/README.md) |
 | [`pruneMethods/`](pruneMethods/) | Heritage pruner/trainer classes (IMP lineage) | [pruneMethods/README.md](pruneMethods/README.md) |
 | [`strategies/`](strategies/) | Heritage saliency strategies (Magnitude, Optimal Brain Damage) | [strategies/README.md](strategies/README.md) |
+| `power.py` | GPU/CPU power sampling (`PowerTracker` + nvidia-smi/amd-smi/turbostat parsers) | see below |
 | `utils.py` | Data loaders (CIFAR-10/100, MNIST, FashionMNIST, STL-10, Caltech101, TinyImageNet, ImageNet), seed/memory helpers, pruneable-module queries | see below |
 
 ## Public API: `pyPrune.collapse`
@@ -52,6 +54,17 @@ Everything below is re-exported from `pyPrune.collapse` (see its
 consistent constructor kwargs (dataset-driven `num_classes`, input shape inference, and a
 `one_batch` probe tensor used by the pipelines for shape discovery). Inventory and quirks:
 [models/README.md](models/README.md).
+
+## `pyPrune.power`
+
+`PowerTracker(device=None, interval_s=1, max_watts=None)` is a context manager that samples
+power draw from a background thread while a measured code region runs — ``NvidiaSmiParser``
+on CUDA devices, ``TurbostatParser`` otherwise:
+
+| Symbol | Notes |
+|---|---|
+| `PowerTracker` | `interval_s` float, floor 0.1 s; sub-second intervals use `nvidia-smi --loop-ms`. `get_results()` returns `(avg_watts, total_joules, elapsed_s, gpu_util, gpu_clock)`; watts/joules are `None` when zero samples were collected (never a fabricated reading) |
+| `NvidiaSmiParser`, `AmdSmiParser`, `TurbostatParser`, `ResourceParser` | streaming line parsers behind the tracker; turbostat needs root for MSR counters |
 
 ## `pyPrune.utils`
 

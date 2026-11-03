@@ -22,12 +22,16 @@ python -c "import torch;raise SystemExit(0 if torch.cuda.is_available() else 1)"
 # --- Default quant flag (analyzes the non-quant universe when unset) ---
 QUANT="${QUANT:-False}"
 
+# --- Measurement reps (noisy power/latency numbers get median depth) ---
+REPS="${REPS:-1}"
+
 # --- Debug: Show variable values ---
 echo "MODEL=$MODEL"
 echo "DATASET=$DATASET"
 echo "QUANT=$QUANT"
 echo "PRETRAIN=$PRETRAIN"
 echo "EPOCHS=$EPOCHS"
+echo "REPS=$REPS"
 
 # --- Check for required variables ---
 if [ -z "$MODEL" ] || [ -z "$DATASET" ] || [ -z "$PRETRAIN" ] || [ -z "$EPOCHS" ]; then
@@ -45,13 +49,14 @@ fi
 OUTPUT_FILE="postprocess_${MODEL}_${DATASET}_pre${PRETRAIN}_ep${EPOCHS}_quant${QUANT}.log"
 
 # --- Run the Python script (single epoch config per job; --pre/--post filter discovery) ---
-echo "Executing: ~/env/lth_env/bin/python main.py --model $MODEL --dataset $DATASET --pre $PRETRAIN --post $EPOCHS $QUANT_FLAG"
+echo "Executing: ~/env/lth_env/bin/python main.py --model $MODEL --dataset $DATASET --pre $PRETRAIN --post $EPOCHS --reps $REPS $QUANT_FLAG"
 
 time ~/env/lth_env/bin/python main.py \
     --model "$MODEL" \
     --dataset "$DATASET" \
     --pre "$PRETRAIN" \
     --post "$EPOCHS" \
+    --reps "$REPS" \
     $QUANT_FLAG > "$OUTPUT_FILE" 2>&1
 
 echo "Job finished."

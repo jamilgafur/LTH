@@ -44,14 +44,12 @@ def _load_utils():
         _stub_module(name)
     if getattr(sys.modules["fvcore.nn"], "FlopCountAnalysis", None) is None:
         sys.modules["fvcore.nn"].FlopCountAnalysis = object  # call fails -> flops=0 path
-    # utils.py does `from main import PowerTracker` (script-dir circular import)
-    _stub_module("main").PowerTracker = object
     return _load("utils", "utils.py")
 
 
 u2 = _load_utils()
 # main.py needs `from utils import *` to resolve to the loaded module and
-# `from attacks import ...` / `import measure_power_usage` from the Transfer2 dir.
+# `from attacks import ...` from the Transfer2 dir.
 if str(TRANSFER2_DIR) not in sys.path:
     sys.path.insert(0, str(TRANSFER2_DIR))
 m2 = _load("transfer2_main", "main.py")
