@@ -482,8 +482,12 @@ forbidding shape-affecting attributes (`in_channels`, `out_channels`, `in_featur
 Pooling underflow is real at CIFAR resolution (e.g. InceptionNet's 3×3 `maxpool4` meeting a
 2×2 map after stride chains). `_SafePool` wraps `MaxPool2d`/`AvgPool2d` and, in `forward`:
 
-1. kernel $(k_h, k_w)$ exceeds input $(H, W)$ (or degenerate input) →
-   `adaptive_avg_pool2d(x, (max(1, min(H,k_h)), max(1, min(W,k_w))))`;
+1. kernel $(k_h, k_w)$ exceeds *effective* input $(H + 2p_h, W + 2p_w)$ i.e. the pool
+   would genuinely fail (padding counts: 3×3/p=1 on a 2×2 map is legal, 1×1 out),
+   or degenerate input → `adaptive_{max,avg}_pool2d(x, (max(1, min(H,k_h)),
+   max(1, min(W,k_w))))`, max-pool variant when wrapping `MaxPool2d`. Adapting a
+   merely small-but-legal pool silently resizes every downstream map, so it is
+   never done;
 2. pool output collapses below $1\times1$ → return the input unchanged;
 3. any runtime failure → bypass the pool, return input.
 
