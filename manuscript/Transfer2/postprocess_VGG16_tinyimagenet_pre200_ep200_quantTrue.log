@@ -1,0 +1,66 @@
+[INFO] Searching for model checkpoints...
+[INFO] Found 1 'before' checkpoints.
+[INFO] Found 0 collapsed checkpoints.
+[INFO] Found 0 'after' checkpoints.
+======================================================================
+Starting Comparison Post-Processing Pipeline
+Model: VGG16 | Dataset: tinyimagenet | Device: cuda
+Epochs Config (override): pre=200, post=200
+Output File: cka_results_VGG16_tinyimagenet_quant_pre200_post200.csv
+CUDA device: NVIDIA A40
+======================================================================
+
+======================================================================
+Processing checkpoint 1/1
+Path: ../Tranfer/VGG16_tinyimagenet_None_epochs200_pretrain200/checkpoints/final_JF_Control.pt
+======================================================================
+[INFO] Parsing experiment directory... ../Tranfer/VGG16_tinyimagenet_None_epochs200_pretrain200/checkpoints/final_JF_Control.pt
+[INFO] Initializing baseline model...
+[INFO] Initializing architecture: model=VGG16, dataset=tinyimagenet
+Loading Tiny ImageNet data...
+Traceback (most recent call last):
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/main.py", line 160, in process_checkpoint
+    collapsed_model_path = find_matching_checkpoint(model_before_path, checkpoints["collapsed"])
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py", line 88, in find_matching_checkpoint
+    raise FileNotFoundError(f"No matching checkpoint found for {base_dir}")
+FileNotFoundError: No matching checkpoint found for ../Tranfer/VGG16_tinyimagenet_None_epochs200_pretrain200
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/main.py", line 710, in main
+    result_rows = process_checkpoint(model_before_path, checkpoints, args, device)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/main.py", line 170, in process_checkpoint
+    raise FileNotFoundError(
+FileNotFoundError: No matching checkpoint found for ../Tranfer/VGG16_tinyimagenet_None_epochs200_pretrain200
+[HINT] No `*_whole.pt` collapsed artifact found for this experiment. Re-run the Tranfer experiments to generate `final_*_whole.pt` artifacts.
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
+[DEBUG] Attempting to initialize VGG16 with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] VGG16 successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/VGG16_tinyimagenet_None_epochs200_pretrain200/checkpoints/final_JF_Control.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 107
+[INFO] Weights loaded in 0.15s
+
+[INFO] Loading original post-finetuning model...
+[INFO] Searching for checkpoint matching: ../Tranfer/VGG16_tinyimagenet_None_epochs200_pretrain200
+[WARN] No Control_Continuted artifact for this dir yet — baseline-only pass.
+[INFO] Loading whole collapsed model artifact...
+[INFO] Searching for checkpoint matching: ../Tranfer/VGG16_tinyimagenet_None_epochs200_pretrain200
+[ERROR] Failed processing checkpoint: ../Tranfer/VGG16_tinyimagenet_None_epochs200_pretrain200/checkpoints/final_JF_Control.pt
+[ERROR] FileNotFoundError: No matching checkpoint found for ../Tranfer/VGG16_tinyimagenet_None_epochs200_pretrain200
+[HINT] No `*_whole.pt` collapsed artifact found for this experiment. Re-run the Tranfer experiments to generate `final_*_whole.pt` artifacts.
+
+======================================================================
+[INFO] Saving final results...
+[ERROR] 0 successful experiments — NOT overwriting 'cka_results_VGG16_tinyimagenet_quant_pre200_post200.csv'. Fix the errors above and rerun.
+[INFO] Total successful experiments: 0
+[INFO] Total runtime: 2.33s
+
+======================================================================
+FINAL RESULTS
+======================================================================
+Empty DataFrame
+Columns: []
+Index: []
