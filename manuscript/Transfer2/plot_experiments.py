@@ -213,78 +213,29 @@ def pad_shared_ylim(ax):
 
 def plot_universe_comparison(df_fp32, df_quant, all_models, columns, labels, title, ylabel, filename,
                              zero_line=False, df_annotations=None, anno_fmt="{val:.2f}"):
-    """Plots one metric as side-by-side fp32 vs fp16 subplots with a shared y-axis."""
-    fig, axes = plt.subplots(1, 2, figsize=(20, 7), sharey=True)
+    """Single-axes grouped bars: fp32 solid + fp16 hatched per method."""
+    fig, ax = plt.subplots(figsize=(16, 7))
     sns.set_theme(style="whitegrid")
-
-    dr_fp32 = draw_bar_panel(axes[0], df_fp32, all_models, columns, labels, 'fp32 (control)', zero_line)
-    dr_quant = draw_bar_panel(axes[1], df_quant, all_models, columns, labels, 'fp16 (quant)', zero_line, legend=True)
-
-    axes[0].set_ylabel(ylabel, fontsize=12)
-    pad_shared_ylim(axes[0])
-
-    if df_annotations is not None:
-        annotate_bars(axes[0], dr_fp32[df_annotations], anno_fmt)
-        annotate_bars(axes[1], dr_quant[df_annotations], anno_fmt)
-
-    axes[1].legend(title='Modification Type', bbox_to_anchor=(1.02, 1), loc='upper left')
-    fig.suptitle(title, fontsize=14, y=1.02)
-    plt.tight_layout()
-    plt.savefig(filename, bbox_inches='tight')
-    print(f"Saved '{filename}'")
-    plt.close()
-
-def plot_adversarial_universes(df_fp32, df_quant, all_models, title, ylabel, filename):
-    """2x2 grid: rows = FGSM/PGD attacks, columns = fp32/fp16 universes, shared y."""
-    fig, axes = plt.subplots(2, 2, figsize=(20, 13), sharey=True)
-    sns.set_theme(style="whitegrid")
-
-    universes = [('fp32 (control)', df_fp32), ('fp16 (quant)', df_quant)]
-    reindexed = {}
-    for r, (attack, imp_col, col_col, _, _) in enumerate(ADV_ATTACKS):
-        for c, (univ, d) in enumerate(universes):
-            ax = axes[r][c]
-            reindexed[(r, c)] = draw_bar_panel(
-                ax, d, all_models, [imp_col, col_col], ['IMP (Unstructured)', 'Collapsed'],
-                f"{attack} — {univ}", zero_line=True, legend=(r == 0 and c == 1))
-            if c == 0:
-                ax.set_ylabel(ylabel, fontsize=11)
-
-    pad_shared_ylim(axes[0][0])
-
-    for r, (_, _, _, anno_imp, anno_col) in enumerate(ADV_ATTACKS):
-        for c in range(2):
-            annotate_bars(axes[r][c], reindexed[(r, c)][[anno_imp, anno_col]], "{val:.1%}")
-
-    axes[0][1].legend(title='Modification Type', bbox_to_anchor=(1.02, 1), loc='upper left')
-    fig.suptitle(title, fontsize=16, y=1.0)
+    draw_uni_bars(ax, df_fp32, df_quant, all_models, columns, labels, title,
+                  zero_line=zero_line, legend=True, df_annotations=df_annotations, anno_fmt=anno_fmt)
+    ax.set_ylabel(ylabel, fontsize=12)
     plt.tight_layout()
     plt.savefig(filename, bbox_inches='tight')
     print(f"Saved '{filename}'")
     plt.close()
 
 def plot_grid(df_fp32, df_quant, all_models, rows, title, ylabels, filename):
-    """N-row x 2-col grid: cols = fp32/fp16 universes.
+    """N-row single-column grid; each axes merges fp32+fp16 (solid vs hatched).
     rows = list of (row_title, bar_cols, labels, anno_cols_or_None, anno_fmt, zero_line)."""
-    universes = [('fp32 (control)', df_fp32), ('fp16 (quant)', df_quant)]
-    fig, axes = plt.subplots(len(rows), 2, figsize=(20, 6 * len(rows) + 1), squeeze=False)
+    fig, axes = plt.subplots(len(rows), 1, figsize=(16, 6 * len(rows) + 1), squeeze=False)
     sns.set_theme(style="whitegrid")
 
-    reindexed = {}
-    for r, (row_title, cols, labels, _, _, zero_line) in enumerate(rows):
-        for c, (univ, d) in enumerate(universes):
-            ax = axes[r][c]
-            reindexed[(r, c)] = draw_bar_panel(ax, d, all_models, cols, labels, f"{row_title} — {univ}",
-                                               zero_line=zero_line, legend=(r == 0 and c == 1))
-            ax.set_ylabel(ylabels[r], fontsize=11)
-            pad_shared_ylim(ax)
+    for r, (row_title, cols, labels, anno_cols, anno_fmt, zero_line) in enumerate(rows):
+        ax = axes[r][0]
+        draw_uni_bars(ax, df_fp32, df_quant, all_models, cols, labels, row_title,
+                      zero_line=zero_line, legend=(r == 0), df_annotations=anno_cols, anno_fmt=anno_fmt)
+        ax.set_ylabel(ylabels[r], fontsize=11)
 
-    for r, (_, _, _, anno_cols, anno_fmt, _) in enumerate(rows):
-        if anno_cols:
-            for c in range(2):
-                annotate_bars(axes[r][c], reindexed[(r, c)][anno_cols], anno_fmt)
-
-    axes[0][1].legend(title='Modification Type', bbox_to_anchor=(1.02, 1), loc='upper left')
     fig.suptitle(title, fontsize=15, y=1.0)
     plt.tight_layout()
     plt.savefig(filename, bbox_inches='tight')
