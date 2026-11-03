@@ -1,0 +1,36 @@
+\begin{table*}[htbp]
+\centering
+\caption{\textbf{Robustness to Post-Training Quantization (INT8).} Comparison isolating the specific degradation introduced by applying INT8 Post-Training Quantization to the collapsed structures. The \textbf{FP32 $\Delta$} tracks the accuracy change of the collapsed model relative to the fully trained Control model. The \textbf{INT8 $\Delta$} tracks the additional penalty incurred solely by quantizing that FP32 collapsed model. Missing values (-) denote incomplete runs or empty architectural sets.}
+\label{tab:quantization_results}
+\begin{tabular}{@{}ll | cc | cc | cc@{}}
+\toprule
+\multirow{2}{*}{\textbf{Architecture}} & \multirow{2}{*}{\textbf{Pre/Fine}} & \multicolumn{2}{c|}{\textbf{CIFAR-10}} & \multicolumn{2}{c|}{\textbf{CIFAR-100}} & \multicolumn{2}{c}{\textbf{Tiny ImageNet}} \\
+\cmidrule(l){3-4} \cmidrule(l){5-6} \cmidrule(l){7-8}
+ & & \textbf{\makecell{FP32 $\Delta$ \\ (vs Control)}} & \textbf{\makecell{INT8 $\Delta$ \\ (vs FP32)}} & \textbf{\makecell{FP32 $\Delta$ \\ (vs Control)}} & \textbf{\makecell{INT8 $\Delta$ \\ (vs FP32)}} & \textbf{\makecell{FP32 $\Delta$ \\ (vs Control)}} & \textbf{\makecell{INT8 $\Delta$ \\ (vs FP32)}} \\
+\midrule
+\multirow{3}{*}{\textbf{ConvNeXt}} & 100/300 & -0.43 & -0.09 & -0.05 & +0.05 & -36.87 & +0.06 \\
+ & 200/200 & \textbf{-0.01} & -0.03 & -0.02 & -0.02 & - & - \\
+ & 300/100 & -0.02 & +0.01 & \textbf{-0.00} & -0.01 & \textbf{-4.00} & +0.23 \\
+\midrule
+\multirow{3}{*}{\textbf{InceptionNet}} & 100/300 & - & - & - & - & -12.45 & +0.05 \\
+ & 200/200 & - & - & - & - & +1.55 & +0.43 \\
+ & 300/100 & - & - & - & - & \textbf{+3.39} & -0.23 \\
+\midrule
+\multirow{3}{*}{\textbf{MobileNet}} & 100/300 & - & - & -1.72 & -0.18 & - & - \\
+ & 200/200 & - & - & -0.06 & -0.06 & - & - \\
+ & 300/100 & - & - & \textbf{-0.02} & -0.03 & - & - \\
+\midrule
+\multirow{3}{*}{\textbf{RegNetX\_400MF}} & 100/300 & -18.62 & +0.21 & -1.91 & -0.33 & -24.02 & +1.26 \\
+ & 200/200 & -6.68 & +1.14 & -0.18 & -0.05 & -6.47 & -0.87 \\
+ & 300/100 & \textbf{-1.44} & -0.05 & \textbf{-0.06} & +0.07 & \textbf{-2.76} & +0.78 \\
+\midrule
+\multirow{3}{*}{\textbf{VGG16}} & 100/300 & -0.23 & +0.03 & -0.39 & +0.04 & +1.63 & +2.82 \\
+ & 200/200 & -0.04 & +0.02 & -0.34 & -0.05 & - & - \\
+ & 300/100 & \textbf{-0.00} & -0.01 & \textbf{+0.01} & -0.00 & \textbf{+21.08} & -0.65 \\
+\midrule
+\multirow{3}{*}{\textbf{XceptionNet}} & 100/300 & - & - & - & - & -9.30 & +0.05 \\
+ & 200/200 & - & - & - & - & -1.03 & -0.37 \\
+ & 300/100 & - & - & - & - & \textbf{+0.94} & -0.05 \\
+\bottomrule
+\end{tabular}
+\end{table*}
