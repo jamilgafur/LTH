@@ -516,8 +516,10 @@ def discover_regions(model, cnn_layers, variances, input_shape=(1, 3, 224, 224),
         
         mod_name = type(lca_mod).__name__
         
-        # [FIX] Broad, universal whitelist for all major architectures
-        allowed_substrings = ['Inception', 'Block', 'Stage', 'Layer', 'Residual', 'AnyNetX']
+        # [FIX] Broad, universal whitelist for all major architectures.
+        # 'SeparableConv' covers Xception's SeparableConv2d and MobileNet's
+        # DepthwiseSeparableConv containers (dw/pw pairs live inside them).
+        allowed_substrings = ['Inception', 'Block', 'Stage', 'Layer', 'Residual', 'AnyNetX', 'SeparableConv']
         if any(sub in mod_name for sub in allowed_substrings): 
             return True
             
@@ -716,7 +718,11 @@ def discover_regions(model, cnn_layers, variances, input_shape=(1, 3, 224, 224),
                         print(f"[DEBUG] [!] Discarding orphan fragment (size {len(expanded_r)}): {expanded_r}")
                         for name in expanded_r: status_map[name] = "Rejected (Orphan)"
                 else:
-                    print(f"[DEBUG] [-] Trapped region: {r[0]}. Marking as Gap.")
+                    print(
+                        f"[DEBUG] [-] Trapped region: {r[0]}. Marking as Gap. "
+                        f"(LCA '{lca_path or '<root>'}' type={type(lca_mod).__name__} "
+                        f"is not an expandable container — check is_valid_lca whitelist)"
+                    )
                     for idx in range(start_idx, end_idx + 1): status_map[cnn_layers[idx]] = "Gap"
 
             return R_candidates, status_map
@@ -750,7 +756,9 @@ def discover_regions(model, cnn_layers, variances, input_shape=(1, 3, 224, 224),
             
             try:
                 print(f"    [STEP] Testing sequence: {start_name} -> {end_name} (Length: {len(r)})")
-                test_model = copy.deepcopy(model).to(device)
+                # .eval(): train-mode BN refuses (1,C,1,1) tensors, so surrogate
+                # validation spuriously crashes on deep blocks at 32x32 inputs.
+                test_model = copy.deepcopy(model).to(device).eval()
                 
                 collapsed_model = collapse_only(
                     model=test_model,
@@ -792,6 +800,10 @@ def discover_regions(model, cnn_layers, variances, input_shape=(1, 3, 224, 224),
                         f" | FLOPs ({base_flops:,.0f} -> {new_flops:,.0f})"
                         if check_flops and np.isfinite(new_flops) and np.isfinite(base_flops) else ""
                     )
+                    gate = []
+                    if not new_params < base_params: gate.append(f"params_not_reduced ({base_params:,} -> {new_params:,})")
+                    if check_flops and not new_flops < base_flops: gate.append(f"flops_not_reduced ({base_flops:,.0f} -> {new_flops:,.0f})")
+                    print(f"        [GATE] Rejected by: {', '.join(gate)}")
                     print(
                         f"        [X] FAILED TO REDUCE: region={start_name} -> {end_name} | "
                         f"Params ({base_params:,} -> {new_params:,}){flop_msg}. Shaving..."
@@ -910,6 +922,13 @@ def discover_regions(model, cnn_layers, variances, input_shape=(1, 3, 224, 224),
             )
     else:
         print("[DEBUG] [FINAL] No regions accepted.")
+        n_active = sum(1 for s in status_map.values() if s == "Active")
+        if n_active:
+            print(
+                f"[DEBUG] [FINAL] {n_active} layers were flagged Active but 0 regions survived. "
+                f"Review the log: 'Trapped region' lines name the LCA container blocking "
+                f"expansion; '[GATE]' lines give the params/FLOPs verdict per tested region."
+            )
     
     experiment_regions["Status_Map"] = status_map
     experiment_regions["Control_Continuted"] = None

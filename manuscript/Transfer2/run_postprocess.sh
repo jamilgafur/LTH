@@ -8,6 +8,11 @@ datasets=("tinyimagenet" "Cifar100" "Cifar10")
 # Existing CSVs with fewer than REPS real-GPU rows get resubmitted.
 REPS="${REPS:-10}"
 
+# FORCE=1 bypasses the skip gate below entirely: resubmits every combo,
+# including ones with 'no_collapsed_regions' verdict rows (use after a fresh
+# stage-1/stage-2 rerun changes the region maps).
+FORCE="${FORCE:-0}"
+
 echo "=== Submitting CKA Post-Processing Jobs ==="
 
 # Epoch configs as "EPOCHS PRETRAIN" pairs (matches temp1/temp2 arg order)
@@ -30,7 +35,7 @@ for model in "${models[@]}"; do
                 # (nothing to measure; rerun once the artifact lands). CPU-only
                 # rows (bad node), old-schema rows, 1-byte placeholders and
                 # missing files get (re)submitted.
-                if python3 - "$CSV" "$model" "$dataset" "$EPOCHS" "$PRETRAIN" "$REPS" <<'PY'
+                if [ "$FORCE" != "1" ] && python3 - "$CSV" "$model" "$dataset" "$EPOCHS" "$PRETRAIN" "$REPS" <<'PY'
 import csv, glob, sys
 # NB: --quant measures the same fp32 collapsed artifact converted to fp16, so the
 # existence check is quant-independent (final_..._All_Combined_whole.pt).

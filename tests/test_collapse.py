@@ -114,6 +114,46 @@ def test_discover_regions_accept_and_reject():
     assert regions["Set_0"] == ("2", "4")
 
 
+class _SeparableConv2d(nn.Module):
+    """Xception/MobileNet-style separable conv: a custom container (not
+    nn.Sequential) whose depthwise/pointwise children are the region targets."""
+
+    def __init__(self, cin, cout):
+        super().__init__()
+        self.depthwise = nn.Conv2d(cin, cin, 3, padding=1, groups=cin, bias=False)
+        self.pointwise = nn.Conv2d(cin, cout, 1, bias=False)
+
+    def forward(self, x):
+        return self.pointwise(self.depthwise(x))
+
+
+class _SepToy(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.stem = nn.Conv2d(3, 8, 3, padding=1)
+        self.sep = _SeparableConv2d(8, 8)
+        self.head = nn.Linear(8, 10)
+
+    def forward(self, x):
+        x = self.sep(self.stem(x))
+        x = F.adaptive_avg_pool2d(x, 1).flatten(1)
+        return self.head(x)
+
+
+def test_discover_regions_separable_conv_not_trapped():
+    # Regression: a dw->pw pair whose LCA is a custom SeparableConv container
+    # used to be judged an invalid LCA, marking the region trapped (Gap) and
+    # yielding 0 sets for Xception/MobileNet-style architectures.
+    model = _SepToy()
+    dummy = torch.randn(1, 3, 8, 8)
+    cnn_layers = list(get_layer_variances(model, dummy).keys())
+    assert cnn_layers == ["stem", "sep.depthwise", "sep.pointwise", "head"]
+
+    v = [1.0, 0.1, 0.05, 0.9]  # veto shields stem; dw/pw Active; head rejected
+    regions = discover_regions(model, cnn_layers, v, input_shape=(1, 3, 8, 8))
+    assert any(k.startswith("Set_") for k in regions), regions.get("Status_Map")
+
+
 class _Branchy(nn.Module):
     """Main path: stem -> body -> head. fc_wrong is registered between stem and
     body but never executes, so named_modules() DFS order disagrees with the

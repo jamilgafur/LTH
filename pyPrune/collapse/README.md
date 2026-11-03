@@ -276,7 +276,7 @@ get_lca_path(a, b):
 
 **Validity** (`is_valid_lca`) — the LCA module is collapsible iff any of:
 `None` · `nn.Sequential`/`nn.ModuleList` · the root-model class (allows region spans to bridge
-stages) · class name containing any of `{'Inception','Block','Stage','Layer','Residual','AnyNetX'}`
+stages) · class name containing any of `{'Inception','Block','Stage','Layer','Residual','AnyNetX','SeparableConv'}`
 · or a leaf (no children). Everything else with children is invalid. *(Containment/attribute
 rules first; the name-substring whitelist is a documented legacy heuristic — see §11.)*
 
