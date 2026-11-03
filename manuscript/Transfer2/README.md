@@ -97,6 +97,23 @@ collects **zero samples** (unsupported driver flags, missing root, region too fa
 cells are written **empty** and a `[WARN]` is logged — no reading is ever fabricated.
 `gpu_util_{variant}` / `gpu_clock_mhz_{variant}` record average SM utilization/clock during the
 tracked pass (None on CPU) — diagnostics for the "collapsed draws more watts" effect.
+Util/clock samples are range-gated (util 0–100%, clock ≤3000 MHz, positional by query
+order) so `[Not Supported]` placeholders and garbled telemetry can never land in the CSV.
+
+**Window audit** (per variant): `eval_elapsed_s_{variant}`, `n_power_samples_{variant}` —
+eval-window duration and power-sample depth, so every energy row carries the evidence of
+what it measured. Config-level: `loader_time_s` / `loader_joules` / `loader_n_samples` from
+`measure_loader_floor` — the data pipeline iterated once with **no forward pass**; the floor
+every variant's eval window shares. Plot-side `loader_frac_*` / `loader_time_frac_*` columns
+expose how much of a measured "energy" number is I/O vs compute.
+
+**Saturated compute-only energy** (per variant, from `benchmark_model` with
+`measure_energy=True`): forwards of one fixed GPU-resident batch — zero data pipeline in
+the window — run until ~2 s of accumulated compute so the sampler sees enough samples.
+`power_watts_saturated_{variant}`, `j_per_img_saturated_{variant}` (the FLOPs→joules
+transferability numerator), `saturated_imgs_{variant}` and
+`n_power_samples_saturated_{variant}`. Self-check: `[CHECK]` is logged when the saturated
+rate deviates >2× from the loader-based `throughput_imgs` of the same run.
 
 **Efficiency tetrad** (`benchmark_model`, CUDA-event timed, 20 batches):
 `flops_{variant}` (fvcore measured; `flops_unstructured` keeps the legacy *theoretical*
