@@ -159,9 +159,9 @@ Sibling tooling:
 
 | File | Purpose |
 |---|---|
-| `aggregate_results.py` | pools every `cka_results_*.csv` (both header variants), drops CPU rows when a GPU twin exists, adds within-row variant/original ratios + J/img, writes `aggregated_rows.csv` / `aggregated_median.csv` — the cross-GPU apples-to-apples tables |
+| `aggregate_results.py` | pools every `cka_results_*.csv` (any header schema, column-unioned), drops CPU rows when a GPU twin exists, adds within-row variant/original ratios + J/img, saturated-J/img ratios, window-dilution fractions (`loader_frac_*`), `energy_transfer` and the `regime` label, writes `aggregated_rows.csv` / `aggregated_median.csv` — the cross-GPU apples-to-apples tables |
 | `diagnose_cka.py` | audits why a config's CKA is ~0: logs which layer each variant's feature extractor strips, plus drift-reference CKAs (extraction bug vs genuine divergence) |
-| `run_postprocess.sh` | submits the config grid but **skips configs whose CSV already has a GPU (non-CPU) measurement row**, or a `no_collapsed_regions` verdict row while the collapsed artifact is still untrained; CPU-only, marker-with-artifact-now-trained, and missing configs (re)run |
+| `run_postprocess.sh` | submits the config grid but **skips configs whose CSV already has ≥ REPS GPU (non-CPU) measurement rows in the current schema** (saturated-energy / loader-floor columns present — old-schema rows resubmit), or a `no_collapsed_regions` verdict row while the collapsed artifact is still untrained; CPU-only, marker-with-artifact-now-trained, old-schema and missing configs (re)run |
 
 ### Corruption data staging
 
