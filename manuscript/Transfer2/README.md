@@ -38,10 +38,11 @@ Per processed `final_JF_Control.pt` ("before") checkpoint:
 | `--dataset` | required | Dataset (e.g. `Cifar100`) |
 | `--pre`, `--post` | `None` | Optional filters on `pretrain{M}`/`epochs{N}` tokens; **derived from checkpoint paths when omitted** |
 | `--output` | `auto` | Results CSV; auto-named from model/dataset/(derived or override) epochs when unset |
-| `--power-interval` | `1` | Power sampling interval (s) for the energy measurements |
+| `--power-interval` | `1` | Power sampling interval (s, float) for the energy measurements; sub-second values down to 0.1 keep short runs well sampled (NVIDIA: `--loop-ms`) |
 | `--analysis` | `standard` | `standard` = historical behavior; `full` adds adversarial ε-sweeps, calibration, OOD, and corruptions |
 | `--corruptions-dir` | unset | CIFAR-C data root (stage via `download_corruptions.sh` on a login node); enables corruption evaluation under `--analysis full` |
 | `--quant` | off | Analyze the fp16-quantized (PTQ) universe: loads the **same fp32 artifacts** as the default run and measures them converted to fp16 (autocast inference, fp16 storage estimate); no retraining involved. CSV outputs get a `_quant` infix so both universes coexist per directory. Legacy `*_quant.pt` artifacts (QAT-trained) are not read |
+| `--reps` | `1` | Measurement repetitions for the accuracy/power/energy eval and the efficiency benchmark (sections 6–7); the CSV gets **one row per rep** (`rep` column) so plot-side medians can reject noisy power samples (use ~10). Deterministic steps (CKA, adversarial, calibration) run once. `run_postprocess.sh` jobs default to `REPS=10` (env-overridable) and resubmit CSVs with fewer than `REPS` real-GPU rows |
 
 ## Checkpoint Discovery & Matching
 
@@ -88,9 +89,12 @@ Result-dict columns (wide CSV), grouped by family:
 **Accuracy / energy** (per variant `original`/`unstructured`/`collapsed`, plus `structural`
 when the optional dep runs):
 `acc_{variant}` (variants use names `acc_original_after`, `acc_unstructured`, `acc_collapsed`,
-`acc_structural`), `power_watts_{variant}`, `energy_joules_{variant}` — measured with a
-`PowerTracker` during full test-set evaluation, after **one untracked warmup pass** (warms the
-disk/page cache and autotuner so the tracked joules reflect compute, not dataloader I/O).
+`acc_structural`), `power_watts_{variant}`, `energy_joules_{variant}` — measured with
+`pyPrune.power.PowerTracker` during full test-set evaluation, after **one untracked warmup
+pass** (warms the disk/page cache and autotuner so the tracked joules reflect compute, not
+dataloader I/O). Joules are avg watts × elapsed over the tracked window; if the sampler
+collects **zero samples** (unsupported driver flags, missing root, region too fast), the
+cells are written **empty** and a `[WARN]` is logged — no reading is ever fabricated.
 `gpu_util_{variant}` / `gpu_clock_mhz_{variant}` record average SM utilization/clock during the
 tracked pass (None on CPU) — diagnostics for the "collapsed draws more watts" effect.
 

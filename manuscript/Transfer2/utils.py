@@ -46,7 +46,7 @@ from pyPrune.models.MobileNet import MobileNet
 import argparse
 import glob
 import re
-from main import PowerTracker
+from pyPrune.power import PowerTracker
 # =========================================================
 # Utility Functions
 # =========================================================
@@ -274,9 +274,11 @@ def evaluate_accuracy(model: nn.Module, dataloader, device: torch.device, power_
     avg_watts, total_joules, elapsed_sec, gpu_util, gpu_clock = tracker.get_results()
     accuracy = correct / total if total > 0 else 0.0
 
+    power_str = f"{avg_watts:.2f}W" if avg_watts is not None else "N/A"
+    energy_str = f"{total_joules:.2f}J" if total_joules is not None else "N/A"
     print(
         f"[INFO] Evaluation complete: acc={accuracy:.4f}, "
-        f"power={avg_watts:.2f}W, energy={total_joules:.2f}J, time={elapsed_sec:.2f}s"
+        f"power={power_str}, energy={energy_str}, time={elapsed_sec:.2f}s"
     )
     return accuracy, avg_watts, total_joules, gpu_util, gpu_clock
 
@@ -389,6 +391,7 @@ def train_imp(model, train_loader, device, epochs, target_sparsity, save_path, c
                 
                 # Query current energy statistics so far in this session
                 _, session_joules, session_time, _, _ = tracker.get_results()
+                session_joules = session_joules or 0.0  # measurement failure: count time, not fake energy
                 
                 # Save atomic checkpoint at the end of every epoch
                 # Writing to a temp file first prevents corrupt checkpoints if SLURM kills the job mid-save.
@@ -410,6 +413,7 @@ def train_imp(model, train_loader, device, epochs, target_sparsity, save_path, c
                     torch.cuda.empty_cache()
 
         _, session_joules, session_time, _, _ = tracker.get_results()
+        session_joules = session_joules or 0.0  # measurement failure: count time, not fake energy
         total_joules = prev_joules + session_joules
         total_time = prev_time + session_time
         avg_watts = total_joules / total_time if total_time > 0 else 0.0
