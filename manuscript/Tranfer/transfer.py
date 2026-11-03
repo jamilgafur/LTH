@@ -834,18 +834,26 @@ def run_discovery_stage(args, device, train_loader, test_loader, model_class, mo
                 scorer=scorer,
             )
 
-            analyze_collapse_heuristics(
-                model=eval_model,
-                input_tensor=input_tensor,
-                save_root_dir=plots_root,
-                model_name=args.model,
-                dataset_name=args.dataset,
-                exp_config=dynamic_experiments
-            )
-
+            # Export BEFORE heuristic analysis: a plotting/probe crash must
+            # never throw away a finished discovery run.
             with open(json_file, 'w') as f:
                 json.dump(dynamic_experiments, f, indent=4)
-            print(f"[✓] Stage 1 Complete (scorer={scorer}). Exported {len(dynamic_experiments)} targets to '{json_file}'.")
+            n_sets = sum(1 for k in dynamic_experiments if k.startswith("Set_"))
+            print(f"[✓] Regions map exported ({n_sets} sets, {len(dynamic_experiments)} targets) to '{json_file}'.")
+
+            try:
+                analyze_collapse_heuristics(
+                    model=eval_model,
+                    input_tensor=input_tensor,
+                    save_root_dir=plots_root,
+                    model_name=args.model,
+                    dataset_name=args.dataset,
+                    exp_config=dynamic_experiments
+                )
+            except Exception as e:
+                print(f"[WARN] Heuristic analysis failed ({type(e).__name__}: {e}) — "
+                      f"regions map was already exported; stage 1 continues.")
+            print(f"[✓] Stage 1 Complete (scorer={scorer}).")
     else:
         # Legacy path (single-image probe) — unchanged for default scorers.
         if variance_file.exists():
@@ -869,18 +877,26 @@ def run_discovery_stage(args, device, train_loader, test_loader, model_class, mo
             scorer=scorer,  # local_dev / percentile consume the flat variance list
         )
 
-        analyze_collapse_heuristics(
-            model=eval_model,
-            input_tensor=input_tensor,
-            save_root_dir=plots_root,
-            model_name=args.model,
-            dataset_name=args.dataset,
-            exp_config=dynamic_experiments
-        )
-
+        # Export BEFORE heuristic analysis: a plotting/probe crash must
+        # never throw away a finished discovery run.
         with open(json_file, 'w') as f:
             json.dump(dynamic_experiments, f, indent=4)
-        print(f"[✓] Stage 1 Complete. Exported {len(dynamic_experiments)} targets to '{json_file}'.")
+        n_sets = sum(1 for k in dynamic_experiments if k.startswith("Set_"))
+        print(f"[✓] Regions map exported ({n_sets} sets, {len(dynamic_experiments)} targets) to '{json_file}'.")
+
+        try:
+            analyze_collapse_heuristics(
+                model=eval_model,
+                input_tensor=input_tensor,
+                save_root_dir=plots_root,
+                model_name=args.model,
+                dataset_name=args.dataset,
+                exp_config=dynamic_experiments
+            )
+        except Exception as e:
+            print(f"[WARN] Heuristic analysis failed ({type(e).__name__}: {e}) — "
+                  f"regions map was already exported; stage 1 continues.")
+        print(f"[✓] Stage 1 Complete.")
 
     # Depth-profile figure for combined-probe runs (best-effort, never fatal)
     if scorer in ("cv", "change", "cka", "all"):

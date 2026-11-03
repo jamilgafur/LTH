@@ -803,6 +803,9 @@ def discover_regions(model, cnn_layers, variances, input_shape=(1, 3, 224, 224),
                     gate = []
                     if not new_params < base_params: gate.append(f"params_not_reduced ({base_params:,} -> {new_params:,})")
                     if check_flops and not new_flops < base_flops: gate.append(f"flops_not_reduced ({base_flops:,.0f} -> {new_flops:,.0f})")
+                    if new_params == base_params:
+                        print("        [GATE] NOTE: model unchanged by the collapse attempt "
+                              "(collapse failed or was a no-op — see [ERROR]/CRASH lines above).")
                     print(f"        [GATE] Rejected by: {', '.join(gate)}")
                     print(
                         f"        [X] FAILED TO REDUCE: region={start_name} -> {end_name} | "
