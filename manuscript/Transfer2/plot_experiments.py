@@ -107,6 +107,70 @@ def highlight_missing_models(ax, all_models, missing_models):
         else:
             tick.set_color('black')
 
+def draw_uni_bars(ax, df_fp32, df_quant, all_models, columns, labels, panel_title,
+                  zero_line=False, legend=False, df_annotations=None, anno_fmt="{val:.2f}"):
+    """Draws both universes' grouped bars on ONE axes: fp32 = solid, fp16 = hatched/alpha."""
+    from matplotlib.patches import Patch
+    rf = df_fp32.set_index('model').reindex(all_models)
+    rq = df_quant.set_index('model').reindex(all_models)
+
+    m, n = len(columns), len(all_models)
+    x = np.arange(n)
+    span = 0.84
+    bw = span / (2 * m)
+    colors = sns.color_palette('Set2', m)
+
+    for i, col in enumerate(columns):
+        for u, d in enumerate([rf, rq]):
+            pos = x + (2 * i + u - (2 * m - 1) / 2) * bw
+            if u == 0:
+                ax.bar(pos, d[col].values, width=bw, color=colors[i], edgecolor='black', linewidth=0.4)
+            else:
+                ax.bar(pos, d[col].values, width=bw, color=colors[i], alpha=0.55,
+                       hatch='///', edgecolor='#444444', linewidth=0.0)
+
+    # Per-universe MISSING half-spans; tick red only if missing in both universes
+    half = span / 2
+    miss_both = set()
+    for idx, model in enumerate(all_models):
+        missing = [rf.loc[model, columns].isna().all(), rq.loc[model, columns].isna().all()]
+        if all(missing):
+            miss_both.add(model)
+        for u, is_missing in enumerate(missing):
+            if is_missing:
+                lo = idx - half if u == 0 else idx
+                ax.axvspan(lo, lo + half, color='red', alpha=0.12, zorder=0)
+                ax.text(lo + half / 2, 0, 'MISSING', color='red', fontsize=7, fontweight='bold',
+                        ha='center', va='center', rotation=90, zorder=3)
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(all_models, rotation=45, ha='right')
+    plt.draw()
+    for tick, model in zip(ax.get_xticklabels(), all_models):
+        if model in miss_both:
+            tick.set_color('red')
+            tick.set_fontweight('bold')
+
+    if zero_line:
+        ax.axhline(0, color='black', linewidth=1.2, linestyle='--')
+    pad_shared_ylim(ax)
+
+    if df_annotations is not None:
+        interleaved = pd.concat([f for acol in df_annotations for f in (rf[acol], rq[acol])], axis=1)
+        annotate_bars(ax, interleaved, anno_fmt, fontsize=8)
+
+    if legend:
+        handles = [Patch(facecolor=colors[i], edgecolor='black', label=labels[i]) for i in range(m)]
+        handles += [Patch(facecolor='white', edgecolor='black', label='fp32 (control, solid)'),
+                    Patch(facecolor='white', edgecolor='#444444', hatch='///', alpha=0.55,
+                          label='fp16 (quant, hatched)')]
+        ax.legend(handles=handles, title='Modification / Universe',
+                  bbox_to_anchor=(1.02, 1), loc='upper left', fontsize=9)
+
+    ax.set_title(panel_title, fontsize=12, fontweight='bold')
+    ax.set_xlabel('Model', fontsize=11)
+    return rf, rq
+
 def draw_bar_panel(ax, df, all_models, columns, labels, panel_title, zero_line=False, legend=False):
     """Draws one universe's grouped bars into ax; returns the reindexed df for later annotation."""
     df_reindexed = df.set_index('model').reindex(all_models)
@@ -125,8 +189,8 @@ def draw_bar_panel(ax, df, all_models, columns, labels, panel_title, zero_line=F
     highlight_missing_models(ax, all_models, missing_models)
     return df_reindexed
 
-def annotate_bars(ax, df_anno, anno_fmt):
-    """Writes raw values on bars; call only after shared y-limits are final."""
+def annotate_bars(ax, df_anno, anno_fmt, fontsize=9):
+    """Writes raw values on bars; container order must match df column order."""
     # ax.containers = bar columns only; ax.patches also includes MISSING axvspans
     rects = [rect for container in ax.containers for rect in container]
     anno_vals = df_anno.values.flatten('F')
@@ -139,7 +203,7 @@ def annotate_bars(ax, df_anno, anno_fmt):
                     (p.get_x() + p.get_width() / 2., height),
                     ha='center', va='bottom' if height >= 0 else 'top',
                     xytext=xytext, textcoords='offset points',
-                    fontsize=9, fontweight='bold', color='#333333')
+                    fontsize=fontsize, fontweight='bold', color='#333333')
 
 def pad_shared_ylim(ax):
     """Pads the shared y-axis so bar annotations fit."""
