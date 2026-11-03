@@ -1,150 +1,0 @@
-[INFO] Searching for model checkpoints...
-[INFO] Borrowing scorerall Control as 'before' for ../Tranfer/VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_epochs300_pretrain100
-[INFO] Found 1 'before' checkpoints.
-[INFO] Found 1 collapsed checkpoints.
-[INFO] Found 2 'after' checkpoints.
-======================================================================
-Starting Comparison Post-Processing Pipeline
-Model: VGG16 | Dataset: Cifar10 | Device: cuda
-Epochs Config (override): pre=100, post=300
-Output File: cka_results_VGG16_Cifar10_quant_pre100_post300.csv
-CUDA device: NVIDIA A10
-======================================================================
-
-======================================================================
-Processing checkpoint 1/1
-Path: ../Tranfer/VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt
-======================================================================
-[INFO] Parsing experiment directory... ../Tranfer/VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt
-[INFO] Initializing baseline model...
-[INFO] Initializing architecture: model=VGG16, dataset=Cifar10
-Loading CIFAR-10 data...
-CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
-[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
-[DEBUG] Attempting to initialize VGG16 with kwargs: dict_keys(['num_classes', 'one_batch'])
-[DEBUG] VGG16 successfully initialized WITH one_batch.
-[INFO] Loading weights: ../Tranfer/VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt
-[INFO] Checkpoint extracted. Candidate state dict keys: 107
-[INFO] Weights loaded in 2.76s
-
-[INFO] Loading original post-finetuning model...
-[INFO] Searching for checkpoint matching: ../Tranfer/VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_scorerall_epochs300_pretrain100
-[INFO] Found matching checkpoint: ../Tranfer/VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
-[INFO] Initializing architecture: model=VGG16, dataset=Cifar10
-Loading CIFAR-10 data...
-CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
-[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
-[DEBUG] Attempting to initialize VGG16 with kwargs: dict_keys(['num_classes', 'one_batch'])
-[DEBUG] VGG16 successfully initialized WITH one_batch.
-[INFO] Loading weights: ../Tranfer/VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
-[INFO] Checkpoint extracted. Candidate state dict keys: 107
-[INFO] Weights loaded in 5.72s
-
-[INFO] Loading whole collapsed model artifact...
-[INFO] Searching for checkpoint matching: ../Tranfer/VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_scorerall_epochs300_pretrain100
-[INFO] Found matching checkpoint: ../Tranfer/VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
-[INFO] Whole-model load completed in 2.21s
-[INFO] Calculating dynamic sparsity to match collapse...
-[INFO] Target unstructured sparsity calculated at: 34.96%
-[INFO] IMP checkpoint not found. Starting on-the-fly finetuning...
-
-[INFO] Starting Iterative Magnitude Pruning (IMP) for 300 epochs...
-[INFO] Compounding prune rate: 0.19% per step over 225 steps.
-[INFO] Found existing checkpoint at ../Tranfer/VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300_ resume_ckpt.pt. Resuming training...
-[INFO] Resuming from Epoch 194/300 (Previous time: 0.00s)
-IMP:   0%|          | 0/107 [00:00<?, ?it/s]
-Epoch 194/300:   0%|          | 0/98 [00:00<?, ?it/s][A
-Epoch 194/300:   1%|          | 1/98 [00:06<09:53,  6.12s/it][A
-Epoch 194/300:   5%|▌         | 5/98 [00:06<01:27,  1.07it/s][A
-Epoch 194/300:   7%|▋         | 7/98 [00:06<00:54,  1.66it/s][A
-Epoch 194/300:   9%|▉         | 9/98 [00:06<00:37,  2.35it/s][A
-Epoch 194/300:  11%|█         | 11/98 [00:07<00:33,  2.60it/s][A
-Epoch 194/300:  14%|█▍        | 14/98 [00:07<00:23,  3.58it/s][A
-Epoch 194/300:  16%|█▋        | 16/98 [00:07<00:18,  4.35it/s][A
-Epoch 194/300:  18%|█▊        | 18/98 [00:08<00:18,  4.28it/s][A
-Epoch 194/300:  19%|█▉        | 19/98 [00:08<00:18,  4.36it/s][A
-Epoch 194/300:  19%|█▉        | 19/98 [00:08<00:18,  4.36it/s, loss=0.0035][A
-Epoch 194/300:  20%|██        | 20/98 [00:08<00:17,  4.50it/s, loss=0.0035][A
-Epoch 194/300:  22%|██▏       | 22/98 [00:08<00:15,  5.05it/s, loss=0.0035][A
-Epoch 194/300:  23%|██▎       | 23/98 [00:09<00:16,  4.59it/s, loss=0.0035][A
-Epoch 194/300:  27%|██▋       | 26/98 [00:09<00:12,  5.59it/s, loss=0.0035][A
-Epoch 194/300:  28%|██▊       | 27/98 [00:09<00:13,  5.42it/s, loss=0.0035][A
-Epoch 194/300:  31%|███       | 30/98 [00:10<00:11,  5.71it/s, loss=0.0035][A
-Epoch 194/300:  32%|███▏      | 31/98 [00:10<00:13,  5.11it/s, loss=0.0035][A
-Epoch 194/300:  34%|███▎      | 33/98 [00:10<00:09,  6.66it/s, loss=0.0035][A
-Epoch 194/300:  35%|███▍      | 34/98 [00:11<00:11,  5.61it/s, loss=0.0035][A
-Epoch 194/300:  36%|███▌      | 35/98 [00:11<00:12,  4.96it/s, loss=0.0035][A
-Epoch 194/300:  38%|███▊      | 37/98 [00:11<00:08,  6.81it/s, loss=0.0035][A
-Epoch 194/300:  39%|███▉      | 38/98 [00:11<00:10,  5.64it/s, loss=0.0035][A
-Epoch 194/300:  40%|███▉      | 39/98 [00:12<00:12,  4.87it/s, loss=0.0035][A
-Epoch 194/300:  40%|███▉      | 39/98 [00:12<00:12,  4.87it/s, loss=0.0033][A
-Epoch 194/300:  41%|████      | 40/98 [00:12<00:11,  4.94it/s, loss=0.0033][A
-Epoch 194/300:  43%|████▎     | 42/98 [00:12<00:09,  6.14it/s, loss=0.0033][A
-Epoch 194/300:  44%|████▍     | 43/98 [00:12<00:10,  5.22it/s, loss=0.0033][A
-Epoch 194/300:  46%|████▌     | 45/98 [00:12<00:08,  6.43it/s, loss=0.0033][A
-Epoch 194/300:  47%|████▋     | 46/98 [00:13<00:08,  6.02it/s, loss=0.0033][A
-Epoch 194/300:  48%|████▊     | 47/98 [00:13<00:10,  5.05it/s, loss=0.0033][A
-Epoch 194/300:  50%|█████     | 49/98 [00:13<00:07,  6.35it/s, loss=0.0033][A
-Epoch 194/300:  51%|█████     | 50/98 [00:13<00:08,  5.87it/s, loss=0.0033][A
-Epoch 194/300:  52%|█████▏    | 51/98 [00:14<00:09,  5.05it/s, loss=0.0033][A
-Epoch 194/300:  54%|█████▍    | 53/98 [00:14<00:06,  7.14it/s, loss=0.0033][A
-Epoch 194/300:  55%|█████▌    | 54/98 [00:14<00:08,  5.10it/s, loss=0.0033][A
-Epoch 194/300:  56%|█████▌    | 55/98 [00:14<00:08,  5.08it/s, loss=0.0033][A
-Epoch 194/300:  58%|█████▊    | 57/98 [00:14<00:05,  7.19it/s, loss=0.0033][A
-Epoch 194/300:  59%|█████▉    | 58/98 [00:15<00:07,  5.11it/s, loss=0.0033][A
-Epoch 194/300:  60%|██████    | 59/98 [00:15<00:06,  5.69it/s, loss=0.0033][A
-Epoch 194/300:  60%|██████    | 59/98 [00:15<00:06,  5.69it/s, loss=0.0033][A
-Epoch 194/300:  61%|██████    | 60/98 [00:15<00:06,  5.63it/s, loss=0.0033][A
-Epoch 194/300:  63%|██████▎   | 62/98 [00:16<00:06,  5.33it/s, loss=0.0033][A
-Epoch 194/300:  64%|██████▍   | 63/98 [00:16<00:06,  5.25it/s, loss=0.0033][A
-Epoch 194/300:  66%|██████▋   | 65/98 [00:16<00:04,  7.40it/s, loss=0.0033][A
-Epoch 194/300:  68%|██████▊   | 67/98 [00:16<00:06,  5.15it/s, loss=0.0033][A
-Epoch 194/300:  70%|███████   | 69/98 [00:17<00:04,  6.89it/s, loss=0.0033][A
-Epoch 194/300:  72%|███████▏  | 71/98 [00:17<00:05,  5.09it/s, loss=0.0033][A
-Epoch 194/300:  76%|███████▌  | 74/98 [00:18<00:04,  5.43it/s, loss=0.0033][A
-Epoch 194/300:  77%|███████▋  | 75/98 [00:18<00:04,  5.37it/s, loss=0.0033][A
-Epoch 194/300:  80%|███████▉  | 78/98 [00:18<00:03,  5.60it/s, loss=0.0033][A
-Epoch 194/300:  81%|████████  | 79/98 [00:19<00:03,  5.51it/s, loss=0.0033][A
-Epoch 194/300:  81%|████████  | 79/98 [00:19<00:03,  5.51it/s, loss=0.0032][A
-Epoch 194/300:  82%|████████▏ | 80/98 [00:19<00:02,  6.00it/s, loss=0.0032][A
-Epoch 194/300:  84%|████████▎ | 82/98 [00:19<00:02,  5.58it/s, loss=0.0032][A
-Epoch 194/300:  85%|████████▍ | 83/98 [00:19<00:02,  5.49it/s, loss=0.0032][A
-Epoch 194/300:  88%|████████▊ | 86/98 [00:20<00:02,  5.70it/s, loss=0.0032][A
-Epoch 194/300:  89%|████████▉ | 87/98 [00:20<00:01,  5.56it/s, loss=0.0032][A
-Epoch 194/300:  92%|█████████▏| 90/98 [00:20<00:01,  5.73it/s, loss=0.0032][A
-Epoch 194/300:  93%|█████████▎| 91/98 [00:21<00:01,  5.63it/s, loss=0.0032][A
-Epoch 194/300:  96%|█████████▌| 94/98 [00:21<00:00,  6.16it/s, loss=0.0032][A
-Epoch 194/300:  97%|█████████▋| 95/98 [00:21<00:00,  6.55it/s, loss=0.0032][A
-Epoch 194/300: 100%|██████████| 98/98 [00:21<00:00,  8.21it/s, loss=0.0032][AEpoch 194/300: 100%|██████████| 98/98 [00:21<00:00,  4.47it/s, loss=0.0032]
-IMP:   0%|          | 0/107 [00:22<?, ?it/s, loss=0.0033]IMP:   1%|          | 1/107 [00:24<42:36, 24.12s/it, loss=0.0033]
-Epoch 195/300:   0%|          | 0/98 [00:00<?, ?it/s][A
-Epoch 195/300:   1%|          | 1/98 [00:00<01:08,  1.41it/s][A
-Epoch 195/300:   4%|▍         | 4/98 [00:00<00:15,  6.16it/s][A
-Epoch 195/300:   6%|▌         | 6/98 [00:01<00:20,  4.48it/s][A
-Epoch 195/300:   9%|▉         | 9/98 [00:02<00:20,  4.42it/s][A
-Epoch 195/300:  12%|█▏        | 12/98 [00:02<00:12,  6.78it/s][A
-Epoch 195/300:  14%|█▍        | 14/98 [00:02<00:16,  5.23it/s][A
-Epoch 195/300:  17%|█▋        | 17/98 [00:03<00:16,  4.84it/s][A
-Epoch 195/300:  17%|█▋        | 17/98 [00:03<00:16,  4.84it/s, loss=0.0036][A
-Epoch 195/300:  20%|██        | 20/98 [00:03<00:13,  5.93it/s, loss=0.0036][A
-Epoch 195/300:  21%|██▏       | 21/98 [00:04<00:15,  4.92it/s, loss=0.0036][A
-Epoch 195/300:  24%|██▍       | 24/98 [00:04<00:10,  7.19it/s, loss=0.0036][A
-Epoch 195/300:  27%|██▋       | 26/98 [00:04<00:13,  5.49it/s, loss=0.0036][A
-Epoch 195/300:  30%|██▉       | 29/98 [00:05<00:13,  5.01it/s, loss=0.0036][A
-Epoch 195/300:  33%|███▎      | 32/98 [00:05<00:09,  6.97it/s, loss=0.0036][A
-Epoch 195/300:  35%|███▍      | 34/98 [00:06<00:11,  5.49it/s, loss=0.0036][A
-Epoch 195/300:  38%|███▊      | 37/98 [00:07<00:12,  5.03it/s, loss=0.0036][A
-Epoch 195/300:  38%|███▊      | 37/98 [00:07<00:12,  5.03it/s, loss=0.0034][A
-Epoch 195/300:  41%|████      | 40/98 [00:07<00:09,  6.04it/s, loss=0.0034][A
-Epoch 195/300:  42%|████▏     | 41/98 [00:07<00:11,  5.03it/s, loss=0.0034][A
-Epoch 195/300:  45%|████▍     | 44/98 [00:07<00:07,  7.21it/s, loss=0.0034][A
-Epoch 195/300:  47%|████▋     | 46/98 [00:08<00:09,  5.53it/s, loss=0.0034][A
-Epoch 195/300:  50%|█████     | 49/98 [00:09<00:09,  5.06it/s, loss=0.0034][A
-Epoch 195/300:  52%|█████▏    | 51/98 [00:09<00:07,  6.21it/s, loss=0.0034][A
-Epoch 195/300:  54%|█████▍    | 53/98 [00:09<00:08,  5.07it/s, loss=0.0034][A
-Epoch 195/300:  56%|█████▌    | 55/98 [00:09<00:06,  6.34it/s, loss=0.0034][A
-Epoch 195/300:  58%|█████▊    | 57/98 [00:10<00:08,  5.08it/s, loss=0.0034][A
-Epoch 195/300:  58%|█████▊    | 57/98 [00:10<00:08,  5.08it/s, loss=0.0032][A
-Epoch 195/300:  61%|██████    | 60/98 [00:10<00:06,  6.25it/s, loss=0.0032][A
-Epoch 195/300:  62%|██████▏   | 61/98 [00:11<00:07,  5.07it/s, loss=0.0032][A
-Epoch 195/300:  64%|██████▍   | 63/98 [00:11<00:05,  6.51it/s, loss=0.0032][A
