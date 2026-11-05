@@ -1,5 +1,3 @@
-/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:734: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
 [INFO] Searching for model checkpoints...
 [INFO] Found 2 'before' checkpoints.
 [INFO] Found 1 collapsed checkpoints.
@@ -9,7 +7,7 @@ Starting Comparison Post-Processing Pipeline
 Model: InceptionNet | Dataset: Cifar100 | Device: cuda
 Epochs Config (override): pre=300, post=100
 Output File: cka_results_InceptionNet_Cifar100_quant_pre300_post100.csv
-CUDA device: NVIDIA GeForce RTX 2080 Ti
+CUDA device: NVIDIA A40
 ======================================================================
 
 ======================================================================
@@ -26,7 +24,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] InceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/InceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 344
-[INFO] Weights loaded in 0.43s
+[INFO] Weights loaded in 2.42s
 
 [INFO] BN running stats recalibrated over 100 batches (57 BN layers).
 [INFO] Loading original post-finetuning model...
@@ -40,13 +38,13 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] InceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/InceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 344
-[INFO] Weights loaded in 0.14s
+[INFO] Weights loaded in 7.94s
 
 [INFO] BN running stats recalibrated over 100 batches (57 BN layers).
 [INFO] Loading whole collapsed model artifact...
 [INFO] Searching for checkpoint matching: ../Tranfer/InceptionNet_Cifar100_None_epochs100_pretrain300
 [INFO] Found matching checkpoint: ../Tranfer/InceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
-[INFO] Whole-model load completed in 0.99s
+[INFO] Whole-model load completed in 0.50s
 [INFO] BN running stats recalibrated over 100 batches (25 BN layers).
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 40.19%
@@ -59,7 +57,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] InceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/InceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 344
-[INFO] Weights loaded in 0.20s
+[INFO] Weights loaded in 1.02s
 
 [WARN] torch-pruning is required for the structural baseline (pip install torch-pruning). Skipping structural baseline.
 
@@ -528,182 +526,181 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
   with torch.cuda.amp.autocast():
 /old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
   with torch.cuda.amp.autocast():
-[INFO] Evaluation complete: acc=0.3796, power=62.26W, energy=197.45J, time=3.17s
+[INFO] Evaluation complete: acc=0.3798, power=79.57W, energy=337.07J, time=4.24s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.4137, power=61.64W, energy=204.48J, time=3.32s
+[INFO] Evaluation complete: acc=0.4137, power=85.51W, energy=205.55J, time=2.40s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.5445, power=63.66W, energy=212.77J, time=3.34s
+[INFO] Evaluation complete: acc=0.5447, power=93.00W, energy=178.00J, time=1.91s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.5676, power=62.03W, energy=255.36J, time=4.12s
-[INFO] Saturated energy: power=126.3, J/img=0.0023257051091902306, samples=2
-[INFO] Saturated energy: power=134.51500000000001, J/img=0.00246763883411971, samples=2
-[INFO] Saturated energy: power=159.84, J/img=0.0020785080589870416, samples=2
+[INFO] Evaluation complete: acc=0.5673, power=90.56W, energy=226.06J, time=2.50s
+[INFO] Saturated energy: power=118.54, J/img=0.001632377624127467, samples=2
+[INFO] Saturated energy: power=117.8, J/img=0.0016245067549439578, samples=2
+[INFO] Saturated energy: power=139.29, J/img=0.0017865940673857347, samples=2
 
 [INFO] === Measurement rep 2/10 ===
        -> Evaluating Baseline
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.3796, power=63.70W, energy=211.44J, time=3.32s
+[INFO] Evaluation complete: acc=0.3798, power=93.19W, energy=183.25J, time=1.97s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.4137, power=61.71W, energy=204.56J, time=3.31s
+[INFO] Evaluation complete: acc=0.4137, power=94.21W, energy=181.44J, time=1.93s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.5445, power=63.51W, energy=196.51J, time=3.09s
+[INFO] Evaluation complete: acc=0.5447, power=95.97W, energy=184.34J, time=1.92s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.5676, power=62.89W, energy=200.92J, time=3.19s
-[INFO] Saturated energy: power=131.07, J/img=0.002376555994234567, samples=2
-[INFO] Saturated energy: power=135.575, J/img=0.002440742185269163, samples=2
-[INFO] Saturated energy: power=158.76, J/img=0.0020680499783173054, samples=2
+[INFO] Evaluation complete: acc=0.5673, power=96.09W, energy=182.77J, time=1.90s
+[INFO] Saturated energy: power=120.525, J/img=0.0016595529034974744, samples=2
+[INFO] Saturated energy: power=118.475, J/img=0.001641922656358154, samples=2
+[INFO] Saturated energy: power=133.97, J/img=0.001726878844231901, samples=2
 
 [INFO] === Measurement rep 3/10 ===
        -> Evaluating Baseline
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.3796, power=63.12W, energy=210.40J, time=3.33s
+[INFO] Evaluation complete: acc=0.3798, power=85.59W, energy=168.67J, time=1.97s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.4137, power=65.29W, energy=203.83J, time=3.12s
+[INFO] Evaluation complete: acc=0.4137, power=79.00W, energy=155.24J, time=1.97s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.5445, power=60.62W, energy=203.11J, time=3.35s
+[INFO] Evaluation complete: acc=0.5447, power=76.36W, energy=152.22J, time=1.99s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.5676, power=64.11W, energy=196.07J, time=3.06s
-[INFO] Saturated energy: power=125.58500000000001, J/img=0.0031250037216646273, samples=2
-[INFO] Saturated energy: power=124.125, J/img=0.002367631265000315, samples=2
-[INFO] Saturated energy: power=155.19, J/img=0.0020132939354516564, samples=2
+[INFO] Evaluation complete: acc=0.5673, power=75.10W, energy=143.83J, time=1.92s
+[INFO] Saturated energy: power=125.96, J/img=0.0017587373405694962, samples=2
+[INFO] Saturated energy: power=117.595, J/img=0.0016398587853627953, samples=2
+[INFO] Saturated energy: power=138.435, J/img=0.0017871808396040592, samples=2
 
 [INFO] === Measurement rep 4/10 ===
        -> Evaluating Baseline
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.3796, power=65.09W, energy=221.23J, time=3.40s
+[INFO] Evaluation complete: acc=0.3798, power=73.98W, energy=144.91J, time=1.96s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.4137, power=59.98W, energy=178.33J, time=2.97s
+[INFO] Evaluation complete: acc=0.4137, power=73.22W, energy=144.06J, time=1.97s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.5445, power=63.23W, energy=221.97J, time=3.51s
+[INFO] Evaluation complete: acc=0.5447, power=73.25W, energy=144.40J, time=1.97s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.5676, power=61.92W, energy=185.02J, time=2.99s
-[INFO] Saturated energy: power=123.995, J/img=0.0022449650364252953, samples=2
-[INFO] Saturated energy: power=131.755, J/img=0.0024375224255348943, samples=2
-[INFO] Saturated energy: power=155.20499999999998, J/img=0.0020286650130481912, samples=2
+[INFO] Evaluation complete: acc=0.5673, power=73.23W, energy=140.48J, time=1.92s
+[INFO] Saturated energy: power=123.19, J/img=0.0017218087160338958, samples=2
+[INFO] Saturated energy: power=120.07, J/img=0.001664214095881235, samples=2
+[INFO] Saturated energy: power=130.665, J/img=0.001685164866793412, samples=2
 
 [INFO] === Measurement rep 5/10 ===
        -> Evaluating Baseline
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.3796, power=63.50W, energy=197.86J, time=3.12s
+[INFO] Evaluation complete: acc=0.3798, power=73.91W, energy=145.50J, time=1.97s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.4137, power=62.46W, energy=192.32J, time=3.08s
+[INFO] Evaluation complete: acc=0.4137, power=73.48W, energy=144.86J, time=1.97s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.5445, power=61.96W, energy=210.59J, time=3.40s
+[INFO] Evaluation complete: acc=0.5447, power=73.50W, energy=144.46J, time=1.97s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.5676, power=61.52W, energy=220.48J, time=3.58s
-[INFO] Saturated energy: power=117.0, J/img=0.0027012789474898263, samples=2
-[INFO] Saturated energy: power=130.04500000000002, J/img=0.005853404786269363, samples=2
-[INFO] Saturated energy: power=155.225, J/img=0.00200368776572016, samples=2
+[INFO] Evaluation complete: acc=0.5673, power=73.42W, energy=140.49J, time=1.91s
+[INFO] Saturated energy: power=125.87, J/img=0.0017315940597172749, samples=2
+[INFO] Saturated energy: power=120.655, J/img=0.0016576689161451124, samples=2
+[INFO] Saturated energy: power=155.03, J/img=0.001998045634083498, samples=3
 
 [INFO] === Measurement rep 6/10 ===
        -> Evaluating Baseline
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.3796, power=61.06W, energy=236.37J, time=3.87s
+[INFO] Evaluation complete: acc=0.3798, power=74.22W, energy=146.01J, time=1.97s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.4137, power=64.20W, energy=210.28J, time=3.28s
+[INFO] Evaluation complete: acc=0.4137, power=74.12W, energy=141.58J, time=1.91s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.5445, power=63.18W, energy=200.73J, time=3.18s
+[INFO] Evaluation complete: acc=0.5447, power=73.75W, energy=141.84J, time=1.92s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.5676, power=62.17W, energy=205.25J, time=3.30s
-[INFO] Saturated energy: power=115.765, J/img=0.0026872658045578967, samples=2
-[INFO] Saturated energy: power=117.98, J/img=0.0035452138291050994, samples=3
-[CHECK] saturated rate 18417 img/s deviates >2x from benchmark throughput 60891 img/s — inspect the window.
-[INFO] Saturated energy: power=76.725, J/img=0.004206938414426986, samples=2
+[INFO] Evaluation complete: acc=0.5673, power=75.20W, energy=146.83J, time=1.95s
+[INFO] Saturated energy: power=121.31, J/img=0.0016648360365638282, samples=2
+[INFO] Saturated energy: power=125.75, J/img=0.001822601595075171, samples=2
+[INFO] Saturated energy: power=130.485, J/img=0.0017041288374805594, samples=2
 
 [INFO] === Measurement rep 7/10 ===
        -> Evaluating Baseline
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.3796, power=63.53W, energy=213.16J, time=3.36s
+[INFO] Evaluation complete: acc=0.3798, power=75.58W, energy=146.23J, time=1.93s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.4137, power=64.19W, energy=208.92J, time=3.25s
+[INFO] Evaluation complete: acc=0.4137, power=74.77W, energy=143.46J, time=1.92s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.5445, power=63.71W, energy=204.01J, time=3.20s
+[INFO] Evaluation complete: acc=0.5447, power=74.22W, energy=143.17J, time=1.93s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.5676, power=60.92W, energy=186.13J, time=3.06s
-[INFO] Saturated energy: power=130.14, J/img=0.0022606958371345033, samples=2
-[INFO] Saturated energy: power=133.835, J/img=0.0023021828224597802, samples=2
-[INFO] Saturated energy: power=148.615, J/img=0.0020665603222056544, samples=2
+[INFO] Evaluation complete: acc=0.5673, power=74.50W, energy=142.89J, time=1.92s
+[INFO] Saturated energy: power=124.79499999999999, J/img=0.0017829311546613122, samples=2
+[INFO] Saturated energy: power=118.67000000000002, J/img=0.0017031127593418872, samples=2
+[INFO] Saturated energy: power=135.065, J/img=0.0017548750497965659, samples=2
 
 [INFO] === Measurement rep 8/10 ===
        -> Evaluating Baseline
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.3796, power=63.81W, energy=218.77J, time=3.43s
+[INFO] Evaluation complete: acc=0.3798, power=75.72W, energy=145.75J, time=1.92s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.4137, power=62.23W, energy=218.74J, time=3.51s
+[INFO] Evaluation complete: acc=0.4137, power=75.81W, energy=150.46J, time=1.98s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.5445, power=61.32W, energy=201.25J, time=3.28s
+[INFO] Evaluation complete: acc=0.5447, power=79.08W, energy=156.78J, time=1.98s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.5676, power=60.61W, energy=198.27J, time=3.27s
-[INFO] Saturated energy: power=126.2, J/img=0.0025039547567616157, samples=2
-[INFO] Saturated energy: power=133.845, J/img=0.002373337302344373, samples=2
-[INFO] Saturated energy: power=157.285, J/img=0.0020120522287574464, samples=2
+[INFO] Evaluation complete: acc=0.5673, power=78.52W, energy=153.54J, time=1.96s
+[INFO] Saturated energy: power=125.38, J/img=0.0017494851738835374, samples=2
+[INFO] Saturated energy: power=122.72999999999999, J/img=0.0017116107057997996, samples=2
+[INFO] Saturated energy: power=130.645, J/img=0.0016864412021212526, samples=2
 
 [INFO] === Measurement rep 9/10 ===
        -> Evaluating Baseline
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.3796, power=63.22W, energy=205.26J, time=3.25s
+[INFO] Evaluation complete: acc=0.3798, power=79.14W, energy=156.44J, time=1.98s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.4137, power=62.18W, energy=187.87J, time=3.02s
+[INFO] Evaluation complete: acc=0.4137, power=80.13W, energy=157.86J, time=1.97s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.5445, power=66.13W, energy=209.24J, time=3.16s
+[INFO] Evaluation complete: acc=0.5447, power=81.73W, energy=160.95J, time=1.97s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.5676, power=63.41W, energy=189.30J, time=2.99s
-[INFO] Saturated energy: power=134.925, J/img=0.0023301760477663362, samples=2
-[INFO] Saturated energy: power=134.79999999999998, J/img=0.002317332373891334, samples=2
-[INFO] Saturated energy: power=157.02, J/img=0.0020191948158763255, samples=2
+[INFO] Evaluation complete: acc=0.5673, power=78.96W, energy=151.52J, time=1.92s
+[INFO] Saturated energy: power=121.305, J/img=0.0016647085686172084, samples=2
+[INFO] Saturated energy: power=120.105, J/img=0.0016518496315180604, samples=2
+[INFO] Saturated energy: power=140.465, J/img=0.0018026131353728087, samples=2
 
 [INFO] === Measurement rep 10/10 ===
        -> Evaluating Baseline
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.3796, power=62.82W, energy=177.80J, time=2.83s
+[INFO] Evaluation complete: acc=0.3798, power=85.02W, energy=168.15J, time=1.98s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.4137, power=60.53W, energy=183.72J, time=3.04s
+[INFO] Evaluation complete: acc=0.4137, power=83.45W, energy=161.09J, time=1.93s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.5445, power=64.71W, energy=189.24J, time=2.92s
+[INFO] Evaluation complete: acc=0.5447, power=82.60W, energy=159.01J, time=1.93s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.5676, power=61.89W, energy=167.36J, time=2.70s
-[INFO] Saturated energy: power=115.515, J/img=0.0027241009283794225, samples=2
-[INFO] Saturated energy: power=115.62, J/img=0.002748629597733807, samples=2
-[INFO] Saturated energy: power=153.28, J/img=0.0019964359220153733, samples=2
+[INFO] Evaluation complete: acc=0.5673, power=86.34W, energy=168.49J, time=1.95s
+[INFO] Saturated energy: power=120.995, J/img=0.0017118367684750464, samples=2
+[INFO] Saturated energy: power=117.985, J/img=0.0017164718390638319, samples=2
+[INFO] Saturated energy: power=137.94, J/img=0.0018029592594205838, samples=2
 [INFO] Measuring dataloader floor (no forward passes)...
-[INFO] Loader floor: time=2.62s, energy=157.42J
-[RESULT] Accuracy Original:     0.4137 | Power: 61.64W | Energy: 204.48J
-[RESULT] Accuracy Unstructured: 0.5445 | Power: 63.66W | Energy: 212.77J
-[RESULT] Accuracy Collapsed:    0.5676 | Power: 62.03W | Energy: 255.36J
+[INFO] Loader floor: time=1.81s, energy=133.78J
+[RESULT] Accuracy Original:     0.4137 | Power: 85.51W | Energy: 205.55J
+[RESULT] Accuracy Unstructured: 0.5447 | Power: 93.00W | Energy: 178.00J
+[RESULT] Accuracy Collapsed:    0.5673 | Power: 90.56W | Energy: 226.06J
 [INFO] 10 measurement reps completed; full per-rep values are rows in the CSV.
-[RESULT] Original     FLOPs=1.665e+10 | latency=10.23 ms/batch | throughput=50035.6 img/s | peak_mem=596.8 MiB | feature_maps=222.2 MiB
-[RESULT] Unstructured FLOPs=1.665e+10 | latency=9.99 ms/batch | throughput=51226.4 img/s | peak_mem=596.8 MiB | feature_maps=222.2 MiB
-[RESULT] Collapsed    FLOPs=1.255e+10 | latency=8.00 ms/batch | throughput=63979.8 img/s | peak_mem=464.0 MiB | feature_maps=198.1 MiB
+[RESULT] Original     FLOPs=1.665e+10 | latency=7.30 ms/batch | throughput=70111.0 img/s | peak_mem=544.7 MiB | feature_maps=222.2 MiB
+[RESULT] Unstructured FLOPs=1.665e+10 | latency=7.36 ms/batch | throughput=69556.6 img/s | peak_mem=544.7 MiB | feature_maps=222.2 MiB
+[RESULT] Collapsed    FLOPs=1.255e+10 | latency=6.59 ms/batch | throughput=77640.8 img/s | peak_mem=424.7 MiB | feature_maps=198.1 MiB
 [RESULT] FLOPs Unstructured (theoretical/effective, kept for back-compat): 9.96e+09
 [RESULT] Storage (state_dict MiB): original=11.7, unstructured=11.7, collapsed=7.0
 
@@ -719,9 +716,9 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 1024), time=2.18s
+[INFO] Feature extraction complete: shape=(5120, 1024), time=1.30s
 [INFO] Computing CKA: features_x=(5120, 1024), features_y=(5120, 1024)
-[INFO] CKA complete: score=1.000000, time=0.75s
+[INFO] CKA complete: score=1.000000, time=0.20s
 [INFO] CKA self-check (expect ~1.0): 1.000000
 [INFO] Extracting features from 10 batches (Classifier-free extraction)...
 [INFO] Feature extraction batch 1/10
@@ -734,7 +731,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 1024), time=2.99s
+[INFO] Feature extraction complete: shape=(5120, 1024), time=1.51s
 [INFO] Extracting features from 10 batches (Classifier-free extraction)...
 [INFO] Feature extraction batch 1/10
 [INFO] Feature extraction batch 2/10
@@ -746,21 +743,21 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 1024), time=2.50s
+[INFO] Feature extraction complete: shape=(5120, 1024), time=1.70s
 [INFO] Computing CKA: features_x=(5120, 1024), features_y=(5120, 1024)
-[INFO] CKA complete: score=0.501169, time=0.00s
+[INFO] CKA complete: score=0.500963, time=0.00s
 [INFO] Computing CKA: features_x=(5120, 1024), features_y=(5120, 1024)
-[INFO] CKA complete: score=0.468021, time=0.07s
+[INFO] CKA complete: score=0.467669, time=0.00s
 
 [INFO] Evaluating Adversarial Robustness...
 [INFO] Running FGSM attack (epsilon=0.03)...
        -> original Accuracy: 0.1211
-       -> unstructured Accuracy: 0.2109
-       -> collapsed Accuracy: 0.1895
+       -> unstructured Accuracy: 0.2148
+       -> collapsed Accuracy: 0.1855
 [INFO] Running PGD attack (epsilon=0.03)...
-       -> original Accuracy: 0.0293
-       -> unstructured Accuracy: 0.1035
-       -> collapsed Accuracy: 0.0977
+       -> original Accuracy: 0.0332
+       -> unstructured Accuracy: 0.1016
+       -> collapsed Accuracy: 0.0957
 
 ======================================================================
 Processing checkpoint 2/2
@@ -776,7 +773,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] InceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/InceptionNet_Cifar100_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 344
-[INFO] Weights loaded in 0.70s
+[INFO] Weights loaded in 0.62s
 
 [INFO] BN running stats recalibrated over 100 batches (57 BN layers).
 [INFO] Loading original post-finetuning model...
@@ -790,13 +787,13 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] InceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/InceptionNet_Cifar100_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 344
-[INFO] Weights loaded in 0.19s
+[INFO] Weights loaded in 0.74s
 
 [INFO] BN running stats recalibrated over 100 batches (57 BN layers).
 [INFO] Loading whole collapsed model artifact...
 [INFO] Searching for checkpoint matching: ../Tranfer/InceptionNet_Cifar100_None_scorerall_epochs100_pretrain300
 [INFO] Found matching checkpoint: ../Tranfer/InceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
-[INFO] Whole-model load completed in 1.22s
+[INFO] Whole-model load completed in 0.11s
 [INFO] BN running stats recalibrated over 100 batches (25 BN layers).
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 40.19%
@@ -809,7 +806,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] InceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/InceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 344
-[INFO] Weights loaded in 0.38s
+[INFO] Weights loaded in 0.11s
 
 [WARN] torch-pruning is required for the structural baseline (pip install torch-pruning). Skipping structural baseline.
 
@@ -938,3 +935,606 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
   with torch.cuda.amp.autocast():
 /old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
   with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+[INFO] Evaluation complete: acc=0.3794, power=76.47W, energy=151.32J, time=1.98s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.4127, power=74.70W, energy=144.01J, time=1.93s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5447, power=72.64W, energy=143.14J, time=1.97s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5677, power=72.68W, energy=139.45J, time=1.92s
+[INFO] Saturated energy: power=125.695, J/img=0.0017550160633301006, samples=2
+[INFO] Saturated energy: power=117.85000000000001, J/img=0.0016493327292577229, samples=2
+[INFO] Saturated energy: power=139.035, J/img=0.0017958704931279796, samples=2
+
+[INFO] === Measurement rep 2/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3794, power=73.83W, energy=145.10J, time=1.97s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.4127, power=73.16W, energy=145.91J, time=1.99s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5447, power=73.00W, energy=143.63J, time=1.97s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5677, power=72.94W, energy=139.88J, time=1.92s
+[INFO] Saturated energy: power=117.86000000000001, J/img=0.001711323685029941, samples=2
+[INFO] Saturated energy: power=117.97, J/img=0.0017290238722584117, samples=2
+[INFO] Saturated energy: power=137.305, J/img=0.0018005250246496873, samples=2
+
+[INFO] === Measurement rep 3/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3794, power=74.64W, energy=147.12J, time=1.97s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.4127, power=74.42W, energy=147.29J, time=1.98s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5447, power=73.41W, energy=141.65J, time=1.93s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5677, power=74.12W, energy=142.82J, time=1.93s
+[INFO] Saturated energy: power=121.02000000000001, J/img=0.001765865194818212, samples=2
+[INFO] Saturated energy: power=126.16, J/img=0.001842876282831033, samples=2
+[INFO] Saturated energy: power=136.45499999999998, J/img=0.0017889325022914034, samples=2
+
+[INFO] === Measurement rep 4/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3794, power=74.72W, energy=149.63J, time=2.00s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.4127, power=73.71W, energy=141.82J, time=1.92s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5447, power=74.12W, energy=140.99J, time=1.90s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5677, power=74.69W, energy=149.15J, time=2.00s
+[INFO] Saturated energy: power=124.07999999999998, J/img=0.0018146781392090823, samples=2
+[INFO] Saturated energy: power=124.655, J/img=0.0018326098796452826, samples=2
+[INFO] Saturated energy: power=128.9, J/img=0.001691269912601759, samples=2
+
+[INFO] === Measurement rep 5/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3794, power=74.99W, energy=148.21J, time=1.98s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.4127, power=78.52W, energy=154.56J, time=1.97s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5447, power=75.47W, energy=149.71J, time=1.98s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5677, power=76.26W, energy=144.69J, time=1.90s
+[INFO] Saturated energy: power=120.02, J/img=0.0016770126053350085, samples=2
+[INFO] Saturated energy: power=125.17, J/img=0.001741708524331003, samples=2
+[INFO] Saturated energy: power=131.345, J/img=0.0016912635995593858, samples=2
+
+[INFO] === Measurement rep 6/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3794, power=76.14W, energy=150.78J, time=1.98s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.4127, power=77.41W, energy=153.37J, time=1.98s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5447, power=81.21W, energy=160.29J, time=1.97s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5677, power=81.22W, energy=159.63J, time=1.97s
+[INFO] Saturated energy: power=120.84, J/img=0.001758012615927801, samples=2
+[INFO] Saturated energy: power=124.42000000000002, J/img=0.001817846423290946, samples=2
+[INFO] Saturated energy: power=128.66, J/img=0.001689023796406885, samples=2
+
+[INFO] === Measurement rep 7/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3794, power=79.04W, energy=152.26J, time=1.93s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.4127, power=81.60W, energy=161.04J, time=1.97s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5447, power=82.70W, energy=163.63J, time=1.98s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5677, power=83.41W, energy=164.31J, time=1.97s
+[INFO] Saturated energy: power=119.305, J/img=0.001761798178297485, samples=2
+[INFO] Saturated energy: power=118.39, J/img=0.0017465714101543588, samples=2
+[INFO] Saturated energy: power=156.46, J/img=0.0020504659410602974, samples=3
+
+[INFO] === Measurement rep 8/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3794, power=88.58W, energy=169.09J, time=1.91s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.4127, power=86.46W, energy=165.13J, time=1.91s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5447, power=86.62W, energy=165.94J, time=1.92s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5677, power=87.75W, energy=171.79J, time=1.96s
+[INFO] Saturated energy: power=125.025, J/img=0.0017887698608789254, samples=2
+[INFO] Saturated energy: power=125.755, J/img=0.0017846706308250267, samples=2
+[INFO] Saturated energy: power=130.45, J/img=0.0016899221012613079, samples=2
+
+[INFO] === Measurement rep 9/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3794, power=92.45W, energy=182.74J, time=1.98s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.4127, power=92.06W, energy=181.74J, time=1.97s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5447, power=92.59W, energy=182.60J, time=1.97s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5677, power=90.35W, energy=172.11J, time=1.90s
+[INFO] Saturated energy: power=119.545, J/img=0.0016729601263233745, samples=2
+[INFO] Saturated energy: power=120.125, J/img=0.0016916513679981497, samples=2
+[INFO] Saturated energy: power=139.675, J/img=0.0018001521468463848, samples=2
+
+[INFO] === Measurement rep 10/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3794, power=96.85W, energy=191.14J, time=1.97s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.4127, power=92.62W, energy=176.67J, time=1.91s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5447, power=96.91W, energy=185.65J, time=1.92s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5677, power=90.09W, energy=171.15J, time=1.90s
+[INFO] Saturated energy: power=123.945, J/img=0.001736784687562531, samples=2
+[INFO] Saturated energy: power=118.645, J/img=0.0016554964546870493, samples=2
+[INFO] Saturated energy: power=128.445, J/img=0.0016622874035393117, samples=2
+[INFO] Measuring dataloader floor (no forward passes)...
+[INFO] Loader floor: time=1.80s, energy=132.63J
+[RESULT] Accuracy Original:     0.4127 | Power: 74.70W | Energy: 144.01J
+[RESULT] Accuracy Unstructured: 0.5447 | Power: 72.64W | Energy: 143.14J
+[RESULT] Accuracy Collapsed:    0.5677 | Power: 72.68W | Energy: 139.45J
+[INFO] 10 measurement reps completed; full per-rep values are rows in the CSV.
+[RESULT] Original     FLOPs=1.665e+10 | latency=7.45 ms/batch | throughput=68737.6 img/s | peak_mem=566.3 MiB | feature_maps=222.2 MiB
+[RESULT] Unstructured FLOPs=1.665e+10 | latency=7.42 ms/batch | throughput=69015.7 img/s | peak_mem=566.3 MiB | feature_maps=222.2 MiB
+[RESULT] Collapsed    FLOPs=1.255e+10 | latency=6.64 ms/batch | throughput=77153.3 img/s | peak_mem=445.4 MiB | feature_maps=198.1 MiB
+[RESULT] FLOPs Unstructured (theoretical/effective, kept for back-compat): 9.96e+09
+[RESULT] Storage (state_dict MiB): original=11.7, unstructured=11.7, collapsed=7.0
+
+[INFO] Extracting features and computing CKA...
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 1024), time=1.33s
+[INFO] Computing CKA: features_x=(5120, 1024), features_y=(5120, 1024)
+[INFO] CKA complete: score=1.000000, time=0.00s
+[INFO] CKA self-check (expect ~1.0): 1.000000
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 1024), time=1.71s
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 1024), time=1.70s
+[INFO] Computing CKA: features_x=(5120, 1024), features_y=(5120, 1024)
+[INFO] CKA complete: score=0.501024, time=0.08s
+[INFO] Computing CKA: features_x=(5120, 1024), features_y=(5120, 1024)
+[INFO] CKA complete: score=0.467685, time=0.00s
+
+[INFO] Evaluating Adversarial Robustness...
+[INFO] Running FGSM attack (epsilon=0.03)...
+       -> original Accuracy: 0.1230
+       -> unstructured Accuracy: 0.2148
+       -> collapsed Accuracy: 0.1855
+[INFO] Running PGD attack (epsilon=0.03)...
+       -> original Accuracy: 0.0352
+       -> unstructured Accuracy: 0.1016
+       -> collapsed Accuracy: 0.0977
+
+======================================================================
+[INFO] Saving final results...
+[INFO] Results successfully saved to 'cka_results_InceptionNet_Cifar100_quant_pre300_post100.csv'
+[INFO] Total successful experiments: 20
+[INFO] Total runtime: 781.53s
+
+======================================================================
+FINAL RESULTS
+======================================================================
+           model   dataset    gpu_name  pre_epochs  post_epochs                                                                                           model_before  intermediate_epoch  rep  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  flops_original  flops_unstructured  flops_collapsed  flops_unstructured_measured  latency_ms_original  latency_ms_unstructured  latency_ms_collapsed  throughput_imgs_original  throughput_imgs_unstructured  throughput_imgs_collapsed  peak_mem_mb_original  peak_mem_mb_unstructured  peak_mem_mb_collapsed  feature_maps_mb_original  feature_maps_mb_unstructured  feature_maps_mb_collapsed  storage_mb_original  storage_mb_unstructured  storage_mb_collapsed  cka_unstructured  cka_collapsed  acc_structural power_watts_structural energy_joules_structural flops_structural latency_ms_structural throughput_imgs_structural peak_mem_mb_structural feature_maps_mb_structural storage_mb_structural cka_structural params_structural sparsity_structural  gpu_util_original  gpu_clock_mhz_original  gpu_util_unstructured  gpu_clock_mhz_unstructured  gpu_util_collapsed  gpu_clock_mhz_collapsed gpu_util_structural gpu_clock_mhz_structural  eval_elapsed_s_original  eval_elapsed_s_unstructured  eval_elapsed_s_collapsed eval_elapsed_s_structural  n_power_samples_original  n_power_samples_unstructured  n_power_samples_collapsed n_power_samples_structural  loader_time_s  loader_joules  loader_n_samples  power_watts_saturated_original  power_watts_saturated_unstructured  power_watts_saturated_collapsed power_watts_saturated_structural  j_per_img_saturated_original  j_per_img_saturated_unstructured  j_per_img_saturated_collapsed j_per_img_saturated_structural  saturated_imgs_original  saturated_imgs_unstructured  saturated_imgs_collapsed saturated_imgs_structural  n_power_samples_saturated_original  n_power_samples_saturated_unstructured  n_power_samples_saturated_collapsed n_power_samples_saturated_structural  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
+0   InceptionNet  Cifar100  NVIDIA A40         300          100            ../Tranfer/InceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    0              0.4137            0.5447         0.5673                 85.51                  205.55                     93.00                      178.00                  90.56                   226.06    1.664698e+10        9.956195e+09     1.255221e+10                 1.664698e+10             7.302704                 7.360917              6.594469              70111.016179                  69556.553690               77640.825758            544.701172                544.701172             424.695312                222.238281                    222.238281                 198.097656            11.732363                11.732363              7.004152          0.500963       0.467669             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                5.5                  1740.0                    8.0                      1740.0                 4.3                   1740.0                None                     None                    2.404                        1.914                     2.496                      None                         2                             2                          3                       None          1.812         133.78                 2                          118.54                              117.80                           139.29                             None                      0.001632                          0.001625                       0.001787                           None             73090.853428                 72988.689860              78794.566202                      None                                   2                                       2                                    2                                 None               0.121094                   0.214844                0.185547              0.033203                  0.101562               0.095703
+1   InceptionNet  Cifar100  NVIDIA A40         300          100            ../Tranfer/InceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    1              0.4137            0.5447         0.5673                 94.21                  181.44                     95.97                      184.34                  96.09                   182.77    1.664698e+10        9.956195e+09     1.255221e+10                 1.664698e+10             7.270851                 7.561618              6.648264              70418.165235                  67710.379738               77012.585233            549.702148                549.702148             431.461914                222.238281                    222.238281                 198.097656            11.732363                11.732363              7.004152          0.500963       0.467669             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                6.0                  1740.0                    9.0                      1740.0                 9.5                   1740.0                None                     None                    1.926                        1.921                     1.902                      None                         2                             2                          2                       None          1.812         133.78                 2                          120.53                              118.47                           133.97                             None                      0.001660                          0.001642                       0.001727                           None             73097.879791                 72655.603200              78509.207166                      None                                   2                                       2                                    2                                 None               0.121094                   0.214844                0.185547              0.033203                  0.101562               0.095703
+2   InceptionNet  Cifar100  NVIDIA A40         300          100            ../Tranfer/InceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    2              0.4137            0.5447         0.5673                 79.00                  155.24                     76.36                      152.22                  75.10                   143.83    1.664698e+10        9.956195e+09     1.255221e+10                 1.664698e+10             7.577906                 7.435602              6.666821              67564.842867                  68857.911546               76798.224559            559.078125                559.078125             437.072266                222.238281                    222.238281                 198.097656            11.732363                11.732363              7.004152          0.500963       0.467669             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                8.0                  1740.0                   10.0                      1740.0                 8.5                   1740.0                None                     None                    1.965                        1.993                     1.915                      None                         2                             2                          2                       None          1.812         133.78                 2                          125.96                              117.59                           138.44                             None                      0.001759                          0.001640                       0.001787                           None             72109.226688                 72189.668016              78084.788260                      None                                   2                                       2                                    2                                 None               0.121094                   0.214844                0.185547              0.033203                  0.101562               0.095703
+3   InceptionNet  Cifar100  NVIDIA A40         300          100            ../Tranfer/InceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    3              0.4137            0.5447         0.5673                 73.22                  144.06                     73.25                      144.40                  73.23                   140.48    1.664698e+10        9.956195e+09     1.255221e+10                 1.664698e+10             7.465333                 7.313405              6.567619              68583.680609                  70008.431427               77958.234796            563.454102                563.454102             444.198242                222.238281                    222.238281                 198.097656            11.732363                11.732363              7.004152          0.500963       0.467669             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                9.5                  1740.0                    8.5                      1740.0                 8.5                   1740.0                None                     None                    1.968                        1.971                     1.918                      None                         2                             2                          2                       None          1.812         133.78                 2                          123.19                              120.07                           130.66                             None                      0.001722                          0.001664                       0.001685                           None             72791.987911                 72623.317412              78025.077805                      None                                   2                                       2                                    2                                 None               0.121094                   0.214844                0.185547              0.033203                  0.101562               0.095703
+4   InceptionNet  Cifar100  NVIDIA A40         300          100            ../Tranfer/InceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    4              0.4137            0.5447         0.5673                 73.48                  144.86                     73.50                      144.46                  73.42                   140.49    1.664698e+10        9.956195e+09     1.255221e+10                 1.664698e+10             7.414008                 7.377747              6.673370              69058.463630                  69397.878193               76722.860061            543.701172                544.701172             424.695312                222.238281                    222.238281                 198.097656            11.732363                11.732363              7.004152          0.500963       0.467669             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                7.5                  1740.0                   10.0                      1740.0                 7.0                   1740.0                None                     None                    1.971                        1.965                     1.914                      None                         2                             2                          2                       None          1.812         133.78                 2                          125.87                              120.66                           155.03                             None                      0.001732                          0.001658                       0.001998                           None             73164.254886                 73272.112529              78996.396588                      None                                   2                                       2                                    3                                 None               0.121094                   0.214844                0.185547              0.033203                  0.101562               0.095703
+5   InceptionNet  Cifar100  NVIDIA A40         300          100            ../Tranfer/InceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    5              0.4137            0.5447         0.5673                 74.12                  141.58                     73.75                      141.84                  75.20                   146.83    1.664698e+10        9.956195e+09     1.255221e+10                 1.664698e+10             7.431430                 7.560629              6.650379              68896.561844                  67719.235030               76988.091366            549.702148                549.702148             431.461914                222.238281                    222.238281                 198.097656            11.732363                11.732363              7.004152          0.500963       0.467669             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                8.0                  1740.0                    9.0                      1740.0                10.5                   1740.0                None                     None                    1.910                        1.923                     1.952                      None                         2                             2                          2                       None          1.812         133.78                 2                          121.31                              125.75                           130.49                             None                      0.001665                          0.001823                       0.001704                           None             73353.898971                 69437.718769              77034.882511                      None                                   2                                       2                                    2                                 None               0.121094                   0.214844                0.185547              0.033203                  0.101562               0.095703
+6   InceptionNet  Cifar100  NVIDIA A40         300          100            ../Tranfer/InceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    6              0.4137            0.5447         0.5673                 74.77                  143.46                     74.22                      143.17                  74.50                   142.89    1.664698e+10        9.956195e+09     1.255221e+10                 1.664698e+10             7.701142                 7.483294              6.638107              66483.642889                  68419.064061               77130.420223            559.078125                559.078125             437.072266                222.238281                    222.238281                 198.097656            11.732363                11.732363              7.004152          0.500963       0.467669             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                6.5                  1740.0                    8.5                      1740.0                10.0                   1740.0                None                     None                    1.919                        1.929                     1.918                      None                         2                             2                          2                       None          1.812         133.78                 2                          124.79                              118.67                           135.06                             None                      0.001783                          0.001703                       0.001755                           None             70458.715667                 70136.310748              77934.450441                      None                                   2                                       2                                    2                                 None               0.121094                   0.214844                0.185547              0.033203                  0.101562               0.095703
+7   InceptionNet  Cifar100  NVIDIA A40         300          100            ../Tranfer/InceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    7              0.4137            0.5447         0.5673                 75.81                  150.46                     79.08                      156.78                  78.52                   153.54    1.664698e+10        9.956195e+09     1.255221e+10                 1.664698e+10             7.735243                 7.340858              6.623781              66190.549758                  69746.619693               77297.244185            563.454102                563.454102             444.198242                222.238281                    222.238281                 198.097656            11.732363                11.732363              7.004152          0.500963       0.467669             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.0                  1740.0                    7.5                      1740.0                12.0                   1740.0                None                     None                    1.985                        1.983                     1.956                      None                         2                             2                          2                       None          1.812         133.78                 2                          125.38                              122.73                           130.65                             None                      0.001749                          0.001712                       0.001686                           None             72141.141155                 72173.859450              77930.439788                      None                                   2                                       2                                    2                                 None               0.121094                   0.214844                0.185547              0.033203                  0.101562               0.095703
+8   InceptionNet  Cifar100  NVIDIA A40         300          100            ../Tranfer/InceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    8              0.4137            0.5447         0.5673                 80.13                  157.86                     81.73                      160.95                  78.96                   151.52    1.664698e+10        9.956195e+09     1.255221e+10                 1.664698e+10             7.490986                 7.430426              6.626392              68348.816402                  68905.878493               77266.784016            544.669922                544.701172             424.695312                222.238281                    222.238281                 198.097656            11.732363                11.732363              7.004152          0.500963       0.467669             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                7.0                  1740.0                    9.5                      1740.0                 7.5                   1740.0                None                     None                    1.970                        1.969                     1.919                      None                         2                             2                          2                       None          1.812         133.78                 2                          121.31                              120.11                           140.47                             None                      0.001665                          0.001652                       0.001803                           None             73340.276090                 73195.970085              78804.307588                      None                                   2                                       2                                    2                                 None               0.121094                   0.214844                0.185547              0.033203                  0.101562               0.095703
+9   InceptionNet  Cifar100  NVIDIA A40         300          100            ../Tranfer/InceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    9              0.4137            0.5447         0.5673                 83.45                  161.09                     82.60                      159.01                  86.34                   168.49    1.664698e+10        9.956195e+09     1.255221e+10                 1.664698e+10             7.375275                 7.697918              6.660787              69421.138284                  66511.487541               76867.791232            549.702148                549.702148             431.461914                222.238281                    222.238281                 198.097656            11.732363                11.732363              7.004152          0.500963       0.467669             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                9.5                  1740.0                    7.0                      1740.0                 8.5                   1740.0                None                     None                    1.930                        1.925                     1.952                      None                         2                             2                          2                       None          1.812         133.78                 2                          121.00                              117.98                           137.94                             None                      0.001712                          0.001716                       0.001803                           None             71154.929088                 69190.654262              77136.311776                      None                                   2                                       2                                    2                                 None               0.121094                   0.214844                0.185547              0.033203                  0.101562               0.095703
+10  InceptionNet  Cifar100  NVIDIA A40         300          100  ../Tranfer/InceptionNet_Cifar100_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    0              0.4127            0.5447         0.5677                 74.70                  144.01                     72.64                      143.14                  72.68                   139.45    1.664698e+10        9.956195e+09     1.255221e+10                 1.664698e+10             7.448611                 7.418598              6.636142              68737.646131                  69015.731789               77153.257301            566.328125                566.328125             445.447266                222.238281                    222.238281                 198.097656            11.732363                11.732363              7.004152          0.501024       0.467685             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                9.0                  1740.0                    7.0                      1740.0                 9.5                   1740.0                None                     None                    1.928                        1.971                     1.919                      None                         2                             2                          2                       None          1.796         132.63                 2                          125.69                              117.85                           139.03                             None                      0.001755                          0.001649                       0.001796                           None             72110.840232                 71927.158179              78067.712913                      None                                   2                                       2                                    2                                 None               0.123047                   0.214844                0.185547              0.035156                  0.101562               0.097656
+11  InceptionNet  Cifar100  NVIDIA A40         300          100  ../Tranfer/InceptionNet_Cifar100_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    1              0.4127            0.5447         0.5677                 73.16                  145.91                     73.00                      143.63                  72.94                   139.88    1.664698e+10        9.956195e+09     1.255221e+10                 1.664698e+10             7.630034                 7.707694              6.780411              67103.243474                  66427.127785               75511.644267            554.326172                554.326172             435.820312                222.238281                    222.238281                 198.097656            11.732363                11.732363              7.004152          0.501024       0.467685             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               11.0                  1740.0                   11.0                      1740.0                 8.0                   1740.0                None                     None                    1.995                        1.968                     1.918                      None                         2                             2                          2                       None          1.796         132.63                 2                          117.86                              117.97                           137.31                             None                      0.001711                          0.001729                       0.001801                           None             69318.666198                 68683.455876              76731.425774                      None                                   2                                       2                                    2                                 None               0.123047                   0.214844                0.185547              0.035156                  0.101562               0.097656
+12  InceptionNet  Cifar100  NVIDIA A40         300          100  ../Tranfer/InceptionNet_Cifar100_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    2              0.4127            0.5447         0.5677                 74.42                  147.29                     73.41                      141.65                  74.12                   142.82    1.664698e+10        9.956195e+09     1.255221e+10                 1.664698e+10             7.833933                 7.787038              6.661661              65356.700689                  65750.285776               76857.711028            560.702148                560.702148             439.204102                222.238281                    222.238281                 198.097656            11.732363                11.732363              7.004152          0.501024       0.467685             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.0                  1740.0                    7.5                      1740.0                10.5                   1740.0                None                     None                    1.979                        1.930                     1.927                      None                         2                             2                          2                       None          1.796         132.63                 2                          121.02                              126.16                           136.45                             None                      0.001766                          0.001843                       0.001789                           None             68988.503511                 68910.013057              76940.038652                      None                                   2                                       2                                    2                                 None               0.123047                   0.214844                0.185547              0.035156                  0.101562               0.097656
+13  InceptionNet  Cifar100  NVIDIA A40         300          100  ../Tranfer/InceptionNet_Cifar100_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    3              0.4127            0.5447         0.5677                 73.71                  141.82                     74.12                      140.99                  74.69                   149.15    1.664698e+10        9.956195e+09     1.255221e+10                 1.664698e+10             7.657146                 7.640792              6.665163              66865.647937                  67008.760450               76817.323762            566.078125                566.078125             444.337891                222.238281                    222.238281                 198.097656            11.732363                11.732363              7.004152          0.501024       0.467685             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                8.0                  1740.0                   11.0                      1740.0                 7.5                   1740.0                None                     None                    1.924                        1.902                     1.997                      None                         2                             2                          2                       None          1.796         132.63                 2                          124.08                              124.66                           128.90                             None                      0.001815                          0.001833                       0.001691                           None             68826.713525                 68465.561113              76681.452120                      None                                   2                                       2                                    2                                 None               0.123047                   0.214844                0.185547              0.035156                  0.101562               0.097656
+14  InceptionNet  Cifar100  NVIDIA A40         300          100  ../Tranfer/InceptionNet_Cifar100_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    4              0.4127            0.5447         0.5677                 78.52                  154.56                     75.47                      149.71                  76.26                   144.69    1.664698e+10        9.956195e+09     1.255221e+10                 1.664698e+10             7.528478                 7.592790              6.624744              68008.431070                  67432.389644               77286.005478            571.329102                571.329102             452.096680                222.238281                    222.238281                 198.097656            11.732363                11.732363              7.004152          0.501024       0.467685             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               12.0                  1740.0                    7.5                      1740.0                 9.5                   1740.0                None                     None                    1.969                        1.984                     1.897                      None                         2                             2                          2                       None          1.796         132.63                 2                          120.02                              125.17                           131.34                             None                      0.001677                          0.001742                       0.001691                           None             72075.207155                 72344.568030              78365.752144                      None                                   2                                       2                                    2                                 None               0.123047                   0.214844                0.185547              0.035156                  0.101562               0.097656
+15  InceptionNet  Cifar100  NVIDIA A40         300          100  ../Tranfer/InceptionNet_Cifar100_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    5              0.4127            0.5447         0.5677                 77.41                  153.37                     81.21                      160.29                  81.22                   159.63    1.664698e+10        9.956195e+09     1.255221e+10                 1.664698e+10             7.825784                 7.741434              6.709754              65424.755354                  66137.620436               76306.825290            554.326172                554.326172             435.820312                222.238281                    222.238281                 198.097656            11.732363                11.732363              7.004152          0.501024       0.467685             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                9.0                  1740.0                    7.0                      1740.0                10.5                   1740.0                None                     None                    1.981                        1.974                     1.965                      None                         2                             2                          2                       None          1.796         132.63                 2                          120.84                              124.42                           128.66                             None                      0.001758                          0.001818                       0.001689                           None             69184.196034                 68888.725725              76638.092641                      None                                   2                                       2                                    2                                 None               0.123047                   0.214844                0.185547              0.035156                  0.101562               0.097656
+16  InceptionNet  Cifar100  NVIDIA A40         300          100  ../Tranfer/InceptionNet_Cifar100_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    6              0.4127            0.5447         0.5677                 81.60                  161.04                     82.70                      163.63                  83.41                   164.31    1.664698e+10        9.956195e+09     1.255221e+10                 1.664698e+10             7.899723                 7.858344              6.710403              64812.396923                  65153.676287               76299.439282            560.702148                560.702148             439.204102                222.238281                    222.238281                 198.097656            11.732363                11.732363              7.004152          0.501024       0.467685             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.5                  1740.0                    7.0                      1740.0                 9.0                   1740.0                None                     None                    1.973                        1.979                     1.970                      None                         2                             2                          2                       None          1.796         132.63                 2                          119.31                              118.39                           156.46                             None                      0.001762                          0.001747                       0.002050                           None             68171.702816                 68230.387223              77466.708354                      None                                   2                                       2                                    3                                 None               0.123047                   0.214844                0.185547              0.035156                  0.101562               0.097656
+17  InceptionNet  Cifar100  NVIDIA A40         300          100  ../Tranfer/InceptionNet_Cifar100_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    7              0.4127            0.5447         0.5677                 86.46                  165.13                     86.62                      165.94                  87.75                   171.79    1.664698e+10        9.956195e+09     1.255221e+10                 1.664698e+10             7.682880                 7.513130              6.627746              66641.676691                  68147.366402               77251.003667            566.078125                566.078125             444.337891                222.238281                    222.238281                 198.097656            11.732363                11.732363              7.004152          0.501024       0.467685             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                8.5                  1740.0                   10.0                      1740.0                 7.0                   1740.0                None                     None                    1.910                        1.916                     1.958                      None                         2                             2                          2                       None          1.796         132.63                 2                          125.03                              125.75                           130.45                             None                      0.001789                          0.001785                       0.001690                           None             70371.790424                 70947.232427              77881.506609                      None                                   2                                       2                                    2                                 None               0.123047                   0.214844                0.185547              0.035156                  0.101562               0.097656
+18  InceptionNet  Cifar100  NVIDIA A40         300          100  ../Tranfer/InceptionNet_Cifar100_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    8              0.4127            0.5447         0.5677                 92.06                  181.74                     92.59                      182.60                  90.35                   172.11    1.664698e+10        9.956195e+09     1.255221e+10                 1.664698e+10             7.562160                 7.505906              6.616342              67705.523581                  68212.954620               77384.145593            571.329102                571.329102             452.096680                222.238281                    222.238281                 198.097656            11.732363                11.732363              7.004152          0.501024       0.467685             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                8.0                  1740.0                    7.5                      1740.0                 9.0                   1740.0                None                     None                    1.974                        1.972                     1.905                      None                         2                             2                          2                       None          1.796         132.63                 2                          119.55                              120.12                           139.68                             None                      0.001673                          0.001692                       0.001800                           None             71947.338713                 71488.953041              78156.861097                      None                                   2                                       2                                    2                                 None               0.123047                   0.214844                0.185547              0.035156                  0.101562               0.097656
+19  InceptionNet  Cifar100  NVIDIA A40         300          100  ../Tranfer/InceptionNet_Cifar100_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    9              0.4127            0.5447         0.5677                 92.62                  176.67                     96.91                      185.65                  90.09                   171.15    1.664698e+10        9.956195e+09     1.255221e+10                 1.664698e+10             7.438536                 7.458819              6.675168              68830.748855                  68643.573199               76702.189212            554.326172                554.326172             435.820312                222.238281                    222.238281                 198.097656            11.732363                11.732363              7.004152          0.501024       0.467685             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                9.0                  1740.0                    6.5                      1740.0                 6.5                   1740.0                None                     None                    1.907                        1.916                     1.900                      None                         2                             2                          2                       None          1.796         132.63                 2                          123.94                              118.64                           128.44                             None                      0.001737                          0.001655                       0.001662                           None             72576.882481                 72138.525148              77919.395133                      None                                   2                                       2                                    2                                 None               0.123047                   0.214844                0.185547              0.035156                  0.101562               0.097656

@@ -1,3 +1,5 @@
+/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:734: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
 [INFO] Searching for model checkpoints...
 [INFO] Found 2 'before' checkpoints.
 [INFO] Found 1 collapsed checkpoints.
@@ -7,7 +9,7 @@ Starting Comparison Post-Processing Pipeline
 Model: XceptionNet | Dataset: Cifar100 | Device: cuda
 Epochs Config (override): pre=300, post=100
 Output File: cka_results_XceptionNet_Cifar100_quant_pre300_post100.csv
-CUDA device: NVIDIA A40
+CUDA device: NVIDIA GeForce RTX 2080 Ti
 ======================================================================
 
 ======================================================================
@@ -24,7 +26,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] XceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/XceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 7.63s
+[INFO] Weights loaded in 0.69s
 
 [INFO] BN running stats recalibrated over 100 batches (40 BN layers).
 [INFO] Loading original post-finetuning model...
@@ -38,314 +40,876 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] XceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/XceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 5.08s
+[INFO] Weights loaded in 0.28s
 
 [INFO] BN running stats recalibrated over 100 batches (40 BN layers).
 [INFO] Loading whole collapsed model artifact...
 [INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_Cifar100_None_epochs100_pretrain300
 [INFO] Found matching checkpoint: ../Tranfer/XceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
-[INFO] Whole-model load completed in 2.74s
+[INFO] Whole-model load completed in 1.00s
 [INFO] BN running stats recalibrated over 100 batches (40 BN layers).
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 35.84%
-[INFO] IMP checkpoint not found. Starting on-the-fly finetuning...
+[INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/XceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
+[INFO] Initializing architecture: model=XceptionNet, dataset=Cifar100
+Loading CIFAR-100 data for XceptionNet...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize XceptionNet with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] XceptionNet successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/XceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 276
+[INFO] Weights loaded in 0.32s
 
-[INFO] Starting Iterative Magnitude Pruning (IMP) for 100 epochs...
-[INFO] Compounding prune rate: 0.59% per step over 75 steps.
-[INFO] Found existing checkpoint at ../Tranfer/XceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100_ resume_ckpt.pt. Resuming training...
-[INFO] Resuming from Epoch 39/100 (Previous time: 0.00s)
-IMP:   0%|          | 0/62 [00:00<?, ?it/s]
-Epoch 39/100:   0%|          | 0/98 [00:00<?, ?it/s][A
-Epoch 39/100:   1%|          | 1/98 [00:03<05:53,  3.65s/it][A
-Epoch 39/100:   3%|▎         | 3/98 [00:03<01:36,  1.01s/it][A
-Epoch 39/100:   4%|▍         | 4/98 [00:04<01:08,  1.37it/s][A
-Epoch 39/100:   5%|▌         | 5/98 [00:04<00:51,  1.80it/s][A
-Epoch 39/100:   6%|▌         | 6/98 [00:04<00:40,  2.26it/s][A
-Epoch 39/100:   7%|▋         | 7/98 [00:04<00:33,  2.74it/s][A
-Epoch 39/100:   8%|▊         | 8/98 [00:04<00:28,  3.17it/s][A
-Epoch 39/100:   9%|▉         | 9/98 [00:05<00:24,  3.57it/s][A
-Epoch 39/100:  10%|█         | 10/98 [00:05<00:22,  3.94it/s][A
-Epoch 39/100:  11%|█         | 11/98 [00:05<00:20,  4.19it/s][A
-Epoch 39/100:  12%|█▏        | 12/98 [00:05<00:19,  4.40it/s][A
-Epoch 39/100:  13%|█▎        | 13/98 [00:05<00:18,  4.56it/s][A
-Epoch 39/100:  14%|█▍        | 14/98 [00:06<00:17,  4.69it/s][A
-Epoch 39/100:  15%|█▌        | 15/98 [00:06<00:17,  4.78it/s][A
-Epoch 39/100:  16%|█▋        | 16/98 [00:06<00:16,  4.85it/s][A
-Epoch 39/100:  17%|█▋        | 17/98 [00:06<00:16,  4.85it/s][A
-Epoch 39/100:  18%|█▊        | 18/98 [00:06<00:18,  4.36it/s][A
-Epoch 39/100:  19%|█▉        | 19/98 [00:07<00:15,  5.10it/s][A
-Epoch 39/100:  19%|█▉        | 19/98 [00:07<00:15,  5.10it/s, loss=0.0167][A
-Epoch 39/100:  20%|██        | 20/98 [00:07<00:17,  4.50it/s, loss=0.0167][A
-Epoch 39/100:  21%|██▏       | 21/98 [00:07<00:16,  4.65it/s, loss=0.0167][A
-Epoch 39/100:  22%|██▏       | 22/98 [00:07<00:14,  5.37it/s, loss=0.0167][A
-Epoch 39/100:  23%|██▎       | 23/98 [00:07<00:14,  5.25it/s, loss=0.0167][A
-Epoch 39/100:  24%|██▍       | 24/98 [00:08<00:14,  5.19it/s, loss=0.0167][A
-Epoch 39/100:  26%|██▌       | 25/98 [00:08<00:16,  4.55it/s, loss=0.0167][A
-Epoch 39/100:  27%|██▋       | 26/98 [00:08<00:15,  4.67it/s, loss=0.0167][A
-Epoch 39/100:  28%|██▊       | 27/98 [00:08<00:13,  5.42it/s, loss=0.0167][A
-Epoch 39/100:  29%|██▊       | 28/98 [00:08<00:13,  5.27it/s, loss=0.0167][A
-Epoch 39/100:  30%|██▉       | 29/98 [00:09<00:13,  5.20it/s, loss=0.0167][A
-Epoch 39/100:  31%|███       | 30/98 [00:09<00:14,  4.55it/s, loss=0.0167][A
-Epoch 39/100:  32%|███▏      | 31/98 [00:09<00:12,  5.29it/s, loss=0.0167][A
-Epoch 39/100:  33%|███▎      | 32/98 [00:09<00:12,  5.21it/s, loss=0.0167][A
-Epoch 39/100:  34%|███▎      | 33/98 [00:09<00:12,  5.18it/s, loss=0.0167][A
-Epoch 39/100:  35%|███▍      | 34/98 [00:10<00:12,  5.15it/s, loss=0.0167][A
-Epoch 39/100:  36%|███▌      | 35/98 [00:10<00:12,  5.10it/s, loss=0.0167][A
-Epoch 39/100:  37%|███▋      | 36/98 [00:10<00:12,  5.07it/s, loss=0.0167][A
-Epoch 39/100:  38%|███▊      | 37/98 [00:10<00:12,  5.04it/s, loss=0.0167][A
-Epoch 39/100:  39%|███▉      | 38/98 [00:10<00:11,  5.04it/s, loss=0.0167][A
-Epoch 39/100:  40%|███▉      | 39/98 [00:11<00:11,  4.99it/s, loss=0.0167][A
-Epoch 39/100:  40%|███▉      | 39/98 [00:11<00:11,  4.99it/s, loss=0.0161][A
-Epoch 39/100:  41%|████      | 40/98 [00:11<00:13,  4.42it/s, loss=0.0161][A
-Epoch 39/100:  42%|████▏     | 41/98 [00:11<00:10,  5.23it/s, loss=0.0161][A
-Epoch 39/100:  43%|████▎     | 42/98 [00:11<00:10,  5.15it/s, loss=0.0161][A
-Epoch 39/100:  44%|████▍     | 43/98 [00:11<00:10,  5.09it/s, loss=0.0161][A
-Epoch 39/100:  45%|████▍     | 44/98 [00:12<00:10,  5.09it/s, loss=0.0161][A
-Epoch 39/100:  46%|████▌     | 45/98 [00:12<00:10,  5.05it/s, loss=0.0161][A
-Epoch 39/100:  47%|████▋     | 46/98 [00:12<00:10,  5.03it/s, loss=0.0161][A
-Epoch 39/100:  48%|████▊     | 47/98 [00:12<00:10,  5.04it/s, loss=0.0161][A
-Epoch 39/100:  49%|████▉     | 48/98 [00:12<00:09,  5.02it/s, loss=0.0161][A
-Epoch 39/100:  50%|█████     | 49/98 [00:13<00:09,  5.02it/s, loss=0.0161][A
-Epoch 39/100:  51%|█████     | 50/98 [00:13<00:09,  5.00it/s, loss=0.0161][A
-Epoch 39/100:  52%|█████▏    | 51/98 [00:13<00:09,  5.01it/s, loss=0.0161][A
-Epoch 39/100:  53%|█████▎    | 52/98 [00:13<00:09,  4.99it/s, loss=0.0161][A
-Epoch 39/100:  54%|█████▍    | 53/98 [00:13<00:09,  5.00it/s, loss=0.0161][A
-Epoch 39/100:  55%|█████▌    | 54/98 [00:14<00:08,  5.02it/s, loss=0.0161][A
-Epoch 39/100:  56%|█████▌    | 55/98 [00:14<00:08,  5.01it/s, loss=0.0161][A
-Epoch 39/100:  57%|█████▋    | 56/98 [00:14<00:08,  4.99it/s, loss=0.0161][A
-Epoch 39/100:  58%|█████▊    | 57/98 [00:14<00:08,  4.99it/s, loss=0.0161][A
-Epoch 39/100:  59%|█████▉    | 58/98 [00:14<00:07,  5.01it/s, loss=0.0161][A
-Epoch 39/100:  60%|██████    | 59/98 [00:15<00:07,  5.01it/s, loss=0.0161][A
-Epoch 39/100:  60%|██████    | 59/98 [00:15<00:07,  5.01it/s, loss=0.0158][A
-Epoch 39/100:  61%|██████    | 60/98 [00:15<00:08,  4.40it/s, loss=0.0158][A
-Epoch 39/100:  62%|██████▏   | 61/98 [00:15<00:07,  5.22it/s, loss=0.0158][A
-Epoch 39/100:  63%|██████▎   | 62/98 [00:15<00:06,  5.15it/s, loss=0.0158][A
-Epoch 39/100:  64%|██████▍   | 63/98 [00:15<00:06,  5.08it/s, loss=0.0158][A
-Epoch 39/100:  65%|██████▌   | 64/98 [00:16<00:06,  5.10it/s, loss=0.0158][A
-Epoch 39/100:  66%|██████▋   | 65/98 [00:16<00:06,  4.96it/s, loss=0.0158][A
-Epoch 39/100:  67%|██████▋   | 66/98 [00:16<00:06,  5.06it/s, loss=0.0158][A
-Epoch 39/100:  68%|██████▊   | 67/98 [00:16<00:06,  5.04it/s, loss=0.0158][A
-Epoch 39/100:  69%|██████▉   | 68/98 [00:16<00:05,  5.03it/s, loss=0.0158][A
-Epoch 39/100:  70%|███████   | 69/98 [00:17<00:06,  4.37it/s, loss=0.0158][A
-Epoch 39/100:  71%|███████▏  | 70/98 [00:17<00:06,  4.54it/s, loss=0.0158][A
-Epoch 39/100:  72%|███████▏  | 71/98 [00:17<00:05,  4.67it/s, loss=0.0158][A
-Epoch 39/100:  73%|███████▎  | 72/98 [00:17<00:05,  4.79it/s, loss=0.0158][A
-Epoch 39/100:  74%|███████▍  | 73/98 [00:18<00:05,  4.24it/s, loss=0.0158][A
-Epoch 39/100:  76%|███████▌  | 74/98 [00:18<00:05,  4.46it/s, loss=0.0158][A
-Epoch 39/100:  77%|███████▋  | 75/98 [00:18<00:04,  5.26it/s, loss=0.0158][A
-Epoch 39/100:  78%|███████▊  | 76/98 [00:18<00:04,  5.18it/s, loss=0.0158][A
-Epoch 39/100:  79%|███████▊  | 77/98 [00:18<00:04,  4.46it/s, loss=0.0158][A
-Epoch 39/100:  80%|███████▉  | 78/98 [00:19<00:04,  4.61it/s, loss=0.0158][A
-Epoch 39/100:  81%|████████  | 79/98 [00:19<00:04,  4.71it/s, loss=0.0158][A
-Epoch 39/100:  81%|████████  | 79/98 [00:19<00:04,  4.71it/s, loss=0.0159][A
-Epoch 39/100:  82%|████████▏ | 80/98 [00:19<00:04,  4.25it/s, loss=0.0159][A
-Epoch 39/100:  83%|████████▎ | 81/98 [00:19<00:03,  5.00it/s, loss=0.0159][A
-Epoch 39/100:  84%|████████▎ | 82/98 [00:19<00:03,  5.06it/s, loss=0.0159][A
-Epoch 39/100:  85%|████████▍ | 83/98 [00:20<00:02,  5.04it/s, loss=0.0159][A
-Epoch 39/100:  86%|████████▌ | 84/98 [00:20<00:02,  5.03it/s, loss=0.0159][A
-Epoch 39/100:  87%|████████▋ | 85/98 [00:20<00:02,  4.97it/s, loss=0.0159][A
-Epoch 39/100:  88%|████████▊ | 86/98 [00:20<00:02,  5.04it/s, loss=0.0159][A
-Epoch 39/100:  89%|████████▉ | 87/98 [00:20<00:02,  5.01it/s, loss=0.0159][A
-Epoch 39/100:  90%|████████▉ | 88/98 [00:21<00:01,  5.02it/s, loss=0.0159][A
-Epoch 39/100:  91%|█████████ | 89/98 [00:21<00:02,  4.39it/s, loss=0.0159][A
-Epoch 39/100:  92%|█████████▏| 90/98 [00:21<00:01,  4.58it/s, loss=0.0159][A
-Epoch 39/100:  93%|█████████▎| 91/98 [00:21<00:01,  5.39it/s, loss=0.0159][A
-Epoch 39/100:  94%|█████████▍| 92/98 [00:21<00:00,  6.03it/s, loss=0.0159][A
-Epoch 39/100:  95%|█████████▍| 93/98 [00:21<00:00,  6.84it/s, loss=0.0159][A
-Epoch 39/100:  97%|█████████▋| 95/98 [00:22<00:00,  8.02it/s, loss=0.0159][A
-Epoch 39/100:  98%|█████████▊| 96/98 [00:22<00:00,  8.43it/s, loss=0.0159][A
-Epoch 39/100: 100%|██████████| 98/98 [00:22<00:00,  8.44it/s, loss=0.0159][AEpoch 39/100: 100%|██████████| 98/98 [00:22<00:00,  4.38it/s, loss=0.0159]
-IMP:   0%|          | 0/62 [00:24<?, ?it/s, loss=0.0156]IMP:   2%|▏         | 1/62 [00:28<29:22, 28.89s/it, loss=0.0156]
-Epoch 40/100:   0%|          | 0/98 [00:00<?, ?it/s][A
-Epoch 40/100:   1%|          | 1/98 [00:00<01:16,  1.27it/s][A
-Epoch 40/100:   2%|▏         | 2/98 [00:00<00:41,  2.30it/s][A
-Epoch 40/100:   3%|▎         | 3/98 [00:01<00:31,  3.05it/s][A
-Epoch 40/100:   4%|▍         | 4/98 [00:01<00:26,  3.59it/s][A
-Epoch 40/100:   5%|▌         | 5/98 [00:01<00:23,  3.98it/s][A
-Epoch 40/100:   6%|▌         | 6/98 [00:01<00:21,  4.31it/s][A
-Epoch 40/100:   7%|▋         | 7/98 [00:01<00:20,  4.52it/s][A
-Epoch 40/100:   8%|▊         | 8/98 [00:02<00:19,  4.64it/s][A
-Epoch 40/100:   9%|▉         | 9/98 [00:02<00:21,  4.18it/s][A
-Epoch 40/100:  10%|█         | 10/98 [00:02<00:19,  4.42it/s][A
-Epoch 40/100:  11%|█         | 11/98 [00:02<00:16,  5.25it/s][A
-Epoch 40/100:  12%|█▏        | 12/98 [00:02<00:16,  5.14it/s][A
-Epoch 40/100:  13%|█▎        | 13/98 [00:03<00:16,  5.12it/s][A
-Epoch 40/100:  14%|█▍        | 14/98 [00:03<00:16,  5.07it/s][A
-Epoch 40/100:  15%|█▌        | 15/98 [00:03<00:16,  5.03it/s][A
-Epoch 40/100:  16%|█▋        | 16/98 [00:03<00:16,  5.06it/s][A
-Epoch 40/100:  17%|█▋        | 17/98 [00:04<00:18,  4.37it/s][A
-Epoch 40/100:  18%|█▊        | 18/98 [00:04<00:17,  4.58it/s][A
-Epoch 40/100:  19%|█▉        | 19/98 [00:04<00:16,  4.66it/s][A
-Epoch 40/100:  19%|█▉        | 19/98 [00:04<00:16,  4.66it/s, loss=0.0151][A
-Epoch 40/100:  20%|██        | 20/98 [00:04<00:18,  4.22it/s, loss=0.0151][A
-Epoch 40/100:  21%|██▏       | 21/98 [00:04<00:17,  4.38it/s, loss=0.0151][A
-Epoch 40/100:  22%|██▏       | 22/98 [00:05<00:16,  4.54it/s, loss=0.0151][A
-Epoch 40/100:  23%|██▎       | 23/98 [00:05<00:16,  4.66it/s, loss=0.0151][A
-Epoch 40/100:  24%|██▍       | 24/98 [00:05<00:15,  4.74it/s, loss=0.0151][A
-Epoch 40/100:  26%|██▌       | 25/98 [00:05<00:15,  4.83it/s, loss=0.0151][A
-Epoch 40/100:  27%|██▋       | 26/98 [00:05<00:14,  4.89it/s, loss=0.0151][A
-Epoch 40/100:  28%|██▊       | 27/98 [00:06<00:14,  4.92it/s, loss=0.0151][A
-Epoch 40/100:  29%|██▊       | 28/98 [00:06<00:14,  4.93it/s, loss=0.0151][A
-Epoch 40/100:  30%|██▉       | 29/98 [00:06<00:13,  4.97it/s, loss=0.0151][A
-Epoch 40/100:  31%|███       | 30/98 [00:06<00:13,  4.98it/s, loss=0.0151][A
-Epoch 40/100:  32%|███▏      | 31/98 [00:06<00:13,  4.98it/s, loss=0.0151][A
-Epoch 40/100:  33%|███▎      | 32/98 [00:07<00:15,  4.37it/s, loss=0.0151][A
-Epoch 40/100:  34%|███▎      | 33/98 [00:07<00:12,  5.12it/s, loss=0.0151][A
-Epoch 40/100:  35%|███▍      | 34/98 [00:07<00:12,  5.18it/s, loss=0.0151][A
-Epoch 40/100:  36%|███▌      | 35/98 [00:07<00:12,  5.10it/s, loss=0.0151][A
-Epoch 40/100:  37%|███▋      | 36/98 [00:07<00:12,  5.08it/s, loss=0.0151][A
-Epoch 40/100:  38%|███▊      | 37/98 [00:08<00:12,  5.05it/s, loss=0.0151][A
-Epoch 40/100:  39%|███▉      | 38/98 [00:08<00:11,  5.05it/s, loss=0.0151][A
-Epoch 40/100:  40%|███▉      | 39/98 [00:08<00:11,  5.04it/s, loss=0.0151][A
-Epoch 40/100:  40%|███▉      | 39/98 [00:08<00:11,  5.04it/s, loss=0.0150][A
-Epoch 40/100:  41%|████      | 40/98 [00:08<00:13,  4.42it/s, loss=0.0150][A
-Epoch 40/100:  42%|████▏     | 41/98 [00:08<00:10,  5.22it/s, loss=0.0150][A
-Epoch 40/100:  43%|████▎     | 42/98 [00:09<00:10,  5.17it/s, loss=0.0150][A
-Epoch 40/100:  44%|████▍     | 43/98 [00:09<00:10,  5.12it/s, loss=0.0150][A
-Epoch 40/100:  45%|████▍     | 44/98 [00:09<00:10,  5.08it/s, loss=0.0150][A
-Epoch 40/100:  46%|████▌     | 45/98 [00:09<00:10,  5.00it/s, loss=0.0150][A
-Epoch 40/100:  47%|████▋     | 46/98 [00:09<00:10,  5.04it/s, loss=0.0150][A
-Epoch 40/100:  48%|████▊     | 47/98 [00:10<00:10,  5.04it/s, loss=0.0150][A
-Epoch 40/100:  49%|████▉     | 48/98 [00:10<00:09,  5.03it/s, loss=0.0150][A
-Epoch 40/100:  50%|█████     | 49/98 [00:10<00:09,  4.99it/s, loss=0.0150][A
-Epoch 40/100:  51%|█████     | 50/98 [00:10<00:09,  5.01it/s, loss=0.0150][A
-Epoch 40/100:  52%|█████▏    | 51/98 [00:10<00:09,  5.00it/s, loss=0.0150][A
-Epoch 40/100:  53%|█████▎    | 52/98 [00:11<00:09,  5.03it/s, loss=0.0150][A
-Epoch 40/100:  54%|█████▍    | 53/98 [00:11<00:10,  4.39it/s, loss=0.0150][A
-Epoch 40/100:  55%|█████▌    | 54/98 [00:11<00:08,  5.21it/s, loss=0.0150][A
-Epoch 40/100:  56%|█████▌    | 55/98 [00:11<00:08,  5.14it/s, loss=0.0150][A
-Epoch 40/100:  57%|█████▋    | 56/98 [00:11<00:08,  5.11it/s, loss=0.0150][A
-Epoch 40/100:  58%|█████▊    | 57/98 [00:12<00:08,  5.01it/s, loss=0.0150][A
-Epoch 40/100:  59%|█████▉    | 58/98 [00:12<00:07,  5.08it/s, loss=0.0150][A
-Epoch 40/100:  60%|██████    | 59/98 [00:12<00:07,  5.04it/s, loss=0.0150][A
-Epoch 40/100:  60%|██████    | 59/98 [00:12<00:07,  5.04it/s, loss=0.0150][A
-Epoch 40/100:  61%|██████    | 60/98 [00:12<00:08,  4.43it/s, loss=0.0150][A
-Epoch 40/100:  62%|██████▏   | 61/98 [00:13<00:08,  4.52it/s, loss=0.0150][A
-Epoch 40/100:  63%|██████▎   | 62/98 [00:13<00:07,  4.67it/s, loss=0.0150][A
-Epoch 40/100:  64%|██████▍   | 63/98 [00:13<00:07,  4.76it/s, loss=0.0150][A
-Epoch 40/100:  65%|██████▌   | 64/98 [00:13<00:07,  4.84it/s, loss=0.0150][A
-Epoch 40/100:  66%|██████▋   | 65/98 [00:13<00:06,  4.87it/s, loss=0.0150][A
-Epoch 40/100:  67%|██████▋   | 66/98 [00:14<00:06,  4.92it/s, loss=0.0150][A
-Epoch 40/100:  68%|██████▊   | 67/98 [00:14<00:06,  4.94it/s, loss=0.0150][A
-Epoch 40/100:  69%|██████▉   | 68/98 [00:14<00:06,  4.96it/s, loss=0.0150][A
-Epoch 40/100:  70%|███████   | 69/98 [00:14<00:06,  4.38it/s, loss=0.0150][A
-Epoch 40/100:  71%|███████▏  | 70/98 [00:14<00:05,  5.18it/s, loss=0.0150][A
-Epoch 40/100:  72%|███████▏  | 71/98 [00:15<00:05,  5.12it/s, loss=0.0150][A
-Epoch 40/100:  73%|███████▎  | 72/98 [00:15<00:05,  5.10it/s, loss=0.0150][A
-Epoch 40/100:  74%|███████▍  | 73/98 [00:15<00:05,  4.41it/s, loss=0.0150][A
-Epoch 40/100:  76%|███████▌  | 74/98 [00:15<00:05,  4.56it/s, loss=0.0150][A
-Epoch 40/100:  77%|███████▋  | 75/98 [00:15<00:04,  4.67it/s, loss=0.0150][A
-Epoch 40/100:  78%|███████▊  | 76/98 [00:16<00:04,  4.77it/s, loss=0.0150][A
-Epoch 40/100:  79%|███████▊  | 77/98 [00:16<00:04,  4.84it/s, loss=0.0150][A
-Epoch 40/100:  80%|███████▉  | 78/98 [00:16<00:04,  4.91it/s, loss=0.0150][A
-Epoch 40/100:  81%|████████  | 79/98 [00:16<00:03,  4.94it/s, loss=0.0150][A
-Epoch 40/100:  81%|████████  | 79/98 [00:17<00:03,  4.94it/s, loss=0.0150][A
-Epoch 40/100:  82%|████████▏ | 80/98 [00:17<00:04,  4.35it/s, loss=0.0150][A
-Epoch 40/100:  83%|████████▎ | 81/98 [00:17<00:03,  4.50it/s, loss=0.0150][A
-Epoch 40/100:  84%|████████▎ | 82/98 [00:17<00:03,  4.64it/s, loss=0.0150][A
-Epoch 40/100:  85%|████████▍ | 83/98 [00:17<00:03,  4.77it/s, loss=0.0150][A
-Epoch 40/100:  86%|████████▌ | 84/98 [00:17<00:02,  5.53it/s, loss=0.0150][A
-Epoch 40/100:  87%|████████▋ | 85/98 [00:18<00:02,  4.69it/s, loss=0.0150][A
-Epoch 40/100:  88%|████████▊ | 86/98 [00:18<00:02,  4.78it/s, loss=0.0150][A
-Epoch 40/100:  89%|████████▉ | 87/98 [00:18<00:01,  5.55it/s, loss=0.0150][A
-Epoch 40/100:  90%|████████▉ | 88/98 [00:18<00:01,  5.42it/s, loss=0.0150][A
-Epoch 40/100:  91%|█████████ | 89/98 [00:18<00:01,  4.52it/s, loss=0.0150][A
-Epoch 40/100:  92%|█████████▏| 90/98 [00:19<00:01,  4.70it/s, loss=0.0150][A
-Epoch 40/100:  93%|█████████▎| 91/98 [00:19<00:01,  4.78it/s, loss=0.0150][A
-Epoch 40/100:  94%|█████████▍| 92/98 [00:19<00:01,  4.88it/s, loss=0.0150][A
-Epoch 40/100:  95%|█████████▍| 93/98 [00:19<00:00,  5.67it/s, loss=0.0150][A
-Epoch 40/100:  96%|█████████▌| 94/98 [00:19<00:00,  6.33it/s, loss=0.0150][A
-Epoch 40/100:  98%|█████████▊| 96/98 [00:19<00:00,  7.65it/s, loss=0.0150][A
-Epoch 40/100: 100%|██████████| 98/98 [00:20<00:00,  8.90it/s, loss=0.0150][AEpoch 40/100: 100%|██████████| 98/98 [00:20<00:00,  4.88it/s, loss=0.0150]
-IMP:   2%|▏         | 1/62 [00:49<29:22, 28.89s/it, loss=0.0151]IMP:   3%|▎         | 2/62 [00:54<27:15, 27.25s/it, loss=0.0151]
-Epoch 41/100:   0%|          | 0/98 [00:00<?, ?it/s][A
-Epoch 41/100:   1%|          | 1/98 [00:00<01:24,  1.14it/s][A
-Epoch 41/100:   2%|▏         | 2/98 [00:01<00:45,  2.09it/s][A
-Epoch 41/100:   3%|▎         | 3/98 [00:01<00:33,  2.87it/s][A
-Epoch 41/100:   4%|▍         | 4/98 [00:01<00:27,  3.41it/s][A
-Epoch 41/100:   5%|▌         | 5/98 [00:01<00:24,  3.86it/s][A
-Epoch 41/100:   6%|▌         | 6/98 [00:01<00:21,  4.19it/s][A
-Epoch 41/100:   7%|▋         | 7/98 [00:02<00:20,  4.46it/s][A
-Epoch 41/100:   8%|▊         | 8/98 [00:02<00:19,  4.59it/s][A
-Epoch 41/100:   9%|▉         | 9/98 [00:02<00:19,  4.67it/s][A
-Epoch 41/100:  10%|█         | 10/98 [00:02<00:18,  4.82it/s][A
-Epoch 41/100:  11%|█         | 11/98 [00:02<00:17,  4.87it/s][A
-Epoch 41/100:  12%|█▏        | 12/98 [00:03<00:17,  4.91it/s][A
-Epoch 41/100:  13%|█▎        | 13/98 [00:03<00:17,  4.88it/s][A
-Epoch 41/100:  14%|█▍        | 14/98 [00:03<00:16,  4.96it/s][A
-Epoch 41/100:  15%|█▌        | 15/98 [00:03<00:16,  4.98it/s][A
-Epoch 41/100:  16%|█▋        | 16/98 [00:03<00:16,  4.97it/s][A
-Epoch 41/100:  17%|█▋        | 17/98 [00:04<00:16,  4.94it/s][A
-Epoch 41/100:  18%|█▊        | 18/98 [00:04<00:15,  5.00it/s][A
-Epoch 41/100:  19%|█▉        | 19/98 [00:04<00:15,  5.01it/s][A
-Epoch 41/100:  19%|█▉        | 19/98 [00:04<00:15,  5.01it/s, loss=0.0139][A
-Epoch 41/100:  20%|██        | 20/98 [00:04<00:17,  4.41it/s, loss=0.0139][A
-Epoch 41/100:  21%|██▏       | 21/98 [00:04<00:16,  4.55it/s, loss=0.0139][A
-Epoch 41/100:  22%|██▏       | 22/98 [00:05<00:16,  4.64it/s, loss=0.0139][A
-Epoch 41/100:  23%|██▎       | 23/98 [00:05<00:15,  4.74it/s, loss=0.0139][A
-Epoch 41/100:  24%|██▍       | 24/98 [00:05<00:15,  4.80it/s, loss=0.0139][A
-Epoch 41/100:  26%|██▌       | 25/98 [00:05<00:14,  4.87it/s, loss=0.0139][A
-Epoch 41/100:  27%|██▋       | 26/98 [00:06<00:16,  4.31it/s, loss=0.0139][A
-Epoch 41/100:  28%|██▊       | 27/98 [00:06<00:15,  4.46it/s, loss=0.0139][A
-Epoch 41/100:  29%|██▊       | 28/98 [00:06<00:15,  4.62it/s, loss=0.0139][A
-Epoch 41/100:  30%|██▉       | 29/98 [00:06<00:14,  4.70it/s, loss=0.0139][A
-Epoch 41/100:  31%|███       | 30/98 [00:06<00:14,  4.81it/s, loss=0.0139][A
-Epoch 41/100:  32%|███▏      | 31/98 [00:07<00:13,  4.87it/s, loss=0.0139][A
-Epoch 41/100:  33%|███▎      | 32/98 [00:07<00:13,  4.90it/s, loss=0.0139][A
-Epoch 41/100:  34%|███▎      | 33/98 [00:07<00:13,  4.92it/s, loss=0.0139][A
-Epoch 41/100:  35%|███▍      | 34/98 [00:07<00:12,  4.96it/s, loss=0.0139][A
-Epoch 41/100:  36%|███▌      | 35/98 [00:07<00:12,  4.96it/s, loss=0.0139][A
-Epoch 41/100:  37%|███▋      | 36/98 [00:08<00:12,  4.99it/s, loss=0.0139][A
-Epoch 41/100:  38%|███▊      | 37/98 [00:08<00:12,  4.99it/s, loss=0.0139][A
-Epoch 41/100:  39%|███▉      | 38/98 [00:08<00:12,  4.99it/s, loss=0.0139][A
-Epoch 41/100:  40%|███▉      | 39/98 [00:08<00:11,  4.98it/s, loss=0.0139][A
-Epoch 41/100:  40%|███▉      | 39/98 [00:08<00:11,  4.98it/s, loss=0.0148][A
-Epoch 41/100:  41%|████      | 40/98 [00:08<00:13,  4.40it/s, loss=0.0148][A
-Epoch 41/100:  42%|████▏     | 41/98 [00:09<00:10,  5.21it/s, loss=0.0148][A
-Epoch 41/100:  43%|████▎     | 42/98 [00:09<00:10,  5.15it/s, loss=0.0148][A
-Epoch 41/100:  44%|████▍     | 43/98 [00:09<00:10,  5.12it/s, loss=0.0148][A
-Epoch 41/100:  45%|████▍     | 44/98 [00:09<00:10,  5.08it/s, loss=0.0148][A
-Epoch 41/100:  46%|████▌     | 45/98 [00:09<00:10,  5.03it/s, loss=0.0148][A
-Epoch 41/100:  47%|████▋     | 46/98 [00:10<00:10,  5.03it/s, loss=0.0148][A
-Epoch 41/100:  48%|████▊     | 47/98 [00:10<00:10,  5.01it/s, loss=0.0148][A
-Epoch 41/100:  49%|████▉     | 48/98 [00:10<00:09,  5.03it/s, loss=0.0148][A
-Epoch 41/100:  50%|█████     | 49/98 [00:10<00:09,  4.97it/s, loss=0.0148][A
-Epoch 41/100:  51%|█████     | 50/98 [00:10<00:09,  5.03it/s, loss=0.0148][A
-Epoch 41/100:  52%|█████▏    | 51/98 [00:11<00:09,  5.02it/s, loss=0.0148][A
-Epoch 41/100:  53%|█████▎    | 52/98 [00:11<00:09,  5.00it/s, loss=0.0148][A
-Epoch 41/100:  54%|█████▍    | 53/98 [00:16<00:10,  4.38it/s, loss=0.0148][A
-Epoch 41/100:  55%|█████▌    | 54/98 [00:16<01:11,  1.62s/it, loss=0.0148][A
-Epoch 41/100:  56%|█████▌    | 55/98 [00:16<00:50,  1.18s/it, loss=0.0148][A
-Epoch 41/100:  57%|█████▋    | 56/98 [00:16<00:36,  1.14it/s, loss=0.0148][A
-Epoch 41/100:  58%|█████▊    | 57/98 [00:16<00:26,  1.54it/s, loss=0.0148][A
-Epoch 41/100:  59%|█████▉    | 58/98 [00:17<00:20,  1.95it/s, loss=0.0148][A
-Epoch 41/100:  60%|██████    | 59/98 [00:17<00:16,  2.39it/s, loss=0.0148][A
-Epoch 41/100:  60%|██████    | 59/98 [00:17<00:16,  2.39it/s, loss=0.0150][A
-Epoch 41/100:  61%|██████    | 60/98 [00:17<00:14,  2.63it/s, loss=0.0150][A
-Epoch 41/100:  62%|██████▏   | 61/98 [00:17<00:11,  3.35it/s, loss=0.0150][A
-Epoch 41/100:  63%|██████▎   | 62/98 [00:17<00:09,  3.70it/s, loss=0.0150][A
-Epoch 41/100:  64%|██████▍   | 63/98 [00:18<00:08,  4.02it/s, loss=0.0150][A
-Epoch 41/100:  65%|██████▌   | 64/98 [00:18<00:07,  4.28it/s, loss=0.0150][A
-Epoch 41/100:  66%|██████▋   | 65/98 [00:18<00:07,  4.47it/s, loss=0.0150][A
-Epoch 41/100:  67%|██████▋   | 66/98 [00:18<00:06,  4.61it/s, loss=0.0150][A
-Epoch 41/100:  68%|██████▊   | 67/98 [00:18<00:06,  4.72it/s, loss=0.0150][A
-Epoch 41/100:  69%|██████▉   | 68/98 [00:19<00:06,  4.80it/s, loss=0.0150][A
-Epoch 41/100:  70%|███████   | 69/98 [00:19<00:05,  4.88it/s, loss=0.0150][A
-Epoch 41/100:  71%|███████▏  | 70/98 [00:19<00:05,  4.89it/s, loss=0.0150][A
-Epoch 41/100:  72%|███████▏  | 71/98 [00:19<00:05,  4.92it/s, loss=0.0150][A
-Epoch 41/100:  73%|███████▎  | 72/98 [00:19<00:05,  4.96it/s, loss=0.0150][A
-Epoch 41/100:  74%|███████▍  | 73/98 [00:20<00:05,  4.97it/s, loss=0.0150][A
-Epoch 41/100:  76%|███████▌  | 74/98 [00:20<00:04,  4.95it/s, loss=0.0150][A
-Epoch 41/100:  77%|███████▋  | 75/98 [00:20<00:04,  4.99it/s, loss=0.0150][A
-Epoch 41/100:  78%|███████▊  | 76/98 [00:20<00:04,  4.98it/s, loss=0.0150][A
-Epoch 41/100:  79%|███████▊  | 77/98 [00:20<00:04,  5.00it/s, loss=0.0150][A
-Epoch 41/100:  80%|███████▉  | 78/98 [00:21<00:04,  4.98it/s, loss=0.0150][A
-Epoch 41/100:  81%|████████  | 79/98 [00:21<00:03,  5.00it/s, loss=0.0150][A
-Epoch 41/100:  81%|████████  | 79/98 [00:21<00:03,  5.00it/s, loss=0.0147][A
-Epoch 41/100:  82%|████████▏ | 80/98 [00:21<00:04,  4.40it/s, loss=0.0147][A
-Epoch 41/100:  83%|████████▎ | 81/98 [00:21<00:03,  5.20it/s, loss=0.0147][A
-Epoch 41/100:  84%|████████▎ | 82/98 [00:21<00:03,  5.13it/s, loss=0.0147][A
-Epoch 41/100:  85%|████████▍ | 83/98 [00:22<00:02,  5.10it/s, loss=0.0147][A
-Epoch 41/100:  86%|████████▌ | 84/98 [00:22<00:02,  5.12it/s, loss=0.0147][A
-Epoch 41/100:  87%|████████▋ | 85/98 [00:22<00:02,  5.03it/s, loss=0.0147][A
-Epoch 41/100:  88%|████████▊ | 86/98 [00:22<00:02,  5.01it/s, loss=0.0147][A
+[WARN] torch-pruning is required for the structural baseline (pip install torch-pruning). Skipping structural baseline.
+
+[INFO] Evaluating model accuracy, power draw, and energy consumption (10 rep(s))...
+
+[INFO] === Measurement rep 1/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+[INFO] Evaluation complete: acc=0.4620, power=76.12W, energy=259.04J, time=3.40s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.4550, power=78.34W, energy=279.25J, time=3.56s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.0100, power=77.35W, energy=272.34J, time=3.52s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5971, power=91.73W, energy=329.36J, time=3.59s
+[INFO] Saturated energy: power=178.545, J/img=0.006524402532312605, samples=2
+[INFO] Saturated energy: power=191.84333333333333, J/img=0.007087437530698086, samples=3
+[INFO] Saturated energy: power=201.57666666666668, J/img=0.00962498210419164, samples=3
+
+[INFO] === Measurement rep 2/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.4620, power=83.78W, energy=288.11J, time=3.44s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.4550, power=78.42W, energy=269.64J, time=3.44s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.0100, power=70.20W, energy=230.51J, time=3.28s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5971, power=82.09W, energy=313.39J, time=3.82s
+[INFO] Saturated energy: power=165.71, J/img=0.0060764341723939805, samples=2
+[INFO] Saturated energy: power=157.305, J/img=0.005797118041381484, samples=2
+[INFO] Saturated energy: power=183.155, J/img=0.008868464268973949, samples=2
+
+[INFO] === Measurement rep 3/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.4620, power=75.18W, energy=260.24J, time=3.46s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.4550, power=78.55W, energy=279.19J, time=3.55s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.0100, power=70.07W, energy=239.61J, time=3.42s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5971, power=84.66W, energy=281.90J, time=3.33s
+[INFO] Saturated energy: power=179.6, J/img=0.006614901675520655, samples=2
+[INFO] Saturated energy: power=168.995, J/img=0.0062603378403967005, samples=2
+[INFO] Saturated energy: power=203.07666666666668, J/img=0.00980977498683927, samples=3
+
+[INFO] === Measurement rep 4/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.4620, power=79.74W, energy=275.45J, time=3.45s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.4550, power=80.09W, energy=263.08J, time=3.28s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.0100, power=71.75W, energy=247.38J, time=3.45s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5971, power=78.47W, energy=271.97J, time=3.47s
+[INFO] Saturated energy: power=201.26999999999998, J/img=0.007384510469208988, samples=3
+[INFO] Saturated energy: power=161.075, J/img=0.005923770696455699, samples=2
+[INFO] Saturated energy: power=183.505, J/img=0.008852259194529501, samples=2
+
+[INFO] === Measurement rep 5/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.4620, power=80.28W, energy=269.34J, time=3.35s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.4550, power=85.70W, energy=282.03J, time=3.29s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.0100, power=86.43W, energy=283.42J, time=3.28s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5971, power=81.75W, energy=280.57J, time=3.43s
+[INFO] Saturated energy: power=183.81, J/img=0.006775473015313254, samples=2
+[INFO] Saturated energy: power=192.40666666666667, J/img=0.00705928951309258, samples=3
+[INFO] Saturated energy: power=167.905, J/img=0.00806098977935773, samples=2
+
+[INFO] === Measurement rep 6/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.4620, power=84.11W, energy=275.53J, time=3.28s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.4550, power=78.84W, energy=274.64J, time=3.48s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.0100, power=79.37W, energy=278.91J, time=3.51s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5971, power=85.56W, energy=289.94J, time=3.39s
+[INFO] Saturated energy: power=206.0666666666667, J/img=0.00754003079355131, samples=3
+[INFO] Saturated energy: power=158.365, J/img=0.005835024763212027, samples=2
+[INFO] Saturated energy: power=177.465, J/img=0.0085190076754065, samples=2
+
+[INFO] === Measurement rep 7/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.4620, power=77.32W, energy=263.24J, time=3.40s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.4550, power=83.70W, energy=278.72J, time=3.33s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.0100, power=74.82W, energy=260.58J, time=3.48s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5971, power=85.26W, energy=278.54J, time=3.27s
+[INFO] Saturated energy: power=197.06000000000003, J/img=0.007227405773527507, samples=3
+[INFO] Saturated energy: power=178.28, J/img=0.006515994135945759, samples=2
+[INFO] Saturated energy: power=172.435, J/img=0.008276430890503589, samples=2
+
+[INFO] === Measurement rep 8/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.4620, power=77.45W, energy=247.44J, time=3.19s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.4550, power=79.69W, energy=273.28J, time=3.43s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.0100, power=82.58W, energy=278.88J, time=3.38s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5971, power=77.52W, energy=279.06J, time=3.60s
+[INFO] Saturated energy: power=159.86, J/img=0.006099068336188794, samples=2
+[INFO] Saturated energy: power=165.525, J/img=0.0062884037021341595, samples=2
+[INFO] Saturated energy: power=178.76500000000001, J/img=0.008721317551846122, samples=2
+
+[INFO] === Measurement rep 9/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.4620, power=82.36W, energy=268.79J, time=3.26s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.4550, power=81.41W, energy=274.73J, time=3.37s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.0100, power=71.01W, energy=244.94J, time=3.45s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5971, power=84.27W, energy=281.88J, time=3.35s
+[INFO] Saturated energy: power=191.75, J/img=0.007024873812312122, samples=3
+[INFO] Saturated energy: power=162.56, J/img=0.005972271333230991, samples=2
+[INFO] Saturated energy: power=175.595, J/img=0.008453273180355431, samples=2
+
+[INFO] === Measurement rep 10/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.4620, power=73.81W, energy=247.21J, time=3.35s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.4550, power=77.56W, energy=256.15J, time=3.30s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.0100, power=76.51W, energy=259.79J, time=3.40s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5971, power=83.87W, energy=300.98J, time=3.59s
+[INFO] Saturated energy: power=197.24666666666667, J/img=0.007309201250166119, samples=3
+[INFO] Saturated energy: power=182.52, J/img=0.0067886330672311335, samples=2
+[INFO] Saturated energy: power=177.285, J/img=0.008492634819235607, samples=2
+[INFO] Measuring dataloader floor (no forward passes)...
+[INFO] Loader floor: time=2.81s, energy=183.08J
+[RESULT] Accuracy Original:     0.4550 | Power: 78.34W | Energy: 279.25J
+[RESULT] Accuracy Unstructured: 0.0100 | Power: 77.35W | Energy: 272.34J
+[RESULT] Accuracy Collapsed:    0.5971 | Power: 91.73W | Energy: 329.36J
+[INFO] 10 measurement reps completed; full per-rep values are rows in the CSV.
+[RESULT] Original     FLOPs=4.835e+10 | latency=23.77 ms/batch | throughput=21540.9 img/s | peak_mem=1553.7 MiB | feature_maps=828.9 MiB
+[RESULT] Unstructured FLOPs=4.835e+10 | latency=23.03 ms/batch | throughput=22229.9 img/s | peak_mem=1553.7 MiB | feature_maps=828.9 MiB
+[RESULT] Collapsed    FLOPs=3.700e+10 | latency=29.39 ms/batch | throughput=17419.8 img/s | peak_mem=1393.6 MiB | feature_maps=780.2 MiB
+[RESULT] FLOPs Unstructured (theoretical/effective, kept for back-compat): 3.10e+10
+[RESULT] Storage (state_dict MiB): original=40.3, unstructured=40.3, collapsed=25.9
+
+[INFO] Extracting features and computing CKA...
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 2048), time=2.20s
+[INFO] Computing CKA: features_x=(5120, 2048), features_y=(5120, 2048)
+[INFO] CKA complete: score=1.000000, time=0.74s
+[INFO] CKA self-check (expect ~1.0): 1.000000
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 2048), time=2.40s
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 2048), time=2.52s
+[INFO] Computing CKA: features_x=(5120, 2048), features_y=(5120, 2048)
+[INFO] CKA complete: score=0.414542, time=0.01s
+[INFO] Computing CKA: features_x=(5120, 2048), features_y=(5120, 2048)
+[INFO] CKA complete: score=0.705743, time=0.08s
+
+[INFO] Evaluating Adversarial Robustness...
+[INFO] Running FGSM attack (epsilon=0.03)...
+       -> original Accuracy: 0.0957
+       -> unstructured Accuracy: 0.0039
+       -> collapsed Accuracy: 0.1406
+[INFO] Running PGD attack (epsilon=0.03)...
+       -> original Accuracy: 0.0293
+       -> unstructured Accuracy: 0.0039
+       -> collapsed Accuracy: 0.0664
+
+======================================================================
+Processing checkpoint 2/2
+Path: ../Tranfer/XceptionNet_Cifar100_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+======================================================================
+[INFO] Parsing experiment directory... ../Tranfer/XceptionNet_Cifar100_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+[INFO] Initializing baseline model...
+[INFO] Initializing architecture: model=XceptionNet, dataset=Cifar100
+Loading CIFAR-100 data for XceptionNet...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize XceptionNet with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] XceptionNet successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/XceptionNet_Cifar100_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 276
+[INFO] Weights loaded in 3.46s
+
+[INFO] BN running stats recalibrated over 100 batches (40 BN layers).
+[INFO] Loading original post-finetuning model...
+[INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_Cifar100_None_scorerall_epochs100_pretrain300
+[INFO] Found matching checkpoint: ../Tranfer/XceptionNet_Cifar100_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Initializing architecture: model=XceptionNet, dataset=Cifar100
+Loading CIFAR-100 data for XceptionNet...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize XceptionNet with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] XceptionNet successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/XceptionNet_Cifar100_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 276
+[INFO] Weights loaded in 3.67s
+
+[INFO] BN running stats recalibrated over 100 batches (40 BN layers).
+[INFO] Loading whole collapsed model artifact...
+[INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_Cifar100_None_scorerall_epochs100_pretrain300
+[INFO] Found matching checkpoint: ../Tranfer/XceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
+[INFO] Whole-model load completed in 2.36s
+[INFO] BN running stats recalibrated over 100 batches (40 BN layers).
+[INFO] Calculating dynamic sparsity to match collapse...
+[INFO] Target unstructured sparsity calculated at: 35.84%
+[INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/XceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
+[INFO] Initializing architecture: model=XceptionNet, dataset=Cifar100
+Loading CIFAR-100 data for XceptionNet...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize XceptionNet with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] XceptionNet successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/XceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 276
+[INFO] Weights loaded in 2.62s
+
+[WARN] torch-pruning is required for the structural baseline (pip install torch-pruning). Skipping structural baseline.
+
+[INFO] Evaluating model accuracy, power draw, and energy consumption (10 rep(s))...
+
+[INFO] === Measurement rep 1/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1203: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1311: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:292: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:307: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():

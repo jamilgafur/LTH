@@ -24,7 +24,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] XceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/XceptionNet_Cifar10_None_epochs200_pretrain200/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 6.40s
+[INFO] Weights loaded in 4.92s
 
 [INFO] BN running stats recalibrated over 100 batches (40 BN layers).
 [INFO] Loading original post-finetuning model...
@@ -38,31 +38,29 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] XceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/XceptionNet_Cifar10_None_epochs200_pretrain200/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 0.46s
+[INFO] Weights loaded in 2.51s
 
 [INFO] BN running stats recalibrated over 100 batches (40 BN layers).
 [INFO] Loading whole collapsed model artifact...
 [INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_Cifar10_None_epochs200_pretrain200
 [INFO] Found matching checkpoint: ../Tranfer/XceptionNet_Cifar10_None_epochs200_pretrain200/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
-[INFO] Whole-model load completed in 4.42s
+[INFO] Whole-model load completed in 0.73s
 [INFO] BN running stats recalibrated over 100 batches (40 BN layers).
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 36.16%
 [INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/XceptionNet_Cifar10_None_epochs200_pretrain200/checkpoints/final_JF_Unstructured_IMP_post200.pt
 [INFO] Initializing architecture: model=XceptionNet, dataset=Cifar10
 Loading CIFAR-10 data for XceptionNet...
+/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch_pruning/pruner/algorithms/base_pruner.py:91: UserWarning: ch_sparsity is deprecated in v1.3.0. Please use pruning_ratio.
+  warnings.warn(
 CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
 [DEBUG] Attempting to initialize XceptionNet with kwargs: dict_keys(['num_classes', 'one_batch'])
 [DEBUG] XceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/XceptionNet_Cifar10_None_epochs200_pretrain200/checkpoints/final_JF_Unstructured_IMP_post200.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 4.66s
+[INFO] Weights loaded in 0.36s
 
-[WARN] torch-pruning is required for the structural baseline (pip install torch-pruning). Skipping structural baseline.
 
-[INFO] Evaluating model accuracy, power draw, and energy consumption (10 rep(s))...
-
-[INFO] === Measurement rep 1/10 ===
-       -> Evaluating Baseline
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Starting structural L1 filter pruning for 200 epochs (target param reduction 36.16%)...
+StructuralL1:   0%|          | 0/200 [00:00<?, ?it/s]StructuralL1:   0%|          | 1/200 [00:21<1:12:38, 21.90s/it]StructuralL1:   1%|          | 2/200 [00:41<1:07:05, 20.33s/it]StructuralL1:   2%|▏         | 3/200 [01:00<1:05:45, 20.03s/it]StructuralL1:   2%|▏         | 4/200 [01:20<1:04:43, 19.81s/it]StructuralL1:   2%|▎         | 5/200 [01:39<1:03:55, 19.67s/it]StructuralL1:   3%|▎         | 6/200 [01:59<1:03:23, 19.61s/it]StructuralL1:   4%|▎         | 7/200 [02:18<1:02:36, 19.47s/it]StructuralL1:   4%|▍         | 8/200 [02:38<1:02:59, 19.68s/it]StructuralL1:   4%|▍         | 9/200 [02:59<1:03:29, 19.94s/it]StructuralL1:   5%|▌         | 10/200 [03:18<1:02:59, 19.89s/it]StructuralL1:   6%|▌         | 11/200 [03:38<1:02:46, 19.93s/it]StructuralL1:   6%|▌         | 12/200 [03:58<1:02:16, 19.87s/it]StructuralL1:   6%|▋         | 13/200 [04:18<1:02:09, 19.94s/it]StructuralL1:   7%|▋         | 14/200 [04:38<1:01:56, 19.98s/it]StructuralL1:   8%|▊         | 15/200 [04:58<1:01:40, 20.00s/it]StructuralL1:   8%|▊         | 16/200 [05:18<1:01:20, 20.00s/it]
