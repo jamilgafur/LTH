@@ -1,0 +1,614 @@
+[INFO] Searching for model checkpoints...
+[INFO] Found 2 'before' checkpoints.
+[INFO] Found 1 collapsed checkpoints.
+[INFO] Found 2 'after' checkpoints.
+======================================================================
+Starting Comparison Post-Processing Pipeline
+Model: ConvNeXt | Dataset: Cifar10 | Device: cuda
+Epochs Config (override): pre=100, post=300
+Output File: cka_results_ConvNeXt_Cifar10_pre100_post300.csv
+CUDA device: NVIDIA A40
+======================================================================
+
+======================================================================
+Processing checkpoint 1/2
+Path: ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
+======================================================================
+[INFO] Parsing experiment directory... ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
+[INFO] Initializing baseline model...
+[INFO] Initializing architecture: model=ConvNeXt, dataset=Cifar10
+Loading CIFAR-10 data for ConvNeXt...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize ConvNeXt with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] ConvNeXt successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 182
+[INFO] Weights loaded in 3.55s
+
+[INFO] Loading original post-finetuning model...
+[INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100
+[INFO] Found matching checkpoint: ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Initializing architecture: model=ConvNeXt, dataset=Cifar10
+Loading CIFAR-10 data for ConvNeXt...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize ConvNeXt with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] ConvNeXt successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 182
+[INFO] Weights loaded in 5.09s
+
+[INFO] Loading whole collapsed model artifact...
+[INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100
+[INFO] Found matching checkpoint: ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
+[INFO] Whole-model load completed in 0.20s
+[INFO] Calculating dynamic sparsity to match collapse...
+[INFO] Target unstructured sparsity calculated at: 90.88%
+[INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
+[INFO] Initializing architecture: model=ConvNeXt, dataset=Cifar10
+Loading CIFAR-10 data for ConvNeXt...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize ConvNeXt with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] ConvNeXt successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 182
+[INFO] Weights loaded in 4.84s
+
+[WARN] torch-pruning is required for the structural baseline (pip install torch-pruning). Skipping structural baseline.
+
+[INFO] Evaluating model accuracy, power draw, and energy consumption (10 rep(s))...
+
+[INFO] === Measurement rep 1/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7333, power=74.02W, energy=156.16J, time=2.11s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7465, power=70.90W, energy=154.44J, time=2.18s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7181, power=71.13W, energy=145.73J, time=2.05s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7163, power=71.77W, energy=142.18J, time=1.98s
+[INFO] Saturated energy: power=185.24, J/img=0.004409562952996019, samples=2
+[INFO] Saturated energy: power=180.24, J/img=0.004224783231371216, samples=2
+[INFO] Saturated energy: power=154.89499999999998, J/img=0.0020990175113187546, samples=2
+
+[INFO] === Measurement rep 2/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7333, power=73.21W, energy=148.02J, time=2.02s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7465, power=73.36W, energy=152.51J, time=2.08s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7181, power=73.98W, energy=152.65J, time=2.06s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7163, power=72.81W, energy=144.78J, time=1.99s
+[INFO] Saturated energy: power=186.51, J/img=0.004381485566513479, samples=2
+[INFO] Saturated energy: power=172.495, J/img=0.004053557670234653, samples=2
+[INFO] Saturated energy: power=157.925, J/img=0.0021368513429454207, samples=2
+
+[INFO] === Measurement rep 3/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7333, power=74.02W, energy=152.70J, time=2.06s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7465, power=75.15W, energy=154.88J, time=2.06s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7181, power=78.39W, energy=161.61J, time=2.06s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7163, power=75.91W, energy=147.65J, time=1.95s
+[INFO] Saturated energy: power=175.21, J/img=0.004120529806629444, samples=2
+[INFO] Saturated energy: power=178.58999999999997, J/img=0.0041457307679832155, samples=2
+[INFO] Saturated energy: power=166.39499999999998, J/img=0.0022648260198782307, samples=2
+
+[INFO] === Measurement rep 4/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7333, power=77.95W, energy=160.79J, time=2.06s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7465, power=76.56W, energy=158.19J, time=2.07s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7181, power=78.84W, energy=162.11J, time=2.06s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7163, power=80.26W, energy=159.20J, time=1.98s
+[INFO] Saturated energy: power=171.925, J/img=0.004088275776470475, samples=2
+[INFO] Saturated energy: power=170.72, J/img=0.003998712762924177, samples=2
+[INFO] Saturated energy: power=159.57, J/img=0.00216042435062102, samples=2
+
+[INFO] === Measurement rep 5/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7333, power=87.69W, energy=182.23J, time=2.08s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7465, power=91.98W, energy=186.79J, time=2.03s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7181, power=97.06W, energy=199.49J, time=2.06s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7163, power=79.66W, energy=158.62J, time=1.99s
+[INFO] Saturated energy: power=187.405, J/img=0.004428658440268548, samples=2
+[INFO] Saturated energy: power=190.985, J/img=0.004448554895694971, samples=2
+[INFO] Saturated energy: power=165.35999999999999, J/img=0.002238143391322357, samples=2
+
+[INFO] === Measurement rep 6/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7333, power=95.46W, energy=194.52J, time=2.04s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7465, power=103.03W, energy=210.10J, time=2.04s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7181, power=103.73W, energy=211.76J, time=2.04s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7163, power=82.17W, energy=159.16J, time=1.94s
+[INFO] Saturated energy: power=186.8, J/img=0.004438983131738672, samples=2
+[INFO] Saturated energy: power=189.72, J/img=0.004431531514928362, samples=2
+[INFO] Saturated energy: power=168.35, J/img=0.0022860105033032595, samples=2
+
+[INFO] === Measurement rep 7/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7333, power=110.91W, energy=230.59J, time=2.08s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7465, power=115.41W, energy=239.17J, time=2.07s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7181, power=117.45W, energy=243.80J, time=2.08s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7163, power=95.38W, energy=185.06J, time=1.94s
+[INFO] Saturated energy: power=232.72, J/img=0.0055695545555967275, samples=2
+[INFO] Saturated energy: power=231.69, J/img=0.005449506969269209, samples=2
+[INFO] Saturated energy: power=204.59333333333333, J/img=0.0027896848007330677, samples=3
+
+[INFO] === Measurement rep 8/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7333, power=137.53W, energy=284.24J, time=2.07s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7465, power=141.65W, energy=291.00J, time=2.05s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7181, power=140.43W, energy=290.67J, time=2.07s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7163, power=120.72W, energy=239.40J, time=1.98s
+[INFO] Saturated energy: power=177.02499999999998, J/img=0.0041973456848379085, samples=2
+[INFO] Saturated energy: power=187.835, J/img=0.0043933055960137905, samples=2
+[INFO] Saturated energy: power=165.9, J/img=0.0022451912513822827, samples=2
+
+[INFO] === Measurement rep 9/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7333, power=150.58W, energy=310.48J, time=2.06s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7465, power=145.38W, energy=303.67J, time=2.09s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7181, power=139.41W, energy=289.51J, time=2.08s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7163, power=105.05W, energy=204.44J, time=1.95s
+[INFO] Saturated energy: power=177.41000000000003, J/img=0.004186468102919038, samples=2
+[INFO] Saturated energy: power=175.76000000000002, J/img=0.0041318437055728975, samples=2
+[INFO] Saturated energy: power=172.95, J/img=0.002339923818902948, samples=2
+
+[INFO] === Measurement rep 10/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7333, power=129.59W, energy=270.82J, time=2.09s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7465, power=117.67W, energy=245.23J, time=2.08s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7181, power=112.41W, energy=228.04J, time=2.03s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7163, power=90.26W, energy=180.58J, time=2.00s
+[INFO] Saturated energy: power=184.16500000000002, J/img=0.004339420710311099, samples=2
+[INFO] Saturated energy: power=177.99, J/img=0.004132259395904839, samples=2
+[INFO] Saturated energy: power=166.325, J/img=0.0022659609718200407, samples=2
+[INFO] Measuring dataloader floor (no forward passes)...
+[INFO] Loader floor: time=1.83s, energy=132.65J
+[RESULT] Accuracy Original:     0.7465 | Power: 70.90W | Energy: 154.44J
+[RESULT] Accuracy Unstructured: 0.7181 | Power: 71.13W | Energy: 145.73J
+[RESULT] Accuracy Collapsed:    0.7163 | Power: 71.77W | Energy: 142.18J
+[INFO] 10 measurement reps completed; full per-rep values are rows in the CSV.
+[RESULT] Original     FLOPs=4.667e+10 | latency=11.78 ms/batch | throughput=43448.4 img/s | peak_mem=1385.5 MiB | feature_maps=537.0 MiB
+[RESULT] Unstructured FLOPs=4.667e+10 | latency=11.68 ms/batch | throughput=43819.2 img/s | peak_mem=1385.5 MiB | feature_maps=537.0 MiB
+[RESULT] Collapsed    FLOPs=1.271e+10 | latency=6.69 ms/batch | throughput=76494.7 img/s | peak_mem=794.8 MiB | feature_maps=318.0 MiB
+[RESULT] FLOPs Unstructured (theoretical/effective, kept for back-compat): 4.26e+09
+[RESULT] Storage (state_dict MiB): original=106.2, unstructured=106.2, collapsed=9.7
+
+[INFO] Extracting features and computing CKA...
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 768), time=1.38s
+[INFO] Computing CKA: features_x=(5120, 768), features_y=(5120, 768)
+[INFO] CKA complete: score=1.000000, time=0.09s
+[INFO] CKA self-check (expect ~1.0): 1.000000
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 768), time=1.69s
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 768), time=1.79s
+[INFO] Computing CKA: features_x=(5120, 768), features_y=(5120, 768)
+[INFO] CKA complete: score=0.771456, time=0.00s
+[INFO] Computing CKA: features_x=(5120, 768), features_y=(5120, 768)
+[INFO] CKA complete: score=0.562023, time=0.00s
+
+[INFO] Evaluating Adversarial Robustness...
+[INFO] Running FGSM attack (epsilon=0.03)...
+       -> original Accuracy: 0.3457
+       -> unstructured Accuracy: 0.2148
+       -> collapsed Accuracy: 0.2383
+[INFO] Running PGD attack (epsilon=0.03)...
+       -> original Accuracy: 0.2695
+       -> unstructured Accuracy: 0.1914
+       -> collapsed Accuracy: 0.1719
+
+======================================================================
+Processing checkpoint 2/2
+Path: ../Tranfer/ConvNeXt_Cifar10_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt
+======================================================================
+[INFO] Parsing experiment directory... ../Tranfer/ConvNeXt_Cifar10_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt
+[INFO] Initializing baseline model...
+[INFO] Initializing architecture: model=ConvNeXt, dataset=Cifar10
+Loading CIFAR-10 data for ConvNeXt...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize ConvNeXt with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] ConvNeXt successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar10_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 182
+[INFO] Weights loaded in 4.41s
+
+[INFO] Loading original post-finetuning model...
+[INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_Cifar10_None_scorerall_epochs300_pretrain100
+[INFO] Found matching checkpoint: ../Tranfer/ConvNeXt_Cifar10_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Initializing architecture: model=ConvNeXt, dataset=Cifar10
+Loading CIFAR-10 data for ConvNeXt...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize ConvNeXt with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] ConvNeXt successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar10_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 182
+[INFO] Weights loaded in 3.78s
+
+[INFO] Loading whole collapsed model artifact...
+[INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_Cifar10_None_scorerall_epochs300_pretrain100
+[INFO] Found matching checkpoint: ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
+[INFO] Whole-model load completed in 0.02s
+[INFO] Calculating dynamic sparsity to match collapse...
+[INFO] Target unstructured sparsity calculated at: 90.88%
+[INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
+[INFO] Initializing architecture: model=ConvNeXt, dataset=Cifar10
+Loading CIFAR-10 data for ConvNeXt...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize ConvNeXt with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] ConvNeXt successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 182
+[INFO] Weights loaded in 0.11s
+
+[WARN] torch-pruning is required for the structural baseline (pip install torch-pruning). Skipping structural baseline.
+
+[INFO] Evaluating model accuracy, power draw, and energy consumption (10 rep(s))...
+
+[INFO] === Measurement rep 1/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7333, power=72.50W, energy=147.90J, time=2.04s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7465, power=72.90W, energy=155.10J, time=2.13s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7181, power=72.59W, energy=147.73J, time=2.03s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7163, power=73.59W, energy=146.21J, time=1.99s
+[INFO] Saturated energy: power=185.115, J/img=0.0043776451705825935, samples=2
+[INFO] Saturated energy: power=190.14, J/img=0.004449937785452111, samples=2
+[INFO] Saturated energy: power=173.085, J/img=0.0023390102104197457, samples=2
+
+[INFO] === Measurement rep 2/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7333, power=75.77W, energy=156.86J, time=2.07s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7465, power=76.75W, energy=157.15J, time=2.05s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7181, power=75.23W, energy=151.64J, time=2.02s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7163, power=73.28W, energy=145.39J, time=1.98s
+[INFO] Saturated energy: power=216.59999999999997, J/img=0.005138484883425105, samples=2
+[INFO] Saturated energy: power=175.73000000000002, J/img=0.004100560266579337, samples=2
+[INFO] Saturated energy: power=163.165, J/img=0.002212340460260599, samples=2
+
+[INFO] === Measurement rep 3/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7333, power=84.49W, energy=172.35J, time=2.04s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7465, power=85.52W, energy=177.02J, time=2.07s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7181, power=88.47W, energy=180.64J, time=2.04s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7163, power=76.87W, energy=152.20J, time=1.98s
+[INFO] Saturated energy: power=220.53, J/img=0.005286286975739591, samples=2
+[INFO] Saturated energy: power=195.38, J/img=0.004580747627741879, samples=2
+[INFO] Saturated energy: power=158.04500000000002, J/img=0.00215443184832111, samples=2
+
+[INFO] === Measurement rep 4/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7333, power=85.91W, energy=177.34J, time=2.06s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7465, power=95.93W, energy=195.88J, time=2.04s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7181, power=93.26W, energy=192.59J, time=2.06s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7163, power=84.38W, energy=164.45J, time=1.95s
+[INFO] Saturated energy: power=174.0, J/img=0.0041321821073182375, samples=2
+[INFO] Saturated energy: power=189.32999999999998, J/img=0.004445813326826374, samples=2
+[INFO] Saturated energy: power=165.935, J/img=0.0022618953708984932, samples=2
+
+[INFO] === Measurement rep 5/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7333, power=103.25W, energy=211.97J, time=2.05s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7465, power=104.12W, energy=214.26J, time=2.06s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7181, power=101.00W, energy=210.23J, time=2.08s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7163, power=91.34W, energy=176.98J, time=1.94s
+[INFO] Saturated energy: power=174.075, J/img=0.004139035329340497, samples=2
+[INFO] Saturated energy: power=187.685, J/img=0.004419790173833354, samples=2
+[INFO] Saturated energy: power=168.21, J/img=0.0022732958061221454, samples=2
+
+[INFO] === Measurement rep 6/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7333, power=114.10W, energy=230.61J, time=2.02s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7465, power=116.82W, energy=240.47J, time=2.06s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7181, power=120.29W, energy=247.63J, time=2.06s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7163, power=99.29W, energy=199.70J, time=2.01s
+[INFO] Saturated energy: power=181.6, J/img=0.0042803557199275425, samples=2
+[INFO] Saturated energy: power=188.92499999999998, J/img=0.004385749604185357, samples=2
+[INFO] Saturated energy: power=177.59, J/img=0.002414442044395749, samples=2
+
+[INFO] === Measurement rep 7/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7333, power=143.56W, energy=291.66J, time=2.03s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7465, power=148.03W, energy=304.68J, time=2.06s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7181, power=150.16W, energy=309.69J, time=2.06s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7163, power=108.99W, energy=216.22J, time=1.98s
+[INFO] Saturated energy: power=176.56, J/img=0.004191880871328603, samples=2
+[INFO] Saturated energy: power=187.62, J/img=0.004394426759244246, samples=2
+[INFO] Saturated energy: power=179.48000000000002, J/img=0.002428074892876404, samples=2
+
+[INFO] === Measurement rep 8/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7333, power=142.13W, energy=288.16J, time=2.03s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7465, power=138.30W, energy=281.19J, time=2.03s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7181, power=133.56W, energy=276.79J, time=2.07s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7163, power=115.07W, energy=229.18J, time=1.99s
+[INFO] Saturated energy: power=225.14999999999998, J/img=0.005308048231499325, samples=2
+[INFO] Saturated energy: power=174.82500000000002, J/img=0.004072229126978049, samples=2
+[INFO] Saturated energy: power=163.68, J/img=0.002214328457216761, samples=2
+
+[INFO] === Measurement rep 9/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7333, power=129.75W, energy=262.59J, time=2.02s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7465, power=122.95W, energy=253.73J, time=2.06s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7181, power=103.42W, energy=214.71J, time=2.08s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7163, power=83.05W, energy=165.33J, time=1.99s
+[INFO] Saturated energy: power=194.29999999999998, J/img=0.004612627244801316, samples=2
+[INFO] Saturated energy: power=236.315, J/img=0.005513200884004339, samples=2
+[INFO] Saturated energy: power=170.735, J/img=0.0023072095849190136, samples=2
+
+[INFO] === Measurement rep 10/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7333, power=73.71W, energy=150.38J, time=2.04s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7465, power=73.08W, energy=149.31J, time=2.04s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7181, power=73.13W, energy=151.67J, time=2.07s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.7163, power=73.38W, energy=144.13J, time=1.96s
+[INFO] Saturated energy: power=180.81, J/img=0.0043055647913175805, samples=2
+[INFO] Saturated energy: power=188.10500000000002, J/img=0.004406476785957858, samples=2
+[INFO] Saturated energy: power=164.26, J/img=0.0022352549038852938, samples=2
+[INFO] Measuring dataloader floor (no forward passes)...
+[INFO] Loader floor: time=1.82s, energy=131.95J
+[RESULT] Accuracy Original:     0.7465 | Power: 72.90W | Energy: 155.10J
+[RESULT] Accuracy Unstructured: 0.7181 | Power: 72.59W | Energy: 147.73J
+[RESULT] Accuracy Collapsed:    0.7163 | Power: 73.59W | Energy: 146.21J
+[INFO] 10 measurement reps completed; full per-rep values are rows in the CSV.
+[RESULT] Original     FLOPs=4.667e+10 | latency=11.73 ms/batch | throughput=43661.9 img/s | peak_mem=1398.4 MiB | feature_maps=537.0 MiB
+[RESULT] Unstructured FLOPs=4.667e+10 | latency=11.64 ms/batch | throughput=43969.2 img/s | peak_mem=1398.4 MiB | feature_maps=537.0 MiB
+[RESULT] Collapsed    FLOPs=1.271e+10 | latency=6.70 ms/batch | throughput=76405.5 img/s | peak_mem=807.7 MiB | feature_maps=318.0 MiB
+[RESULT] FLOPs Unstructured (theoretical/effective, kept for back-compat): 4.26e+09
+[RESULT] Storage (state_dict MiB): original=106.2, unstructured=106.2, collapsed=9.7
+
+[INFO] Extracting features and computing CKA...
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 768), time=1.35s
+[INFO] Computing CKA: features_x=(5120, 768), features_y=(5120, 768)
+[INFO] CKA complete: score=1.000000, time=0.00s
+[INFO] CKA self-check (expect ~1.0): 1.000000
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 768), time=1.80s
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 768), time=1.70s
+[INFO] Computing CKA: features_x=(5120, 768), features_y=(5120, 768)
+[INFO] CKA complete: score=0.771456, time=0.00s
+[INFO] Computing CKA: features_x=(5120, 768), features_y=(5120, 768)
+[INFO] CKA complete: score=0.562023, time=0.00s
+
+[INFO] Evaluating Adversarial Robustness...
+[INFO] Running FGSM attack (epsilon=0.03)...
+       -> original Accuracy: 0.3457
+       -> unstructured Accuracy: 0.2148
+       -> collapsed Accuracy: 0.2383
+[INFO] Running PGD attack (epsilon=0.03)...
+       -> original Accuracy: 0.2695
+       -> unstructured Accuracy: 0.1914
+       -> collapsed Accuracy: 0.1719
+
+======================================================================
+[INFO] Saving final results...
+[INFO] Results successfully saved to 'cka_results_ConvNeXt_Cifar10_pre100_post300.csv'
+[INFO] Total successful experiments: 20
+[INFO] Total runtime: 698.35s
+
+======================================================================
+FINAL RESULTS
+======================================================================
+       model  dataset    gpu_name  pre_epochs  post_epochs                                                                                      model_before  intermediate_epoch  rep  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  flops_original  flops_unstructured  flops_collapsed  flops_unstructured_measured  latency_ms_original  latency_ms_unstructured  latency_ms_collapsed  throughput_imgs_original  throughput_imgs_unstructured  throughput_imgs_collapsed  peak_mem_mb_original  peak_mem_mb_unstructured  peak_mem_mb_collapsed  feature_maps_mb_original  feature_maps_mb_unstructured  feature_maps_mb_collapsed  storage_mb_original  storage_mb_unstructured  storage_mb_collapsed  cka_unstructured  cka_collapsed  acc_structural power_watts_structural energy_joules_structural flops_structural latency_ms_structural throughput_imgs_structural peak_mem_mb_structural feature_maps_mb_structural storage_mb_structural cka_structural params_structural sparsity_structural  gpu_util_original  gpu_clock_mhz_original  gpu_util_unstructured  gpu_clock_mhz_unstructured  gpu_util_collapsed  gpu_clock_mhz_collapsed gpu_util_structural gpu_clock_mhz_structural  eval_elapsed_s_original  eval_elapsed_s_unstructured  eval_elapsed_s_collapsed eval_elapsed_s_structural  n_power_samples_original  n_power_samples_unstructured  n_power_samples_collapsed n_power_samples_structural  loader_time_s  loader_joules  loader_n_samples  power_watts_saturated_original  power_watts_saturated_unstructured  power_watts_saturated_collapsed power_watts_saturated_structural  j_per_img_saturated_original  j_per_img_saturated_unstructured  j_per_img_saturated_collapsed j_per_img_saturated_structural  saturated_imgs_original  saturated_imgs_unstructured  saturated_imgs_collapsed saturated_imgs_structural  n_power_samples_saturated_original  n_power_samples_saturated_unstructured  n_power_samples_saturated_collapsed n_power_samples_saturated_structural  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
+0   ConvNeXt  Cifar10  NVIDIA A40         100          300            ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    0              0.7465            0.7181         0.7163                 70.90                  154.44                     71.13                      145.73                  71.77                   142.18    4.666609e+10        4.256056e+09     1.270992e+10                 4.666609e+10            11.784091                11.684366              6.693277              43448.407673                  43819.234916               76494.670009           1385.498047               1385.498047             794.836914                537.019531                    537.019531                 318.019531           106.211126               106.211126              9.703137          0.771456       0.562023             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               15.3                  1740.0                   17.0                      1740.0                10.5                   1740.0                None                     None                    2.178                        2.049                     1.981                      None                         3                             2                          2                       None          1.828         132.65                 2                          185.24                              180.24                           154.89                             None                      0.004410                          0.004225                       0.002099                           None             42265.239289                 42987.168723              74481.147611                      None                                   2                                       2                                    2                                 None               0.345703                   0.214844                0.238281              0.269531                  0.191406               0.171875
+1   ConvNeXt  Cifar10  NVIDIA A40         100          300            ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    1              0.7465            0.7181         0.7163                 73.36                  152.51                     73.98                      152.65                  72.81                   144.78    4.666609e+10        4.256056e+09     1.270992e+10                 4.666609e+10            11.623837                11.701235              6.702443              44047.417863                  43756.064232               76390.053958           1387.576660               1385.498047             794.836914                537.019531                    537.019531                 318.019531           106.211126               106.211126              9.703137          0.771456       0.562023             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               12.0                  1740.0                   19.5                      1740.0                11.5                   1740.0                None                     None                    2.079                        2.063                     1.989                      None                         3                             2                          2                       None          1.828         132.65                 2                          186.51                              172.50                           157.93                             None                      0.004381                          0.004054                       0.002137                           None             42968.781505                 42732.119757              74313.652935                      None                                   2                                       2                                    2                                 None               0.345703                   0.214844                0.238281              0.269531                  0.191406               0.171875
+2   ConvNeXt  Cifar10  NVIDIA A40         100          300            ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    2              0.7465            0.7181         0.7163                 75.15                  154.88                     78.39                      161.61                  75.91                   147.65    4.666609e+10        4.256056e+09     1.270992e+10                 4.666609e+10            11.625262                11.514360              6.739936              44042.016712                  44466.214459               75965.113491           1387.576660               1387.576660             796.915527                537.019531                    537.019531                 318.019531           106.211126               106.211126              9.703137          0.771456       0.562023             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               17.0                  1740.0                   12.0                      1740.0                 8.0                   1740.0                None                     None                    2.061                        2.062                     1.945                      None                         2                             3                          2                       None          1.828         132.65                 2                          175.21                              178.59                           166.39                             None                      0.004121                          0.004146                       0.002265                           None             42855.243981                 43225.650970              74713.380649                      None                                   2                                       2                                    2                                 None               0.345703                   0.214844                0.238281              0.269531                  0.191406               0.171875
+3   ConvNeXt  Cifar10  NVIDIA A40         100          300            ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    3              0.7465            0.7181         0.7163                 76.56                  158.19                     78.84                      162.11                  80.26                   159.20    4.666609e+10        4.256056e+09     1.270992e+10                 4.666609e+10            11.738245                11.660893              6.709237              43618.105598                  43907.444129               76312.703290           1389.655273               1389.655273             798.994141                537.019531                    537.019531                 318.019531           106.211126               106.211126              9.703137          0.771456       0.562023             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               11.5                  1740.0                   18.5                      1740.0                10.5                   1740.0                None                     None                    2.066                        2.056                     1.984                      None                         2                             2                          2                       None          1.828         132.65                 2                          171.93                              170.72                           159.57                             None                      0.004088                          0.003999                       0.002160                           None             42225.504151                 42998.278111              74984.560621                      None                                   2                                       2                                    2                                 None               0.345703                   0.214844                0.238281              0.269531                  0.191406               0.171875
+4   ConvNeXt  Cifar10  NVIDIA A40         100          300            ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    4              0.7465            0.7181         0.7163                 91.98                  186.79                     97.06                      199.49                  79.66                   158.62    4.666609e+10        4.256056e+09     1.270992e+10                 4.666609e+10            11.686966                11.584327              6.706886              43809.486708                  44197.649185               76339.447047           1391.733887               1391.733887             801.072754                537.019531                    537.019531                 318.019531           106.211126               106.211126              9.703137          0.771456       0.562023             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               12.0                  1740.0                   21.5                      1740.0                 9.5                   1740.0                None                     None                    2.031                        2.055                     1.991                      None                         3                             2                          2                       None          1.828         132.65                 2                          187.41                              190.99                           165.36                             None                      0.004429                          0.004449                       0.002238                           None             42647.544881                 43266.848667              74814.925840                      None                                   2                                       2                                    2                                 None               0.345703                   0.214844                0.238281              0.269531                  0.191406               0.171875
+5   ConvNeXt  Cifar10  NVIDIA A40         100          300            ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    5              0.7465            0.7181         0.7163                103.03                  210.10                    103.73                      211.76                  82.17                   159.16    4.666609e+10        4.256056e+09     1.270992e+10                 4.666609e+10            11.731214                11.655288              6.742734              43644.245375                  43928.558328               75933.585947           1393.812500               1393.812500             803.151367                537.019531                    537.019531                 318.019531           106.211126               106.211126              9.703137          0.771456       0.562023             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               15.0                  1740.0                   17.5                      1740.0                11.5                   1740.0                None                     None                    2.039                        2.041                     1.937                      None                         2                             2                          2                       None          1.828         132.65                 2                          186.80                              189.72                           168.35                             None                      0.004439                          0.004432                       0.002286                           None             42468.694831                 43105.348953              74200.001456                      None                                   2                                       2                                    2                                 None               0.345703                   0.214844                0.238281              0.269531                  0.191406               0.171875
+6   ConvNeXt  Cifar10  NVIDIA A40         100          300            ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    6              0.7465            0.7181         0.7163                115.41                  239.17                    117.45                      243.80                  95.38                   185.06    4.666609e+10        4.256056e+09     1.270992e+10                 4.666609e+10            11.762978                11.673512              6.744267              43526.393760                  43859.979644               75916.327854           1395.891113               1395.891113             805.229980                537.019531                    537.019531                 318.019531           106.211126               106.211126              9.703137          0.771456       0.562023             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               14.0                  1740.0                   11.7                      1740.0                 9.0                   1740.0                None                     None                    2.072                        2.076                     1.940                      None                         3                             3                          2                       None          1.828         132.65                 2                          232.72                              231.69                           204.59                             None                      0.005570                          0.005450                       0.002790                           None             42138.478563                 42699.541602              74584.347925                      None                                   2                                       2                                    3                                 None               0.345703                   0.214844                0.238281              0.269531                  0.191406               0.171875
+7   ConvNeXt  Cifar10  NVIDIA A40         100          300            ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    7              0.7465            0.7181         0.7163                141.65                  291.00                    140.43                      290.67                 120.72                   239.40    4.666609e+10        4.256056e+09     1.270992e+10                 4.666609e+10            11.729629                11.617709              6.697264              43650.144906                  44070.652038               76449.128762           1397.969727               1397.969727             807.308594                537.019531                    537.019531                 318.019531           106.211126               106.211126              9.703137          0.771456       0.562023             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               11.0                  1740.0                    9.3                      1740.0                 7.0                   1740.0                None                     None                    2.054                        2.070                     1.983                      None                         2                             3                          2                       None          1.828         132.65                 2                          177.02                              187.84                           165.90                             None                      0.004197                          0.004393                       0.002245                           None             42327.013604                 43158.222213              74840.456176                      None                                   2                                       2                                    2                                 None               0.345703                   0.214844                0.238281              0.269531                  0.191406               0.171875
+8   ConvNeXt  Cifar10  NVIDIA A40         100          300            ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    8              0.7465            0.7181         0.7163                145.38                  303.67                    139.41                      289.51                 105.05                   204.44    4.666609e+10        4.256056e+09     1.270992e+10                 4.666609e+10            11.613738                11.688840              6.700275              44085.721262                  43802.464633               76414.772073           1400.048340               1385.498047             794.836914                537.019531                    537.019531                 318.019531           106.211126               106.211126              9.703137          0.771456       0.562023             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               11.0                  1740.0                   11.3                      1740.0                 8.0                   1740.0                None                     None                    2.089                        2.077                     1.946                      None                         3                             3                          2                       None          1.828         132.65                 2                          177.41                              175.76                           172.95                             None                      0.004186                          0.004132                       0.002340                           None             42538.657361                 42917.849742              74335.489710                      None                                   2                                       2                                    2                                 None               0.345703                   0.214844                0.238281              0.269531                  0.191406               0.171875
+9   ConvNeXt  Cifar10  NVIDIA A40         100          300            ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    9              0.7465            0.7181         0.7163                117.67                  245.23                    112.41                      228.04                  90.26                   180.58    4.666609e+10        4.256056e+09     1.270992e+10                 4.666609e+10            11.625494                11.531466              6.774515              44041.137603                  44400.253759               75577.363429           1387.576660               1387.576660             796.915527                537.019531                    537.019531                 318.019531           106.211126               106.211126              9.703137          0.771456       0.562023             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               13.0                  1740.0                   12.0                      1740.0                 9.5                   1740.0                None                     None                    2.084                        2.029                     2.001                      None                         3                             2                          2                       None          1.828         132.65                 2                          184.17                              177.99                           166.32                             None                      0.004339                          0.004132                       0.002266                           None             42683.248458                 43454.798325              74709.824089                      None                                   2                                       2                                    2                                 None               0.345703                   0.214844                0.238281              0.269531                  0.191406               0.171875
+10  ConvNeXt  Cifar10  NVIDIA A40         100          300  ../Tranfer/ConvNeXt_Cifar10_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    0              0.7465            0.7181         0.7163                 72.90                  155.10                     72.59                      147.73                  73.59                   146.21    4.666609e+10        4.256056e+09     1.270992e+10                 4.666609e+10            11.726464                11.644523              6.701086              43661.925941                  43969.167762               76405.521463           1398.405273               1398.405273             807.744141                537.019531                    537.019531                 318.019531           106.211126               106.211126              9.703137          0.771456       0.562023             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.0                  1740.0                   18.0                      1740.0                10.0                   1740.0                None                     None                    2.127                        2.035                     1.987                      None                         3                             2                          2                       None          1.820         131.95                 2                          185.12                              190.14                           173.09                             None                      0.004378                          0.004450                       0.002339                           None             42429.423753                 43068.873289              74452.292909                      None                                   2                                       2                                    2                                 None               0.345703                   0.214844                0.238281              0.269531                  0.191406               0.171875
+11  ConvNeXt  Cifar10  NVIDIA A40         100          300  ../Tranfer/ConvNeXt_Cifar10_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    1              0.7465            0.7181         0.7163                 76.75                  157.15                     75.23                      151.64                  73.28                   145.39    4.666609e+10        4.256056e+09     1.270992e+10                 4.666609e+10            11.685435                11.574086              6.714413              43815.227085                  44236.753148               76253.875475           1400.483887               1400.483887             809.822754                537.019531                    537.019531                 318.019531           106.211126               106.211126              9.703137          0.771456       0.562023             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               18.5                  1740.0                   15.0                      1740.0                 7.0                   1740.0                None                     None                    2.047                        2.016                     1.984                      None                         2                             2                          2                       None          1.820         131.95                 2                          216.60                              175.73                           163.16                             None                      0.005138                          0.004101                       0.002212                           None             42294.663878                 43342.939605              74952.420732                      None                                   2                                       2                                    2                                 None               0.345703                   0.214844                0.238281              0.269531                  0.191406               0.171875
+12  ConvNeXt  Cifar10  NVIDIA A40         100          300  ../Tranfer/ConvNeXt_Cifar10_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    2              0.7465            0.7181         0.7163                 85.52                  177.02                     88.47                      180.64                  76.87                   152.20    4.666609e+10        4.256056e+09     1.270992e+10                 4.666609e+10            11.727235                11.626422              6.748317              43659.054356                  44037.622332               75870.771340           1402.562500               1402.562500             811.901367                537.019531                    537.019531                 318.019531           106.211126               106.211126              9.703137          0.771456       0.562023             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               12.3                  1740.0                   19.5                      1740.0                11.5                   1740.0                None                     None                    2.070                        2.042                     1.980                      None                         3                             2                          2                       None          1.820         131.95                 2                          220.53                              195.38                           158.05                             None                      0.005286                          0.004581                       0.002154                           None             42334.419376                 42798.174535              74637.413147                      None                                   2                                       2                                    2                                 None               0.345703                   0.214844                0.238281              0.269531                  0.191406               0.171875
+13  ConvNeXt  Cifar10  NVIDIA A40         100          300  ../Tranfer/ConvNeXt_Cifar10_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    3              0.7465            0.7181         0.7163                 95.93                  195.88                     93.26                      192.59                  84.38                   164.45    4.666609e+10        4.256056e+09     1.270992e+10                 4.666609e+10            11.748841                11.659339              6.739733              43578.764942                  43913.294706               75967.403181           1404.641113               1404.641113             813.979980                537.019531                    537.019531                 318.019531           106.211126               106.211126              9.703137          0.771456       0.562023             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               15.5                  1740.0                   17.3                      1740.0                12.0                   1740.0                None                     None                    2.042                        2.065                     1.949                      None                         2                             3                          2                       None          1.820         131.95                 2                          174.00                              189.33                           165.94                             None                      0.004132                          0.004446                       0.002262                           None             42398.772348                 43048.547822              74380.080361                      None                                   2                                       2                                    2                                 None               0.345703                   0.214844                0.238281              0.269531                  0.191406               0.171875
+14  ConvNeXt  Cifar10  NVIDIA A40         100          300  ../Tranfer/ConvNeXt_Cifar10_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    4              0.7465            0.7181         0.7163                104.12                  214.26                    101.00                      210.23                  91.34                   176.98    4.666609e+10        4.256056e+09     1.270992e+10                 4.666609e+10            11.729462                11.715566              6.690392              43650.764121                  43702.539048               76527.653325           1406.719727               1394.248047             803.586914                537.019531                    537.019531                 318.019531           106.211126               106.211126              9.703137          0.771456       0.562023             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               12.0                  1732.5                   15.7                      1740.0                11.0                   1740.0                None                     None                    2.058                        2.082                     1.938                      None                         2                             3                          2                       None          1.820         131.95                 2                          174.07                              187.69                           168.21                             None                      0.004139                          0.004420                       0.002273                           None             42359.700001                 42610.435717              75182.112985                      None                                   2                                       2                                    2                                 None               0.345703                   0.214844                0.238281              0.269531                  0.191406               0.171875
+15  ConvNeXt  Cifar10  NVIDIA A40         100          300  ../Tranfer/ConvNeXt_Cifar10_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    5              0.7465            0.7181         0.7163                116.82                  240.47                    120.29                      247.63                  99.29                   199.70    4.666609e+10        4.256056e+09     1.270992e+10                 4.666609e+10            11.616685                11.515448              6.731013              44074.536855                  44462.013399               76065.818563           1396.326660               1396.326660             805.665527                537.019531                    537.019531                 318.019531           106.211126               106.211126              9.703137          0.771456       0.562023             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               11.0                  1740.0                   18.5                      1740.0                11.5                   1740.0                None                     None                    2.058                        2.058                     2.011                      None                         2                             2                          2                       None          1.820         131.95                 2                          181.60                              188.92                           177.59                             None                      0.004280                          0.004386                       0.002414                           None             42572.724573                 43549.620002              74659.439880                      None                                   2                                       2                                    2                                 None               0.345703                   0.214844                0.238281              0.269531                  0.191406               0.171875
+16  ConvNeXt  Cifar10  NVIDIA A40         100          300  ../Tranfer/ConvNeXt_Cifar10_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    6              0.7465            0.7181         0.7163                148.03                  304.68                    150.16                      309.69                 108.99                   216.22    4.666609e+10        4.256056e+09     1.270992e+10                 4.666609e+10            11.744235                11.632091              6.706275              43595.856323                  44016.161128               76346.404352           1398.405273               1398.405273             807.744141                537.019531                    537.019531                 318.019531           106.211126               106.211126              9.703137          0.771456       0.562023             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               14.0                  1732.5                   19.0                      1740.0                 7.5                   1740.0                None                     None                    2.058                        2.062                     1.984                      None                         2                             2                          2                       None          1.820         131.95                 2                          176.56                              187.62                           179.48                             None                      0.004192                          0.004394                       0.002428                           None             42450.149692                 43026.942811              75032.554798                      None                                   2                                       2                                    2                                 None               0.345703                   0.214844                0.238281              0.269531                  0.191406               0.171875
+17  ConvNeXt  Cifar10  NVIDIA A40         100          300  ../Tranfer/ConvNeXt_Cifar10_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    7              0.7465            0.7181         0.7163                138.30                  281.19                    133.56                      276.79                 115.07                   229.18    4.666609e+10        4.256056e+09     1.270992e+10                 4.666609e+10            11.677016                11.571826              6.756149              43846.818862                  44245.395473               75782.818586           1400.483887               1400.483887             809.822754                537.019531                    537.019531                 318.019531           106.211126               106.211126              9.703137          0.771456       0.562023             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               12.0                  1735.0                   12.0                      1740.0                 8.5                   1740.0                None                     None                    2.033                        2.072                     1.992                      None                         3                             2                          2                       None          1.820         131.95                 2                          225.15                              174.83                           163.68                             None                      0.005308                          0.004072                       0.002214                           None             42728.928357                 43123.557084              74969.644545                      None                                   2                                       2                                    2                                 None               0.345703                   0.214844                0.238281              0.269531                  0.191406               0.171875
+18  ConvNeXt  Cifar10  NVIDIA A40         100          300  ../Tranfer/ConvNeXt_Cifar10_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    8              0.7465            0.7181         0.7163                122.95                  253.73                    103.42                      214.71                  83.05                   165.33    4.666609e+10        4.256056e+09     1.270992e+10                 4.666609e+10            11.734758                11.638158              6.693034              43631.064087                  43993.214623               76497.449938           1402.562500               1402.562500             811.901367                537.019531                    537.019531                 318.019531           106.211126               106.211126              9.703137          0.771456       0.562023             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               16.0                  1740.0                   11.5                      1740.0                10.0                   1740.0                None                     None                    2.064                        2.076                     1.991                      None                         2                             2                          2                       None          1.820         131.95                 2                          194.30                              236.31                           170.74                             None                      0.004613                          0.005513                       0.002307                           None             42395.651934                 43015.118391              75220.916281                      None                                   2                                       2                                    2                                 None               0.345703                   0.214844                0.238281              0.269531                  0.191406               0.171875
+19  ConvNeXt  Cifar10  NVIDIA A40         100          300  ../Tranfer/ConvNeXt_Cifar10_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    9              0.7465            0.7181         0.7163                 73.08                  149.31                     73.13                      151.67                  73.38                   144.13    4.666609e+10        4.256056e+09     1.270992e+10                 4.666609e+10            11.761280                11.661549              6.738837              43532.677024                  43904.974339               75977.503999           1404.641113               1404.641113             813.979980                537.019531                    537.019531                 318.019531           106.211126               106.211126              9.703137          0.771456       0.562023             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               12.5                  1732.5                   16.0                      1740.0                 8.0                   1740.0                None                     None                    2.043                        2.074                     1.964                      None                         2                             3                          2                       None          1.820         131.95                 2                          180.81                              188.11                           164.26                             None                      0.004306                          0.004406                       0.002235                           None             42257.773743                 43020.202102              74694.005911                      None                                   2                                       2                                    2                                 None               0.345703                   0.214844                0.238281              0.269531                  0.191406               0.171875

@@ -7,7 +7,7 @@ Starting Comparison Post-Processing Pipeline
 Model: ConvNeXt | Dataset: tinyimagenet | Device: cuda
 Epochs Config (override): pre=300, post=100
 Output File: cka_results_ConvNeXt_tinyimagenet_pre300_post100.csv
-CUDA device: NVIDIA A40
+CUDA device: NVIDIA A100 80GB PCIe
 ======================================================================
 
 ======================================================================
@@ -23,7 +23,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 4.36s
+[INFO] Weights loaded in 7.36s
 
 [INFO] Loading original post-finetuning model...
 [INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs100_pretrain300
@@ -35,12 +35,12 @@ Loading Tiny ImageNet data for ConvNeXt...
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 6.99s
+[INFO] Weights loaded in 3.63s
 
 [INFO] Loading whole collapsed model artifact...
 [INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs100_pretrain300
 [INFO] Found matching checkpoint: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
-[INFO] Whole-model load completed in 1.09s
+[INFO] Whole-model load completed in 0.21s
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 96.99%
 [INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
@@ -51,7 +51,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 6.92s
+[INFO] Weights loaded in 5.30s
 
 [WARN] torch-pruning is required for the structural baseline (pip install torch-pruning). Skipping structural baseline.
 
@@ -63,28 +63,28 @@ Loading Tiny ImageNet data for ConvNeXt...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4296, power=100.38W, energy=665.66J, time=6.63s
+[INFO] Evaluation complete: acc=0.4296, power=89.58W, energy=646.74J, time=7.22s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4122, power=103.99W, energy=652.23J, time=6.27s
+[INFO] Evaluation complete: acc=0.4122, power=83.83W, energy=414.20J, time=4.94s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4092, power=98.14W, energy=639.12J, time=6.51s
+[INFO] Evaluation complete: acc=0.4092, power=85.80W, energy=434.73J, time=5.07s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4421, power=84.05W, energy=535.05J, time=6.37s
-[INFO] Saturated energy: power=179.165, J/img=0.018542894177016666, samples=2
-[INFO] Saturated energy: power=174.38, J/img=0.017880955844295103, samples=2
-[INFO] Saturated energy: power=169.98000000000002, J/img=0.00778308974680966, samples=2
+[INFO] Evaluation complete: acc=0.4421, power=81.22W, energy=386.64J, time=4.76s
+[INFO] Saturated energy: power=180.155, J/img=0.015526696551662214, samples=2
+[INFO] Saturated energy: power=177.45, J/img=0.0152280759520647, samples=2
+[INFO] Saturated energy: power=182.8033333333333, J/img=0.005264125795945914, samples=3
 
 [INFO] === Measurement rep 2/10 ===
        -> Evaluating Baseline
@@ -92,28 +92,28 @@ Loading Tiny ImageNet data for ConvNeXt...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4296, power=110.54W, energy=675.13J, time=6.11s
+[INFO] Evaluation complete: acc=0.4296, power=97.24W, energy=477.74J, time=4.91s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4122, power=107.46W, energy=689.95J, time=6.42s
+[INFO] Evaluation complete: acc=0.4122, power=94.70W, energy=761.57J, time=8.04s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4092, power=103.05W, energy=656.57J, time=6.37s
+[INFO] Evaluation complete: acc=0.4092, power=95.48W, energy=498.40J, time=5.22s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4421, power=87.56W, energy=499.44J, time=5.70s
-[INFO] Saturated energy: power=187.98, J/img=0.01941323987699923, samples=2
-[INFO] Saturated energy: power=183.12, J/img=0.018864379177490873, samples=2
-[INFO] Saturated energy: power=158.225, J/img=0.007232394898109298, samples=2
+[INFO] Evaluation complete: acc=0.4421, power=78.18W, energy=376.92J, time=4.82s
+[INFO] Saturated energy: power=173.91, J/img=0.014924857314848607, samples=2
+[INFO] Saturated energy: power=166.29500000000002, J/img=0.014247639881770899, samples=2
+[INFO] Saturated energy: power=186.38, J/img=0.005347641465078612, samples=3
 
 [INFO] === Measurement rep 3/10 ===
        -> Evaluating Baseline
@@ -121,28 +121,28 @@ Loading Tiny ImageNet data for ConvNeXt...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4296, power=107.10W, energy=662.26J, time=6.18s
+[INFO] Evaluation complete: acc=0.4296, power=100.30W, energy=501.74J, time=5.00s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4122, power=116.09W, energy=736.61J, time=6.35s
+[INFO] Evaluation complete: acc=0.4122, power=110.64W, energy=550.29J, time=4.97s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4092, power=112.00W, energy=741.61J, time=6.62s
+[INFO] Evaluation complete: acc=0.4092, power=87.07W, energy=652.04J, time=7.49s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4421, power=86.39W, energy=528.72J, time=6.12s
-[INFO] Saturated energy: power=187.255, J/img=0.019390341514586715, samples=2
-[INFO] Saturated energy: power=195.905, J/img=0.020166441078230835, samples=2
-[INFO] Saturated energy: power=190.35, J/img=0.008685670307010028, samples=3
+[INFO] Evaluation complete: acc=0.4421, power=81.35W, energy=415.94J, time=5.11s
+[INFO] Saturated energy: power=166.95499999999998, J/img=0.01440258554610439, samples=2
+[INFO] Saturated energy: power=210.92000000000002, J/img=0.01842871526343435, samples=2
+[INFO] Saturated energy: power=179.07999999999998, J/img=0.005145320481374227, samples=2
 
 [INFO] === Measurement rep 4/10 ===
        -> Evaluating Baseline
@@ -150,28 +150,28 @@ Loading Tiny ImageNet data for ConvNeXt...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4296, power=108.10W, energy=765.16J, time=7.08s
+[INFO] Evaluation complete: acc=0.4296, power=91.48W, energy=486.77J, time=5.32s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4122, power=106.69W, energy=662.30J, time=6.21s
+[INFO] Evaluation complete: acc=0.4122, power=91.56W, energy=476.32J, time=5.20s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4092, power=104.62W, energy=671.70J, time=6.42s
+[INFO] Evaluation complete: acc=0.4092, power=101.11W, energy=585.93J, time=5.79s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4421, power=87.55W, energy=511.82J, time=5.85s
-[INFO] Saturated energy: power=193.7, J/img=0.020034550316631792, samples=2
-[INFO] Saturated energy: power=188.81, J/img=0.019478549370267353, samples=2
-[INFO] Saturated energy: power=163.66, J/img=0.007443964402690978, samples=2
+[INFO] Evaluation complete: acc=0.4421, power=79.58W, energy=485.05J, time=6.09s
+[INFO] Saturated energy: power=161.4, J/img=0.013821833645520002, samples=2
+[INFO] Saturated energy: power=181.275, J/img=0.015583500143079817, samples=2
+[INFO] Saturated energy: power=205.63666666666668, J/img=0.005904298860677998, samples=3
 
 [INFO] === Measurement rep 5/10 ===
        -> Evaluating Baseline
@@ -179,28 +179,28 @@ Loading Tiny ImageNet data for ConvNeXt...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4296, power=111.67W, energy=701.02J, time=6.28s
+[INFO] Evaluation complete: acc=0.4296, power=95.21W, energy=501.72J, time=5.27s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4122, power=114.46W, energy=724.31J, time=6.33s
+[INFO] Evaluation complete: acc=0.4122, power=92.14W, energy=479.11J, time=5.20s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4092, power=111.94W, energy=706.22J, time=6.31s
+[INFO] Evaluation complete: acc=0.4092, power=98.60W, energy=525.06J, time=5.33s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4421, power=87.42W, energy=513.00J, time=5.87s
-[INFO] Saturated energy: power=188.32, J/img=0.0194319617728718, samples=2
-[INFO] Saturated energy: power=182.51, J/img=0.018716176384726252, samples=2
-[INFO] Saturated energy: power=162.06, J/img=0.0073731134308119934, samples=2
+[INFO] Evaluation complete: acc=0.4421, power=82.58W, energy=450.01J, time=5.45s
+[INFO] Saturated energy: power=166.71, J/img=0.014349871997795085, samples=2
+[INFO] Saturated energy: power=157.18, J/img=0.013482860458817908, samples=2
+[INFO] Saturated energy: power=183.77999999999997, J/img=0.005311671143593492, samples=3
 
 [INFO] === Measurement rep 6/10 ===
        -> Evaluating Baseline
@@ -208,28 +208,28 @@ Loading Tiny ImageNet data for ConvNeXt...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4296, power=106.89W, energy=646.09J, time=6.04s
+[INFO] Evaluation complete: acc=0.4296, power=107.74W, energy=538.79J, time=5.00s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4122, power=102.52W, energy=643.54J, time=6.28s
+[INFO] Evaluation complete: acc=0.4122, power=92.05W, energy=483.50J, time=5.25s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4092, power=104.95W, energy=642.96J, time=6.13s
+[INFO] Evaluation complete: acc=0.4092, power=102.52W, energy=540.75J, time=5.27s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4421, power=86.34W, energy=519.63J, time=6.02s
-[INFO] Saturated energy: power=192.97, J/img=0.019925689103661992, samples=2
-[INFO] Saturated energy: power=181.19, J/img=0.018655317400449088, samples=2
-[INFO] Saturated energy: power=164.445, J/img=0.007489405544782928, samples=2
+[INFO] Evaluation complete: acc=0.4421, power=78.42W, energy=426.54J, time=5.44s
+[INFO] Saturated energy: power=232.035, J/img=0.019967231041614394, samples=2
+[INFO] Saturated energy: power=166.71, J/img=0.014266523824012636, samples=2
+[INFO] Saturated energy: power=167.585, J/img=0.004799622873784882, samples=2
 
 [INFO] === Measurement rep 7/10 ===
        -> Evaluating Baseline
@@ -237,28 +237,28 @@ Loading Tiny ImageNet data for ConvNeXt...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4296, power=109.50W, energy=697.85J, time=6.37s
+[INFO] Evaluation complete: acc=0.4296, power=91.48W, energy=524.34J, time=5.73s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4122, power=107.52W, energy=707.42J, time=6.58s
+[INFO] Evaluation complete: acc=0.4122, power=92.40W, energy=497.09J, time=5.38s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4092, power=100.39W, energy=739.10J, time=7.36s
+[INFO] Evaluation complete: acc=0.4092, power=97.91W, energy=549.72J, time=5.61s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4421, power=86.68W, energy=546.89J, time=6.31s
-[INFO] Saturated energy: power=179.85, J/img=0.01867644802879284, samples=2
-[INFO] Saturated energy: power=186.10500000000002, J/img=0.01923547396436334, samples=2
-[INFO] Saturated energy: power=159.025, J/img=0.007234114969551606, samples=2
+[INFO] Evaluation complete: acc=0.4421, power=80.03W, energy=407.53J, time=5.09s
+[INFO] Saturated energy: power=192.21, J/img=0.01654242216809894, samples=2
+[INFO] Saturated energy: power=222.89, J/img=0.0190949111985078, samples=2
+[INFO] Saturated energy: power=157.625, J/img=0.004518605440620098, samples=2
 
 [INFO] === Measurement rep 8/10 ===
        -> Evaluating Baseline
@@ -266,28 +266,28 @@ Loading Tiny ImageNet data for ConvNeXt...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4296, power=107.98W, energy=693.20J, time=6.42s
+[INFO] Evaluation complete: acc=0.4296, power=97.91W, energy=783.83J, time=8.01s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4122, power=98.09W, energy=912.60J, time=9.30s
+[INFO] Evaluation complete: acc=0.4122, power=93.44W, energy=746.11J, time=7.98s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4092, power=109.79W, energy=734.14J, time=6.69s
+[INFO] Evaluation complete: acc=0.4092, power=93.73W, energy=602.32J, time=6.43s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4421, power=85.37W, energy=584.32J, time=6.84s
-[INFO] Saturated energy: power=189.945, J/img=0.01967580442930587, samples=2
-[INFO] Saturated energy: power=187.765, J/img=0.019254382679226818, samples=2
-[INFO] Saturated energy: power=164.505, J/img=0.007490784387698333, samples=2
+[INFO] Evaluation complete: acc=0.4421, power=82.13W, energy=507.61J, time=6.18s
+[INFO] Saturated energy: power=230.96, J/img=0.019911338477918546, samples=2
+[INFO] Saturated energy: power=153.66500000000002, J/img=0.013207217261357153, samples=2
+[INFO] Saturated energy: power=194.35333333333332, J/img=0.005571665313712942, samples=3
 
 [INFO] === Measurement rep 9/10 ===
        -> Evaluating Baseline
@@ -295,28 +295,28 @@ Loading Tiny ImageNet data for ConvNeXt...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4296, power=104.61W, energy=674.96J, time=6.45s
+[INFO] Evaluation complete: acc=0.4296, power=94.82W, energy=710.28J, time=7.49s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4122, power=106.18W, energy=740.46J, time=6.97s
+[INFO] Evaluation complete: acc=0.4122, power=96.36W, energy=691.53J, time=7.18s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4092, power=107.58W, energy=688.06J, time=6.40s
+[INFO] Evaluation complete: acc=0.4092, power=101.61W, energy=610.11J, time=6.00s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4421, power=86.67W, energy=557.62J, time=6.43s
-[INFO] Saturated energy: power=185.775, J/img=0.019231721671188577, samples=2
-[INFO] Saturated energy: power=177.82, J/img=0.01829212051431014, samples=2
-[INFO] Saturated energy: power=172.02, J/img=0.00783426776421156, samples=2
+[INFO] Evaluation complete: acc=0.4421, power=82.30W, energy=502.18J, time=6.10s
+[INFO] Saturated energy: power=232.935, J/img=0.0200221548652368, samples=2
+[INFO] Saturated energy: power=207.70999999999998, J/img=0.01778537634013064, samples=2
+[INFO] Saturated energy: power=189.5, J/img=0.005548297633986661, samples=3
 
 [INFO] === Measurement rep 10/10 ===
        -> Evaluating Baseline
@@ -324,37 +324,37 @@ Loading Tiny ImageNet data for ConvNeXt...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4296, power=111.78W, energy=680.75J, time=6.09s
+[INFO] Evaluation complete: acc=0.4296, power=85.52W, energy=599.76J, time=7.01s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4122, power=104.94W, energy=767.85J, time=7.32s
+[INFO] Evaluation complete: acc=0.4122, power=98.11W, energy=728.36J, time=7.42s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4092, power=103.04W, energy=707.68J, time=6.87s
+[INFO] Evaluation complete: acc=0.4092, power=105.67W, energy=610.57J, time=5.78s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4421, power=85.13W, energy=555.31J, time=6.52s
-[INFO] Saturated energy: power=182.82, J/img=0.0188174920555823, samples=2
-[INFO] Saturated energy: power=179.99, J/img=0.018448286315958417, samples=2
-[INFO] Saturated energy: power=193.33, J/img=0.008829913960131152, samples=3
+[INFO] Evaluation complete: acc=0.4421, power=78.71W, energy=492.98J, time=6.26s
+[INFO] Saturated energy: power=165.24, J/img=0.014384934528838864, samples=2
+[INFO] Saturated energy: power=158.405, J/img=0.013646770429382424, samples=2
+[INFO] Saturated energy: power=216.76333333333332, J/img=0.0063385401934231205, samples=3
 [INFO] Measuring dataloader floor (no forward passes)...
-[INFO] Loader floor: time=7.97s, energy=589.11J
-[RESULT] Accuracy Original:     0.4122 | Power: 103.99W | Energy: 652.23J
-[RESULT] Accuracy Unstructured: 0.4092 | Power: 98.14W | Energy: 639.12J
-[RESULT] Accuracy Collapsed:    0.4421 | Power: 84.05W | Energy: 535.05J
+[INFO] Loader floor: time=6.71s, energy=482.17J
+[RESULT] Accuracy Original:     0.4122 | Power: 83.83W | Energy: 414.20J
+[RESULT] Accuracy Unstructured: 0.4092 | Power: 85.80W | Energy: 434.73J
+[RESULT] Accuracy Collapsed:    0.4421 | Power: 81.22W | Energy: 386.64J
 [INFO] 10 measurement reps completed; full per-rep values are rows in the CSV.
-[RESULT] Original     FLOPs=2.334e+10 | latency=6.64 ms/batch | throughput=9645.7 img/s | peak_mem=812.9 MiB | feature_maps=268.0 MiB
-[RESULT] Unstructured FLOPs=2.334e+10 | latency=6.57 ms/batch | throughput=9736.3 img/s | peak_mem=812.9 MiB | feature_maps=268.0 MiB
-[RESULT] Collapsed    FLOPs=4.873e+09 | latency=2.94 ms/batch | throughput=21805.6 img/s | peak_mem=329.8 MiB | feature_maps=128.5 MiB
+[RESULT] Original     FLOPs=2.334e+10 | latency=5.56 ms/batch | throughput=11513.2 img/s | peak_mem=812.9 MiB | feature_maps=268.0 MiB
+[RESULT] Unstructured FLOPs=2.334e+10 | latency=5.55 ms/batch | throughput=11538.7 img/s | peak_mem=812.9 MiB | feature_maps=268.0 MiB
+[RESULT] Collapsed    FLOPs=4.873e+09 | latency=1.92 ms/batch | throughput=33295.9 img/s | peak_mem=329.8 MiB | feature_maps=128.5 MiB
 [RESULT] FLOPs Unstructured (theoretical/effective, kept for back-compat): 7.04e+08
 [RESULT] Storage (state_dict MiB): original=106.8, unstructured=106.8, collapsed=3.2
 
@@ -370,9 +370,9 @@ Loading Tiny ImageNet data for ConvNeXt...
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 768), time=0.46s
+[INFO] Feature extraction complete: shape=(640, 768), time=0.60s
 [INFO] Computing CKA: features_x=(640, 768), features_y=(640, 768)
-[INFO] CKA complete: score=1.000000, time=0.02s
+[INFO] CKA complete: score=1.000000, time=0.01s
 [INFO] CKA self-check (expect ~1.0): 1.000000
 [INFO] Extracting features from 10 batches (Classifier-free extraction)...
 [INFO] Feature extraction batch 1/10
@@ -385,7 +385,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 768), time=0.56s
+[INFO] Feature extraction complete: shape=(640, 768), time=0.37s
 [INFO] Extracting features from 10 batches (Classifier-free extraction)...
 [INFO] Feature extraction batch 1/10
 [INFO] Feature extraction batch 2/10
@@ -397,11 +397,11 @@ Loading Tiny ImageNet data for ConvNeXt...
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 768), time=0.54s
+[INFO] Feature extraction complete: shape=(640, 768), time=0.43s
 [INFO] Computing CKA: features_x=(640, 768), features_y=(640, 768)
 [INFO] CKA complete: score=0.584933, time=0.00s
 [INFO] Computing CKA: features_x=(640, 768), features_y=(640, 768)
-[INFO] CKA complete: score=0.516372, time=0.00s
+[INFO] CKA complete: score=0.516371, time=0.00s
 
 [INFO] Evaluating Adversarial Robustness...
 [INFO] Running FGSM attack (epsilon=0.03)...
@@ -410,7 +410,7 @@ Loading Tiny ImageNet data for ConvNeXt...
        -> collapsed Accuracy: 0.0781
 [INFO] Running PGD attack (epsilon=0.03)...
        -> original Accuracy: 0.0156
-       -> unstructured Accuracy: 0.0938
+       -> unstructured Accuracy: 0.0781
        -> collapsed Accuracy: 0.0312
 
 ======================================================================
@@ -426,7 +426,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_tinyimagenet_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 2.15s
+[INFO] Weights loaded in 5.28s
 
 [INFO] Loading original post-finetuning model...
 [INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_tinyimagenet_None_scorerall_epochs100_pretrain300
@@ -438,7 +438,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_tinyimagenet_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 3.94s
+[INFO] Weights loaded in 5.97s
 
 [INFO] Loading whole collapsed model artifact...
 [INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_tinyimagenet_None_scorerall_epochs100_pretrain300
@@ -463,3 +463,386 @@ Loading Tiny ImageNet data for ConvNeXt...
 [INFO] === Measurement rep 1/10 ===
        -> Evaluating Baseline
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4296, power=81.92W, energy=441.27J, time=5.39s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4122, power=88.37W, energy=517.49J, time=5.86s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4092, power=95.31W, energy=535.66J, time=5.62s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4421, power=74.55W, energy=474.77J, time=6.37s
+[INFO] Saturated energy: power=202.79500000000002, J/img=0.017450623727133855, samples=2
+[INFO] Saturated energy: power=156.45499999999998, J/img=0.01339302392716855, samples=2
+[INFO] Saturated energy: power=209.06000000000003, J/img=0.005995939590231701, samples=3
+
+[INFO] === Measurement rep 2/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4296, power=84.09W, energy=651.24J, time=7.74s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4122, power=99.36W, energy=618.55J, time=6.23s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4092, power=104.08W, energy=598.59J, time=5.75s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4421, power=81.56W, energy=511.95J, time=6.28s
+[INFO] Saturated energy: power=174.855, J/img=0.014963503365364412, samples=2
+[INFO] Saturated energy: power=164.685, J/img=0.014143517295847716, samples=2
+[INFO] Saturated energy: power=189.20666666666668, J/img=0.005401640765595928, samples=3
+
+[INFO] === Measurement rep 3/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4296, power=101.74W, energy=767.54J, time=7.54s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4122, power=82.52W, energy=535.78J, time=6.49s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4092, power=96.75W, energy=569.57J, time=5.89s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4421, power=80.39W, energy=477.31J, time=5.94s
+[INFO] Saturated energy: power=176.38, J/img=0.015179326970516983, samples=2
+[INFO] Saturated energy: power=172.145, J/img=0.014853255387022084, samples=2
+[INFO] Saturated energy: power=182.21, J/img=0.005251096560342892, samples=3
+
+[INFO] === Measurement rep 4/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4296, power=101.15W, energy=629.75J, time=6.23s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4122, power=93.44W, energy=575.49J, time=6.16s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4092, power=87.30W, energy=512.64J, time=5.87s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4421, power=75.62W, energy=449.82J, time=5.95s
+[INFO] Saturated energy: power=227.79500000000002, J/img=0.019490600837920997, samples=2
+[INFO] Saturated energy: power=158.04, J/img=0.01354026669271938, samples=2
+[INFO] Saturated energy: power=155.83499999999998, J/img=0.004462953193346247, samples=2
+
+[INFO] === Measurement rep 5/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4296, power=116.31W, energy=705.32J, time=6.06s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4122, power=93.11W, energy=647.04J, time=6.95s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4092, power=90.82W, energy=564.32J, time=6.21s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4421, power=80.20W, energy=488.97J, time=6.10s
+[INFO] Saturated energy: power=191.16333333333333, J/img=0.016450173396418626, samples=3
+[INFO] Saturated energy: power=162.935, J/img=0.014051441379810032, samples=2
+[INFO] Saturated energy: power=184.2733333333333, J/img=0.005288501057920246, samples=3
+
+[INFO] === Measurement rep 6/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4296, power=85.21W, energy=482.91J, time=5.67s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4122, power=90.19W, energy=477.66J, time=5.30s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4092, power=80.83W, energy=507.62J, time=6.28s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4421, power=77.60W, energy=447.11J, time=5.76s
+[INFO] Saturated energy: power=167.365, J/img=0.014309716929850702, samples=2
+[INFO] Saturated energy: power=163.23499999999999, J/img=0.014040239034851553, samples=2
+[INFO] Saturated energy: power=182.79, J/img=0.005249070191101448, samples=3
+
+[INFO] === Measurement rep 7/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4296, power=92.83W, energy=531.68J, time=5.73s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4122, power=83.69W, energy=555.63J, time=6.64s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4092, power=96.57W, energy=488.90J, time=5.06s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4421, power=78.77W, energy=477.33J, time=6.06s
+[INFO] Saturated energy: power=171.99, J/img=0.01481939110415031, samples=2
+[INFO] Saturated energy: power=183.01, J/img=0.015667765003467057, samples=2
+[INFO] Saturated energy: power=220.53, J/img=0.006314996081286192, samples=2
+
+[INFO] === Measurement rep 8/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4296, power=86.94W, energy=492.73J, time=5.67s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4122, power=101.72W, energy=578.32J, time=5.69s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4092, power=87.30W, energy=487.90J, time=5.59s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4421, power=78.49W, energy=420.84J, time=5.36s
+[INFO] Saturated energy: power=237.005, J/img=0.020425204920238287, samples=2
+[INFO] Saturated energy: power=208.83499999999998, J/img=0.01792327745216175, samples=2
+[INFO] Saturated energy: power=161.635, J/img=0.004657941055990269, samples=2
+
+[INFO] === Measurement rep 9/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4296, power=101.62W, energy=560.16J, time=5.51s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4122, power=112.11W, energy=631.43J, time=5.63s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4092, power=94.17W, energy=678.25J, time=7.20s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4421, power=77.77W, energy=424.70J, time=5.46s
+[INFO] Saturated energy: power=234.79999999999998, J/img=0.020232996384948895, samples=3
+[INFO] Saturated energy: power=152.22, J/img=0.013141189711015733, samples=2
+[INFO] Saturated energy: power=188.19666666666663, J/img=0.005440427248723986, samples=3
+
+[INFO] === Measurement rep 10/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4296, power=109.63W, energy=608.57J, time=5.55s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4122, power=97.56W, energy=555.85J, time=5.70s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4092, power=103.84W, energy=586.72J, time=5.65s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4421, power=82.05W, energy=478.69J, time=5.83s
+[INFO] Saturated energy: power=239.625, J/img=0.021396886454844524, samples=2
+[INFO] Saturated energy: power=155.22, J/img=0.01333948246505345, samples=2
+[INFO] Saturated energy: power=182.49, J/img=0.0052319837086197505, samples=3
+[INFO] Measuring dataloader floor (no forward passes)...
+[INFO] Loader floor: time=5.93s, energy=425.61J
+[RESULT] Accuracy Original:     0.4122 | Power: 88.37W | Energy: 517.49J
+[RESULT] Accuracy Unstructured: 0.4092 | Power: 95.31W | Energy: 535.66J
+[RESULT] Accuracy Collapsed:    0.4421 | Power: 74.55W | Energy: 474.77J
+[INFO] 10 measurement reps completed; full per-rep values are rows in the CSV.
+[RESULT] Original     FLOPs=2.334e+10 | latency=5.56 ms/batch | throughput=11511.6 img/s | peak_mem=823.0 MiB | feature_maps=268.0 MiB
+[RESULT] Unstructured FLOPs=2.334e+10 | latency=5.56 ms/batch | throughput=11506.9 img/s | peak_mem=823.0 MiB | feature_maps=268.0 MiB
+[RESULT] Collapsed    FLOPs=4.873e+09 | latency=1.92 ms/batch | throughput=33328.9 img/s | peak_mem=339.7 MiB | feature_maps=128.5 MiB
+[RESULT] FLOPs Unstructured (theoretical/effective, kept for back-compat): 7.04e+08
+[RESULT] Storage (state_dict MiB): original=106.8, unstructured=106.8, collapsed=3.2
+
+[INFO] Extracting features and computing CKA...
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(640, 768), time=0.44s
+[INFO] Computing CKA: features_x=(640, 768), features_y=(640, 768)
+[INFO] CKA complete: score=1.000000, time=0.00s
+[INFO] CKA self-check (expect ~1.0): 1.000000
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(640, 768), time=0.56s
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(640, 768), time=0.53s
+[INFO] Computing CKA: features_x=(640, 768), features_y=(640, 768)
+[INFO] CKA complete: score=0.584933, time=0.00s
+[INFO] Computing CKA: features_x=(640, 768), features_y=(640, 768)
+[INFO] CKA complete: score=0.516371, time=0.00s
+
+[INFO] Evaluating Adversarial Robustness...
+[INFO] Running FGSM attack (epsilon=0.03)...
+       -> original Accuracy: 0.1875
+       -> unstructured Accuracy: 0.2500
+       -> collapsed Accuracy: 0.0781
+[INFO] Running PGD attack (epsilon=0.03)...
+       -> original Accuracy: 0.0156
+       -> unstructured Accuracy: 0.0781
+       -> collapsed Accuracy: 0.0312
+
+======================================================================
+[INFO] Saving final results...
+[INFO] Results successfully saved to 'cka_results_ConvNeXt_tinyimagenet_pre300_post100.csv'
+[INFO] Total successful experiments: 20
+[INFO] Total runtime: 1576.91s
+
+======================================================================
+FINAL RESULTS
+======================================================================
+       model       dataset               gpu_name  pre_epochs  post_epochs                                                                                           model_before  intermediate_epoch  rep  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  flops_original  flops_unstructured  flops_collapsed  flops_unstructured_measured  latency_ms_original  latency_ms_unstructured  latency_ms_collapsed  throughput_imgs_original  throughput_imgs_unstructured  throughput_imgs_collapsed  peak_mem_mb_original  peak_mem_mb_unstructured  peak_mem_mb_collapsed  feature_maps_mb_original  feature_maps_mb_unstructured  feature_maps_mb_collapsed  storage_mb_original  storage_mb_unstructured  storage_mb_collapsed  cka_unstructured  cka_collapsed  acc_structural power_watts_structural energy_joules_structural flops_structural latency_ms_structural throughput_imgs_structural peak_mem_mb_structural feature_maps_mb_structural storage_mb_structural cka_structural params_structural sparsity_structural  gpu_util_original  gpu_clock_mhz_original  gpu_util_unstructured  gpu_clock_mhz_unstructured  gpu_util_collapsed  gpu_clock_mhz_collapsed gpu_util_structural gpu_clock_mhz_structural  eval_elapsed_s_original  eval_elapsed_s_unstructured  eval_elapsed_s_collapsed eval_elapsed_s_structural  n_power_samples_original  n_power_samples_unstructured  n_power_samples_collapsed n_power_samples_structural  loader_time_s  loader_joules  loader_n_samples  power_watts_saturated_original  power_watts_saturated_unstructured  power_watts_saturated_collapsed power_watts_saturated_structural  j_per_img_saturated_original  j_per_img_saturated_unstructured  j_per_img_saturated_collapsed j_per_img_saturated_structural  saturated_imgs_original  saturated_imgs_unstructured  saturated_imgs_collapsed saturated_imgs_structural  n_power_samples_saturated_original  n_power_samples_saturated_unstructured  n_power_samples_saturated_collapsed n_power_samples_saturated_structural  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
+0   ConvNeXt  tinyimagenet  NVIDIA A100 80GB PCIe         300          100            ../Tranfer/ConvNeXt_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    0              0.4122            0.4092         0.4421                 83.83                  414.20                     85.80                      434.73                  81.22                   386.64    2.334017e+10        7.035076e+08     4.872782e+09                 2.334017e+10             5.558861                 5.546531              1.922157              11513.150364                  11538.743300               33295.930718            812.928711                812.928711             329.765625                267.986328                    267.986328                 128.486328           106.768499               106.768499              3.230605          0.584933       0.516371             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               18.2                  1410.0                   16.8                      1410.0                 6.4                   1410.0                None                     None                    4.941                        5.067                     4.760                      None                         5                             6                          5                       None          6.710         482.17                 7                          180.16                              177.45                           182.80                             None                      0.015527                          0.015228                       0.005264                           None             11739.401964                 11795.281595              35473.452088                      None                                   2                                       2                                    3                                 None                 0.1875                       0.25                0.078125              0.015625                  0.078125                0.03125
+1   ConvNeXt  tinyimagenet  NVIDIA A100 80GB PCIe         300          100            ../Tranfer/ConvNeXt_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    1              0.4122            0.4092         0.4421                 94.70                  761.57                     95.48                      498.40                  78.18                   376.92    2.334017e+10        7.035076e+08     4.872782e+09                 2.334017e+10             5.559637                 5.541933              1.929694              11511.543329                  11548.317589               33165.873273            812.928711                812.928711             329.765625                267.986328                    267.986328                 128.486328           106.768499               106.768499              3.230605          0.584933       0.516371             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               11.6                  1410.0                   17.3                      1410.0                 6.0                   1410.0                None                     None                    8.042                        5.220                     4.821                      None                         8                             6                          5                       None          6.710         482.17                 7                          173.91                              166.30                           186.38                             None                      0.014925                          0.014248                       0.005348                           None             11730.438493                 11746.488373              35459.913675                      None                                   2                                       2                                    3                                 None                 0.1875                       0.25                0.078125              0.015625                  0.078125                0.03125
+2   ConvNeXt  tinyimagenet  NVIDIA A100 80GB PCIe         300          100            ../Tranfer/ConvNeXt_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    2              0.4122            0.4092         0.4421                110.64                  550.29                     87.07                      652.04                  81.35                   415.94    2.334017e+10        7.035076e+08     4.872782e+09                 2.334017e+10             5.569957                 5.630734              1.929782              11490.214783                  11366.190536               33164.360974            813.838379                813.838379             330.675293                267.986328                    267.986328                 128.486328           106.768499               106.768499              3.230605          0.584933       0.516371             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               16.6                  1410.0                   12.8                      1410.0                 6.7                   1410.0                None                     None                    4.973                        7.489                     5.113                      None                         5                             8                          6                       None          6.710         482.17                 7                          166.95                              210.92                           179.08                             None                      0.014403                          0.018429                       0.005145                           None             11700.797207                 11596.276236              35408.626539                      None                                   2                                       2                                    2                                 None                 0.1875                       0.25                0.078125              0.015625                  0.078125                0.03125
+3   ConvNeXt  tinyimagenet  NVIDIA A100 80GB PCIe         300          100            ../Tranfer/ConvNeXt_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    3              0.4122            0.4092         0.4421                 91.56                  476.32                    101.11                      585.93                  79.58                   485.05    2.334017e+10        7.035076e+08     4.872782e+09                 2.334017e+10             5.552387                 5.547821              1.919722              11526.573524                  11536.061087               33338.167309            814.748047                813.838379             330.675293                267.986328                    267.986328                 128.486328           106.768499               106.768499              3.230605          0.584933       0.516371             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               18.0                  1410.0                   15.2                      1410.0                 5.6                   1410.0                None                     None                    5.202                        5.795                     6.095                      None                         6                             6                          7                       None          6.710         482.17                 7                          161.40                              181.28                           205.64                             None                      0.013822                          0.015584                       0.005904                           None             11750.665248                 11750.046966              35571.196777                      None                                   2                                       2                                    3                                 None                 0.1875                       0.25                0.078125              0.015625                  0.078125                0.03125
+4   ConvNeXt  tinyimagenet  NVIDIA A100 80GB PCIe         300          100            ../Tranfer/ConvNeXt_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    4              0.4122            0.4092         0.4421                 92.14                  479.11                     98.60                      525.06                  82.58                   450.01    2.334017e+10        7.035076e+08     4.872782e+09                 2.334017e+10             5.566688                 5.563336              1.930126              11496.961901                  11503.888954               33158.450264            814.748047                813.838379             330.675293                267.986328                    267.986328                 128.486328           106.768499               106.768499              3.230605          0.584933       0.516371             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               17.3                  1410.0                   17.5                      1410.0                 6.0                   1410.0                None                     None                    5.200                        5.325                     5.450                      None                         6                             6                          6                       None          6.710         482.17                 7                          166.71                              157.18                           183.78                             None                      0.014350                          0.013483                       0.005312                           None             11733.336742                 11780.893057              35588.049096                      None                                   2                                       2                                    3                                 None                 0.1875                       0.25                0.078125              0.015625                  0.078125                0.03125
+5   ConvNeXt  tinyimagenet  NVIDIA A100 80GB PCIe         300          100            ../Tranfer/ConvNeXt_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    5              0.4122            0.4092         0.4421                 92.05                  483.50                    102.52                      540.75                  78.42                   426.54    2.334017e+10        7.035076e+08     4.872782e+09                 2.334017e+10             5.567030                 5.547517              1.917995              11496.254795                  11536.693370               33368.175433            814.748047                813.838379             330.675293                267.986328                    267.986328                 128.486328           106.768499               106.768499              3.230605          0.584933       0.516371             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               15.2                  1410.0                   16.7                      1410.0                 4.7                   1410.0                None                     None                    5.252                        5.275                     5.439                      None                         6                             6                          6                       None          6.710         482.17                 7                          232.03                              166.71                           167.59                             None                      0.019967                          0.014267                       0.004800                           None             11693.739074                 11758.354666              35524.789947                      None                                   2                                       2                                    2                                 None                 0.1875                       0.25                0.078125              0.015625                  0.078125                0.03125
+6   ConvNeXt  tinyimagenet  NVIDIA A100 80GB PCIe         300          100            ../Tranfer/ConvNeXt_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    6              0.4122            0.4092         0.4421                 92.40                  497.09                     97.91                      549.72                  80.03                   407.53    2.334017e+10        7.035076e+08     4.872782e+09                 2.334017e+10             5.580563                 5.556696              1.926358              11468.376502                  11517.635541               33223.308778            813.838379                813.838379             330.675293                267.986328                    267.986328                 128.486328           106.768499               106.768499              3.230605          0.584933       0.516371             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               17.7                  1410.0                   14.8                      1410.0                 6.7                   1410.0                None                     None                    5.380                        5.615                     5.092                      None                         6                             6                          6                       None          6.710         482.17                 7                          192.21                              222.89                           157.62                             None                      0.016542                          0.019095                       0.004519                           None             11729.286796                 11784.938586              35509.128109                      None                                   2                                       2                                    2                                 None                 0.1875                       0.25                0.078125              0.015625                  0.078125                0.03125
+7   ConvNeXt  tinyimagenet  NVIDIA A100 80GB PCIe         300          100            ../Tranfer/ConvNeXt_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    7              0.4122            0.4092         0.4421                 93.44                  746.11                     93.73                      602.32                  82.13                   507.61    2.334017e+10        7.035076e+08     4.872782e+09                 2.334017e+10             5.563050                 5.554755              1.927680              11504.481179                  11521.659834               33200.531351            813.838379                813.838379             330.675293                267.986328                    267.986328                 128.486328           106.768499               106.768499              3.230605          0.584933       0.516371             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               11.4                  1410.0                   15.0                      1410.0                 5.3                   1410.0                None                     None                    7.985                        6.426                     6.181                      None                         8                             7                          7                       None          6.710         482.17                 7                          230.96                              153.67                           194.35                             None                      0.019911                          0.013207                       0.005572                           None             11671.860692                 11759.166241              35527.770899                      None                                   2                                       2                                    3                                 None                 0.1875                       0.25                0.078125              0.015625                  0.078125                0.03125
+8   ConvNeXt  tinyimagenet  NVIDIA A100 80GB PCIe         300          100            ../Tranfer/ConvNeXt_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    8              0.4122            0.4092         0.4421                 96.36                  691.53                    101.61                      610.11                  82.30                   502.18    2.334017e+10        7.035076e+08     4.872782e+09                 2.334017e+10             5.553920                 5.548446              1.948706              11523.392423                  11534.760497               32842.313251            812.928711                812.928711             329.765625                267.986328                    267.986328                 128.486328           106.768499               106.768499              3.230605          0.584933       0.516371             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               12.0                  1410.0                   16.5                      1410.0                 4.6                   1410.0                None                     None                    7.176                        6.005                     6.102                      None                         8                             6                          7                       None          6.710         482.17                 7                          232.94                              207.71                           189.50                             None                      0.020022                          0.017785                       0.005548                           None             11705.677076                 11792.199654              34938.561877                      None                                   2                                       2                                    3                                 None                 0.1875                       0.25                0.078125              0.015625                  0.078125                0.03125
+9   ConvNeXt  tinyimagenet  NVIDIA A100 80GB PCIe         300          100            ../Tranfer/ConvNeXt_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    9              0.4122            0.4092         0.4421                 98.11                  728.36                    105.67                      610.57                  78.71                   492.98    2.334017e+10        7.035076e+08     4.872782e+09                 2.334017e+10             5.628256                 5.547438              1.949238              11371.195698                  11536.856348               32833.336416            812.928711                812.928711             329.765625                267.986328                    267.986328                 128.486328           106.768499               106.768499              3.230605          0.584933       0.516371             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               13.0                  1410.0                   15.7                      1410.0                 5.4                   1410.0                None                     None                    7.424                        5.778                     6.263                      None                         8                             6                          7                       None          6.710         482.17                 7                          165.24                              158.41                           216.76                             None                      0.014385                          0.013647                       0.006339                           None             11558.192496                 11749.770863              35042.001778                      None                                   2                                       2                                    3                                 None                 0.1875                       0.25                0.078125              0.015625                  0.078125                0.03125
+10  ConvNeXt  tinyimagenet  NVIDIA A100 80GB PCIe         300          100  ../Tranfer/ConvNeXt_tinyimagenet_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    0              0.4122            0.4092         0.4421                 88.37                  517.49                     95.31                      535.66                  74.55                   474.77    2.334017e+10        7.035076e+08     4.872782e+09                 2.334017e+10             5.559597                 5.561885              1.920258              11511.626165                  11506.890596               33328.861640            822.998047                822.998047             339.709961                267.986328                    267.986328                 128.486328           106.768499               106.768499              3.230605          0.584933       0.516371             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               14.3                  1410.0                   16.3                      1410.0                 4.7                   1410.0                None                     None                    5.856                        5.620                     6.368                      None                         6                             6                          7                       None          5.934         425.61                 6                          202.80                              156.45                           209.06                             None                      0.017451                          0.013393                       0.005996                           None             11693.207038                 11789.764254              35476.811151                      None                                   2                                       2                                    3                                 None                 0.1875                       0.25                0.078125              0.015625                  0.078125                0.03125
+11  ConvNeXt  tinyimagenet  NVIDIA A100 80GB PCIe         300          100  ../Tranfer/ConvNeXt_tinyimagenet_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    1              0.4122            0.4092         0.4421                 99.36                  618.55                    104.08                      598.59                  81.56                   511.95    2.334017e+10        7.035076e+08     4.872782e+09                 2.334017e+10             5.557602                 5.556354              1.918765              11515.758845                  11518.345477               33354.791378            822.998047                822.998047             339.709961                267.986328                    267.986328                 128.486328           106.768499               106.768499              3.230605          0.584933       0.516371             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               13.9                  1410.0                   16.8                      1410.0                 5.3                   1410.0                None                     None                    6.225                        5.751                     6.277                      None                         7                             6                          7                       None          5.934         425.61                 6                          174.85                              164.69                           189.21                             None                      0.014964                          0.014144                       0.005402                           None             11758.078086                 11715.615665              35685.799182                      None                                   2                                       2                                    3                                 None                 0.1875                       0.25                0.078125              0.015625                  0.078125                0.03125
+12  ConvNeXt  tinyimagenet  NVIDIA A100 80GB PCIe         300          100  ../Tranfer/ConvNeXt_tinyimagenet_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    2              0.4122            0.4092         0.4421                 82.52                  535.78                     96.75                      569.57                  80.39                   477.31    2.334017e+10        7.035076e+08     4.872782e+09                 2.334017e+10             5.568074                 5.556117              1.917856              11494.100976                  11518.836380               33370.597238            822.998047                822.998047             339.709961                267.986328                    267.986328                 128.486328           106.768499               106.768499              3.230605          0.584933       0.516371             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               13.9                  1410.0                   15.7                      1410.0                 5.2                   1410.0                None                     None                    6.493                        5.887                     5.938                      None                         7                             6                          6                       None          5.934         425.61                 6                          176.38                              172.15                           182.21                             None                      0.015179                          0.014853                       0.005251                           None             11697.404658                 11790.312737              35501.169114                      None                                   2                                       2                                    3                                 None                 0.1875                       0.25                0.078125              0.015625                  0.078125                0.03125
+13  ConvNeXt  tinyimagenet  NVIDIA A100 80GB PCIe         300          100  ../Tranfer/ConvNeXt_tinyimagenet_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    3              0.4122            0.4092         0.4421                 93.44                  575.49                     87.30                      512.64                  75.62                   449.82    2.334017e+10        7.035076e+08     4.872782e+09                 2.334017e+10             5.559162                 5.557195              1.925019              11512.527374                  11516.601064               33246.421566            822.998047                822.998047             339.709961                267.986328                    267.986328                 128.486328           106.768499               106.768499              3.230605          0.584933       0.516371             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               11.9                  1410.0                   14.3                      1410.0                 4.8                   1410.0                None                     None                    6.159                        5.872                     5.949                      None                         7                             6                          6                       None          5.934         425.61                 6                          227.80                              158.04                           155.83                             None                      0.019491                          0.013540                       0.004463                           None             11772.311223                 11745.306650              35525.280736                      None                                   2                                       2                                    2                                 None                 0.1875                       0.25                0.078125              0.015625                  0.078125                0.03125
+14  ConvNeXt  tinyimagenet  NVIDIA A100 80GB PCIe         300          100  ../Tranfer/ConvNeXt_tinyimagenet_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    4              0.4122            0.4092         0.4421                 93.11                  647.04                     90.82                      564.32                  80.20                   488.97    2.334017e+10        7.035076e+08     4.872782e+09                 2.334017e+10             5.553866                 5.579448              1.922048              11523.505408                  11470.668863               33297.815620            823.907715                823.907715             340.619629                267.986328                    267.986328                 128.486328           106.768499               106.768499              3.230605          0.584933       0.516371             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               15.0                  1410.0                   14.1                      1410.0                 6.1                   1410.0                None                     None                    6.949                        6.214                     6.097                      None                         7                             7                          7                       None          5.934         425.61                 6                          191.16                              162.94                           184.27                             None                      0.016450                          0.014051                       0.005289                           None             11781.181884                 11670.153033              35537.062120                      None                                   3                                       2                                    3                                 None                 0.1875                       0.25                0.078125              0.015625                  0.078125                0.03125
+15  ConvNeXt  tinyimagenet  NVIDIA A100 80GB PCIe         300          100  ../Tranfer/ConvNeXt_tinyimagenet_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    5              0.4122            0.4092         0.4421                 90.19                  477.66                     80.83                      507.62                  77.60                   447.11    2.334017e+10        7.035076e+08     4.872782e+09                 2.334017e+10             5.553813                 5.550757              1.919133              11523.614933                  11529.959327               33348.395711            824.817383                823.907715             340.619629                267.986328                    267.986328                 128.486328           106.768499               106.768499              3.230605          0.584933       0.516371             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               15.7                  1410.0                   13.7                      1410.0                 5.7                   1410.0                None                     None                    5.296                        6.280                     5.761                      None                         6                             7                          6                       None          5.934         425.61                 6                          167.37                              163.23                           182.79                             None                      0.014310                          0.014040                       0.005249                           None             11784.529032                 11791.343542              35508.601134                      None                                   2                                       2                                    3                                 None                 0.1875                       0.25                0.078125              0.015625                  0.078125                0.03125
+16  ConvNeXt  tinyimagenet  NVIDIA A100 80GB PCIe         300          100  ../Tranfer/ConvNeXt_tinyimagenet_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    6              0.4122            0.4092         0.4421                 83.69                  555.63                     96.57                      488.90                  78.77                   477.33    2.334017e+10        7.035076e+08     4.872782e+09                 2.334017e+10             5.559598                 5.556704              1.917853              11511.622858                  11517.618986               33370.652932            824.817383                823.907715             340.619629                267.986328                    267.986328                 128.486328           106.768499               106.768499              3.230605          0.584933       0.516371             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               14.3                  1410.0                   18.2                      1410.0                 5.3                   1410.0                None                     None                    6.639                        5.063                     6.060                      None                         7                             6                          6                       None          5.934         425.61                 6                          171.99                              183.01                           220.53                             None                      0.014819                          0.015668                       0.006315                           None             11677.351416                 11754.971275              35531.952286                      None                                   2                                       2                                    2                                 None                 0.1875                       0.25                0.078125              0.015625                  0.078125                0.03125
+17  ConvNeXt  tinyimagenet  NVIDIA A100 80GB PCIe         300          100  ../Tranfer/ConvNeXt_tinyimagenet_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    7              0.4122            0.4092         0.4421                101.72                  578.32                     87.30                      487.90                  78.49                   420.84    2.334017e+10        7.035076e+08     4.872782e+09                 2.334017e+10             5.554701                 5.555624              1.927235              11521.772686                  11519.858009               33208.193927            824.817383                823.907715             340.619629                267.986328                    267.986328                 128.486328           106.768499               106.768499              3.230605          0.584933       0.516371             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               13.7                  1410.0                   14.2                      1410.0                 5.3                   1410.0                None                     None                    5.686                        5.589                     5.362                      None                         6                             6                          6                       None          5.934         425.61                 6                          237.00                              208.83                           161.63                             None                      0.020425                          0.017923                       0.004658                           None             11749.512652                 11724.814149              35322.050274                      None                                   2                                       2                                    2                                 None                 0.1875                       0.25                0.078125              0.015625                  0.078125                0.03125
+18  ConvNeXt  tinyimagenet  NVIDIA A100 80GB PCIe         300          100  ../Tranfer/ConvNeXt_tinyimagenet_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    8              0.4122            0.4092         0.4421                112.11                  631.43                     94.17                      678.25                  77.77                   424.70    2.334017e+10        7.035076e+08     4.872782e+09                 2.334017e+10             5.563134                 5.563886              1.936155              11504.305951                  11502.750969               33055.201462            823.907715                823.907715             340.619629                267.986328                    267.986328                 128.486328           106.768499               106.768499              3.230605          0.584933       0.516371             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               16.8                  1410.0                   14.2                      1410.0                 5.7                   1410.0                None                     None                    5.632                        7.203                     5.461                      None                         6                             8                          6                       None          5.934         425.61                 6                          234.80                              152.22                           188.20                             None                      0.020233                          0.013141                       0.005440                           None             11778.131406                 11692.376248              35218.926824                      None                                   3                                       2                                    3                                 None                 0.1875                       0.25                0.078125              0.015625                  0.078125                0.03125
+19  ConvNeXt  tinyimagenet  NVIDIA A100 80GB PCIe         300          100  ../Tranfer/ConvNeXt_tinyimagenet_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    9              0.4122            0.4092         0.4421                 97.56                  555.85                    103.84                      586.72                  82.05                   478.69    2.334017e+10        7.035076e+08     4.872782e+09                 2.334017e+10             5.570544                 5.593994              1.930115              11489.003677                  11440.842663               33158.642465            823.907715                823.907715             340.619629                267.986328                    267.986328                 128.486328           106.768499               106.768499              3.230605          0.584933       0.516371             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               13.0                  1410.0                   16.3                      1410.0                 6.0                   1410.0                None                     None                    5.698                        5.650                     5.834                      None                         6                             6                          6                       None          5.934         425.61                 6                          239.62                              155.22                           182.49                             None                      0.021397                          0.013339                       0.005232                           None             11772.040031                 11729.850594              35554.455194                      None                                   2                                       2                                    3                                 None                 0.1875                       0.25                0.078125              0.015625                  0.078125                0.03125

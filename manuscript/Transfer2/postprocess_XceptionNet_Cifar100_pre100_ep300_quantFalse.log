@@ -1,13 +1,13 @@
 [INFO] Searching for model checkpoints...
 [INFO] Found 2 'before' checkpoints.
-[INFO] Found 0 collapsed checkpoints.
+[INFO] Found 1 collapsed checkpoints.
 [INFO] Found 2 'after' checkpoints.
 ======================================================================
 Starting Comparison Post-Processing Pipeline
 Model: XceptionNet | Dataset: Cifar100 | Device: cuda
 Epochs Config (override): pre=100, post=300
 Output File: cka_results_XceptionNet_Cifar100_pre100_post300.csv
-CUDA device: NVIDIA A40
+CUDA device: NVIDIA A10
 ======================================================================
 
 ======================================================================
@@ -24,20 +24,57 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] XceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/XceptionNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 4.50s
+[INFO] Weights loaded in 15.23s
 
 [INFO] Loading original post-finetuning model...
 [INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_Cifar100_None_epochs300_pretrain100
 [INFO] Found matching checkpoint: ../Tranfer/XceptionNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Initializing architecture: model=XceptionNet, dataset=Cifar100
 Loading CIFAR-100 data for XceptionNet...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize XceptionNet with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] XceptionNet successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/XceptionNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 276
+[INFO] Weights loaded in 22.87s
+
+[INFO] Loading whole collapsed model artifact...
+[INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_Cifar100_None_epochs300_pretrain100
+[INFO] Found matching checkpoint: ../Tranfer/XceptionNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
+[INFO] Whole-model load completed in 22.65s
+[INFO] Calculating dynamic sparsity to match collapse...
+[INFO] Target unstructured sparsity calculated at: 35.84%
+[INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/XceptionNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
+[INFO] Initializing architecture: model=XceptionNet, dataset=Cifar100
+Loading CIFAR-100 data for XceptionNet...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize XceptionNet with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] XceptionNet successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/XceptionNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 276
+[INFO] Weights loaded in 12.89s
+
+[WARN] torch-pruning is required for the structural baseline (pip install torch-pruning). Skipping structural baseline.
+
+[INFO] Evaluating model accuracy, power draw, and energy consumption (10 rep(s))...
+
+[INFO] === Measurement rep 1/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
 Traceback (most recent call last):
-  File "/old_Users/jgafur/LTH/manuscript/Transfer2/main.py", line 160, in process_checkpoint
-    collapsed_model_path = find_matching_checkpoint(model_before_path, checkpoints["collapsed"])
-                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py", line 88, in find_matching_checkpoint
-    raise FileNotFoundError(f"No matching checkpoint found for {base_dir}")
-FileNotFoundError: No matching checkpoint found for ../Tranfer/XceptionNet_Cifar100_None_epochs300_pretrain100
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1251, in _try_get_data
+    data = self._data_queue.get(timeout=timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/queue.py", line 180, in get
+    self.not_empty.wait(remaining)
+  File "/Users/jgafur/env/lth_env/lib/python3.11/threading.py", line 331, in wait
+    gotit = waiter.acquire(True, timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/_utils/signal_handling.py", line 73, in handler
+    _error_if_any_worker_fails()
+RuntimeError: DataLoader worker (pid 53994) is killed by signal: Killed. 
 
 The above exception was the direct cause of the following exception:
 
@@ -45,23 +82,62 @@ Traceback (most recent call last):
   File "/old_Users/jgafur/LTH/manuscript/Transfer2/main.py", line 710, in main
     result_rows = process_checkpoint(model_before_path, checkpoints, args, device)
                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/manuscript/Transfer2/main.py", line 170, in process_checkpoint
-    raise FileNotFoundError(
-FileNotFoundError: No matching checkpoint found for ../Tranfer/XceptionNet_Cifar100_None_epochs300_pretrain100
-[HINT] No `*_whole.pt` collapsed artifact found for this experiment. Re-run the Tranfer experiments to generate `final_*_whole.pt` artifacts.
-CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
-[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
-[DEBUG] Attempting to initialize XceptionNet with kwargs: dict_keys(['num_classes', 'one_batch'])
-[DEBUG] XceptionNet successfully initialized WITH one_batch.
-[INFO] Loading weights: ../Tranfer/XceptionNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
-[INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 5.26s
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/main.py", line 301, in process_checkpoint
+    m = {"before": _eval_one(model_before, "Baseline")}
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/main.py", line 281, in _eval_one
+    res = evaluate_accuracy(model, test_loader, device, power_interval=args.power_interval, quant=args.quant)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py", line 248, in evaluate_accuracy
+    for inputs, _ in dataloader:
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 708, in __next__
+    data = self._next_data()
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1458, in _next_data
+    idx, data = self._get_data()
+                ^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1410, in _get_data
+    success, data = self._try_get_data()
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1264, in _try_get_data
+    raise RuntimeError(
+RuntimeError: DataLoader worker (pid(s) 53994) exited unexpectedly
+[INFO] Evaluation complete: acc=0.0190, power=63.68W, energy=154.69J, time=2.43s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.0216, power=67.68W, energy=169.05J, time=2.50s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.6061, power=65.64W, energy=158.53J, time=2.42s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5959, power=71.48W, energy=170.51J, time=2.39s
+[INFO] Saturated energy: power=122.42999999999999, J/img=0.005622678857200362, samples=2
+[INFO] Saturated energy: power=119.72, J/img=0.0055011718032945845, samples=2
+[INFO] Saturated energy: power=123.0, J/img=0.007575790921691805, samples=2
 
-[INFO] Loading whole collapsed model artifact...
-[INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_Cifar100_None_epochs300_pretrain100
+[INFO] === Measurement rep 2/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.0190, power=75.67W, energy=185.63J, time=2.45s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.0216, power=78.11W, energy=183.92J, time=2.35s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.6061, power=78.29W, energy=180.17J, time=2.30s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5959, power=67.90W, energy=508.93J, time=7.50s
+[INFO] Saturated energy: power=125.165, J/img=0.005765109166481294, samples=2
+[INFO] Saturated energy: power=119.1, J/img=0.005556354589541169, samples=2
+[INFO] Saturated energy: power=115.45499999999998, J/img=0.007113900853400991, samples=2
+
+[INFO] === Measurement rep 3/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [ERROR] Failed processing checkpoint: ../Tranfer/XceptionNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
-[ERROR] FileNotFoundError: No matching checkpoint found for ../Tranfer/XceptionNet_Cifar100_None_epochs300_pretrain100
-[HINT] No `*_whole.pt` collapsed artifact found for this experiment. Re-run the Tranfer experiments to generate `final_*_whole.pt` artifacts.
+[ERROR] RuntimeError: DataLoader worker (pid(s) 53994) exited unexpectedly
 
 ======================================================================
 Processing checkpoint 2/2
@@ -77,20 +153,57 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] XceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/XceptionNet_Cifar100_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 3.92s
+[INFO] Weights loaded in 0.24s
 
 [INFO] Loading original post-finetuning model...
 [INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_Cifar100_None_scorerall_epochs300_pretrain100
 [INFO] Found matching checkpoint: ../Tranfer/XceptionNet_Cifar100_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Initializing architecture: model=XceptionNet, dataset=Cifar100
 Loading CIFAR-100 data for XceptionNet...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize XceptionNet with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] XceptionNet successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/XceptionNet_Cifar100_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 276
+[INFO] Weights loaded in 0.15s
+
+[INFO] Loading whole collapsed model artifact...
+[INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_Cifar100_None_scorerall_epochs300_pretrain100
+[INFO] Found matching checkpoint: ../Tranfer/XceptionNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
+[INFO] Whole-model load completed in 0.44s
+[INFO] Calculating dynamic sparsity to match collapse...
+[INFO] Target unstructured sparsity calculated at: 35.84%
+[INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/XceptionNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
+[INFO] Initializing architecture: model=XceptionNet, dataset=Cifar100
+Loading CIFAR-100 data for XceptionNet...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize XceptionNet with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] XceptionNet successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/XceptionNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 276
+[INFO] Weights loaded in 1.76s
+
+[WARN] torch-pruning is required for the structural baseline (pip install torch-pruning). Skipping structural baseline.
+
+[INFO] Evaluating model accuracy, power draw, and energy consumption (10 rep(s))...
+
+[INFO] === Measurement rep 1/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
 Traceback (most recent call last):
-  File "/old_Users/jgafur/LTH/manuscript/Transfer2/main.py", line 160, in process_checkpoint
-    collapsed_model_path = find_matching_checkpoint(model_before_path, checkpoints["collapsed"])
-                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py", line 88, in find_matching_checkpoint
-    raise FileNotFoundError(f"No matching checkpoint found for {base_dir}")
-FileNotFoundError: No matching checkpoint found for ../Tranfer/XceptionNet_Cifar100_None_scorerall_epochs300_pretrain100
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1251, in _try_get_data
+    data = self._data_queue.get(timeout=timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/queue.py", line 180, in get
+    self.not_empty.wait(remaining)
+  File "/Users/jgafur/env/lth_env/lib/python3.11/threading.py", line 331, in wait
+    gotit = waiter.acquire(True, timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/_utils/signal_handling.py", line 73, in handler
+    _error_if_any_worker_fails()
+RuntimeError: DataLoader worker (pid 55793) is killed by signal: Killed. 
 
 The above exception was the direct cause of the following exception:
 
@@ -98,29 +211,176 @@ Traceback (most recent call last):
   File "/old_Users/jgafur/LTH/manuscript/Transfer2/main.py", line 710, in main
     result_rows = process_checkpoint(model_before_path, checkpoints, args, device)
                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/manuscript/Transfer2/main.py", line 170, in process_checkpoint
-    raise FileNotFoundError(
-FileNotFoundError: No matching checkpoint found for ../Tranfer/XceptionNet_Cifar100_None_scorerall_epochs300_pretrain100
-[HINT] No `*_whole.pt` collapsed artifact found for this experiment. Re-run the Tranfer experiments to generate `final_*_whole.pt` artifacts.
-CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
-[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
-[DEBUG] Attempting to initialize XceptionNet with kwargs: dict_keys(['num_classes', 'one_batch'])
-[DEBUG] XceptionNet successfully initialized WITH one_batch.
-[INFO] Loading weights: ../Tranfer/XceptionNet_Cifar100_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
-[INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 4.19s
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/main.py", line 310, in process_checkpoint
+    m["unstructured"] = _eval_one(unstructured_pruning_model, "Unstructured Pruned Model")
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/main.py", line 281, in _eval_one
+    res = evaluate_accuracy(model, test_loader, device, power_interval=args.power_interval, quant=args.quant)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py", line 248, in evaluate_accuracy
+    for inputs, _ in dataloader:
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 708, in __next__
+    data = self._next_data()
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1458, in _next_data
+    idx, data = self._get_data()
+                ^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1410, in _get_data
+    success, data = self._try_get_data()
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1264, in _try_get_data
+    raise RuntimeError(
+RuntimeError: DataLoader worker (pid(s) 55793) exited unexpectedly
+[INFO] Evaluation complete: acc=0.0190, power=109.51W, energy=247.90J, time=2.26s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.0216, power=110.47W, energy=251.44J, time=2.28s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.6061, power=111.68W, energy=257.94J, time=2.31s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5959, power=127.71W, energy=293.72J, time=2.30s
+[INFO] Saturated energy: power=113.94999999999999, J/img=0.005227460653986781, samples=2
+[INFO] Saturated energy: power=127.22, J/img=0.005847248900031974, samples=2
+[INFO] Saturated energy: power=125.08, J/img=0.007691303664760198, samples=2
 
-[INFO] Loading whole collapsed model artifact...
-[INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_Cifar100_None_scorerall_epochs300_pretrain100
+[INFO] === Measurement rep 2/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.0190, power=132.05W, energy=293.53J, time=2.22s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.0216, power=128.39W, energy=292.20J, time=2.28s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.6061, power=121.04W, energy=269.72J, time=2.23s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5959, power=118.95W, energy=273.63J, time=2.30s
+[INFO] Saturated energy: power=116.41999999999999, J/img=0.005379152318572296, samples=2
+[INFO] Saturated energy: power=113.91499999999999, J/img=0.0052635360539208574, samples=2
+[INFO] Saturated energy: power=117.48, J/img=0.007292807742487639, samples=2
+
+[INFO] === Measurement rep 3/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.0190, power=108.05W, energy=243.74J, time=2.26s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.0216, power=97.35W, energy=220.77J, time=2.27s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.6061, power=100.69W, energy=226.11J, time=2.25s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5959, power=90.99W, energy=227.50J, time=2.50s
+[INFO] Saturated energy: power=125.04500000000002, J/img=0.005801128592643449, samples=2
+[INFO] Saturated energy: power=114.11, J/img=0.00528599553001935, samples=2
+[INFO] Saturated energy: power=118.525, J/img=0.007338063324823452, samples=2
+
+[INFO] === Measurement rep 4/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.0190, power=69.29W, energy=154.24J, time=2.23s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.0216, power=70.15W, energy=163.04J, time=2.32s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.6061, power=62.76W, energy=150.64J, time=2.40s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5959, power=66.14W, energy=155.43J, time=2.35s
+[INFO] Saturated energy: power=126.14, J/img=0.005835564332082867, samples=2
+[INFO] Saturated energy: power=123.64500000000001, J/img=0.005700196612461963, samples=2
+[INFO] Saturated energy: power=123.365, J/img=0.008122693019608657, samples=2
+
+[INFO] === Measurement rep 5/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.0190, power=66.67W, energy=152.05J, time=2.28s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.0216, power=66.29W, energy=149.20J, time=2.25s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.6061, power=64.57W, energy=142.46J, time=2.21s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5959, power=71.16W, energy=161.41J, time=2.27s
+[INFO] Saturated energy: power=125.795, J/img=0.005851649960393415, samples=2
+[INFO] Saturated energy: power=129.315, J/img=0.0060028559781939664, samples=2
+[INFO] Saturated energy: power=132.74666666666667, J/img=0.008257980539541071, samples=3
+
+[INFO] === Measurement rep 6/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.0190, power=69.79W, energy=157.80J, time=2.26s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.0216, power=68.30W, energy=155.56J, time=2.28s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.6061, power=68.59W, energy=157.76J, time=2.30s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5959, power=68.70W, energy=156.43J, time=2.28s
+[INFO] Saturated energy: power=129.015, J/img=0.0059994935617946514, samples=2
+[INFO] Saturated energy: power=118.13499999999999, J/img=0.005464426473276141, samples=2
+[INFO] Saturated energy: power=119.23, J/img=0.007393320000192034, samples=2
+
+[INFO] === Measurement rep 7/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.0190, power=71.58W, energy=162.31J, time=2.27s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.0216, power=72.08W, energy=163.11J, time=2.26s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.6061, power=71.58W, energy=163.19J, time=2.28s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5959, power=73.73W, energy=168.90J, time=2.29s
+[INFO] Saturated energy: power=128.29, J/img=0.005947482889134655, samples=2
+[INFO] Saturated energy: power=129.86, J/img=0.006016285047044649, samples=2
+[INFO] Saturated energy: power=131.31, J/img=0.008157560198596911, samples=3
+
+[INFO] === Measurement rep 8/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.0190, power=78.36W, energy=174.96J, time=2.23s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.0216, power=72.70W, energy=164.88J, time=2.27s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.6061, power=79.83W, energy=178.49J, time=2.24s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5959, power=80.08W, energy=184.22J, time=2.30s
+[INFO] Saturated energy: power=120.91499999999999, J/img=0.00561334976301912, samples=2
+[INFO] Saturated energy: power=128.34, J/img=0.005971268434734905, samples=2
+[INFO] Saturated energy: power=118.435, J/img=0.007352323096820328, samples=2
+
+[INFO] === Measurement rep 9/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.0190, power=89.74W, energy=202.23J, time=2.25s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.0216, power=89.27W, energy=200.16J, time=2.24s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [ERROR] Failed processing checkpoint: ../Tranfer/XceptionNet_Cifar100_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt
-[ERROR] FileNotFoundError: No matching checkpoint found for ../Tranfer/XceptionNet_Cifar100_None_scorerall_epochs300_pretrain100
-[HINT] No `*_whole.pt` collapsed artifact found for this experiment. Re-run the Tranfer experiments to generate `final_*_whole.pt` artifacts.
+[ERROR] RuntimeError: DataLoader worker (pid(s) 55793) exited unexpectedly
 
 ======================================================================
 [INFO] Saving final results...
 [ERROR] 0 successful experiments — NOT overwriting 'cka_results_XceptionNet_Cifar100_pre100_post300.csv'. Fix the errors above and rerun.
 [INFO] Total successful experiments: 0
-[INFO] Total runtime: 35.41s
+[INFO] Total runtime: 499.22s
 
 ======================================================================
 FINAL RESULTS

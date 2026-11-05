@@ -1,6 +1,6 @@
 [INFO] Searching for model checkpoints...
 [INFO] Found 2 'before' checkpoints.
-[INFO] Found 0 collapsed checkpoints.
+[INFO] Found 1 collapsed checkpoints.
 [INFO] Found 2 'after' checkpoints.
 ======================================================================
 Starting Comparison Post-Processing Pipeline
@@ -24,44 +24,277 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] InceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/InceptionNet_Cifar100_None_epochs200_pretrain200/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 344
-[INFO] Weights loaded in 0.24s
+[INFO] Weights loaded in 0.78s
 
 [INFO] Loading original post-finetuning model...
 [INFO] Searching for checkpoint matching: ../Tranfer/InceptionNet_Cifar100_None_epochs200_pretrain200
 [INFO] Found matching checkpoint: ../Tranfer/InceptionNet_Cifar100_None_epochs200_pretrain200/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Initializing architecture: model=InceptionNet, dataset=Cifar100
 Loading CIFAR-100 data for InceptionNet...
-Traceback (most recent call last):
-  File "/old_Users/jgafur/LTH/manuscript/Transfer2/main.py", line 160, in process_checkpoint
-    collapsed_model_path = find_matching_checkpoint(model_before_path, checkpoints["collapsed"])
-                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py", line 88, in find_matching_checkpoint
-    raise FileNotFoundError(f"No matching checkpoint found for {base_dir}")
-FileNotFoundError: No matching checkpoint found for ../Tranfer/InceptionNet_Cifar100_None_epochs200_pretrain200
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/old_Users/jgafur/LTH/manuscript/Transfer2/main.py", line 710, in main
-    result_rows = process_checkpoint(model_before_path, checkpoints, args, device)
-                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/manuscript/Transfer2/main.py", line 170, in process_checkpoint
-    raise FileNotFoundError(
-FileNotFoundError: No matching checkpoint found for ../Tranfer/InceptionNet_Cifar100_None_epochs200_pretrain200
-[HINT] No `*_whole.pt` collapsed artifact found for this experiment. Re-run the Tranfer experiments to generate `final_*_whole.pt` artifacts.
 CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
 [DEBUG] Attempting to initialize InceptionNet with kwargs: dict_keys(['num_classes', 'one_batch', 'aux_logits'])
 [DEBUG] InceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/InceptionNet_Cifar100_None_epochs200_pretrain200/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 344
-[INFO] Weights loaded in 0.93s
+[INFO] Weights loaded in 0.73s
 
 [INFO] Loading whole collapsed model artifact...
 [INFO] Searching for checkpoint matching: ../Tranfer/InceptionNet_Cifar100_None_epochs200_pretrain200
-[ERROR] Failed processing checkpoint: ../Tranfer/InceptionNet_Cifar100_None_epochs200_pretrain200/checkpoints/final_JF_Control.pt
-[ERROR] FileNotFoundError: No matching checkpoint found for ../Tranfer/InceptionNet_Cifar100_None_epochs200_pretrain200
-[HINT] No `*_whole.pt` collapsed artifact found for this experiment. Re-run the Tranfer experiments to generate `final_*_whole.pt` artifacts.
+[INFO] Found matching checkpoint: ../Tranfer/InceptionNet_Cifar100_None_epochs200_pretrain200/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
+[INFO] Whole-model load completed in 1.09s
+[INFO] Calculating dynamic sparsity to match collapse...
+[INFO] Target unstructured sparsity calculated at: 40.19%
+[INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/InceptionNet_Cifar100_None_epochs200_pretrain200/checkpoints/final_JF_Unstructured_IMP_post200.pt
+[INFO] Initializing architecture: model=InceptionNet, dataset=Cifar100
+Loading CIFAR-100 data for InceptionNet...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize InceptionNet with kwargs: dict_keys(['num_classes', 'one_batch', 'aux_logits'])
+[DEBUG] InceptionNet successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/InceptionNet_Cifar100_None_epochs200_pretrain200/checkpoints/final_JF_Unstructured_IMP_post200.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 344
+[INFO] Weights loaded in 1.14s
+
+[WARN] torch-pruning is required for the structural baseline (pip install torch-pruning). Skipping structural baseline.
+
+[INFO] Evaluating model accuracy, power draw, and energy consumption (10 rep(s))...
+
+[INFO] === Measurement rep 1/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2716, power=73.04W, energy=154.77J, time=2.12s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2401, power=79.71W, energy=162.12J, time=2.03s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5356, power=84.34W, energy=171.35J, time=2.03s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5822, power=75.60W, energy=205.44J, time=2.72s
+[INFO] Saturated energy: power=103.215, J/img=0.0016619083705275255, samples=2
+[INFO] Saturated energy: power=104.99000000000001, J/img=0.0016841248076914354, samples=2
+[INFO] Saturated energy: power=122.44333333333334, J/img=0.0020705864259127713, samples=3
+
+[INFO] === Measurement rep 2/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2716, power=74.29W, energy=167.32J, time=2.25s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2401, power=77.52W, energy=161.79J, time=2.09s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5356, power=78.84W, energy=161.51J, time=2.05s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5822, power=76.78W, energy=159.48J, time=2.08s
+[INFO] Saturated energy: power=102.575, J/img=0.0016652311229074198, samples=2
+[INFO] Saturated energy: power=108.60499999999999, J/img=0.0017608363764004113, samples=2
+[INFO] Saturated energy: power=107.775, J/img=0.001825738890204467, samples=2
+
+[INFO] === Measurement rep 3/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2716, power=71.87W, energy=148.30J, time=2.06s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2401, power=70.24W, energy=146.95J, time=2.09s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5356, power=64.21W, energy=133.14J, time=2.07s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5822, power=62.56W, energy=135.40J, time=2.16s
+[INFO] Saturated energy: power=105.64, J/img=0.0017190715199536528, samples=2
+[INFO] Saturated energy: power=99.745, J/img=0.0016171008823803576, samples=2
+[INFO] Saturated energy: power=105.74000000000001, J/img=0.0017922706955188464, samples=2
+
+[INFO] === Measurement rep 4/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2716, power=59.16W, energy=119.69J, time=2.02s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2401, power=59.00W, energy=118.51J, time=2.01s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5356, power=58.92W, energy=118.84J, time=2.02s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5822, power=58.86W, energy=118.33J, time=2.01s
+[INFO] Saturated energy: power=111.175, J/img=0.0018096564214461104, samples=2
+[INFO] Saturated energy: power=106.215, J/img=0.0017258584105741752, samples=2
+[INFO] Saturated energy: power=111.065, J/img=0.0018924389958237756, samples=2
+
+[INFO] === Measurement rep 5/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2716, power=59.83W, energy=120.82J, time=2.02s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2401, power=59.60W, energy=125.48J, time=2.11s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5356, power=60.66W, energy=124.71J, time=2.06s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5822, power=59.98W, energy=124.75J, time=2.08s
+[INFO] Saturated energy: power=108.26, J/img=0.0018295160314076193, samples=2
+[INFO] Saturated energy: power=109.445, J/img=0.0017814775199864118, samples=2
+[INFO] Saturated energy: power=120.13666666666666, J/img=0.002054352102513413, samples=3
+
+[INFO] === Measurement rep 6/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2716, power=60.37W, energy=121.78J, time=2.02s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2401, power=61.49W, energy=139.13J, time=2.26s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5356, power=60.40W, energy=127.38J, time=2.11s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5822, power=63.52W, energy=128.97J, time=2.03s
+[INFO] Saturated energy: power=106.32, J/img=0.0017316056045988374, samples=2
+[INFO] Saturated energy: power=111.385, J/img=0.001811337782193191, samples=2
+[INFO] Saturated energy: power=110.8, J/img=0.0018861559079760134, samples=2
+
+[INFO] === Measurement rep 7/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2716, power=61.99W, energy=128.77J, time=2.08s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2401, power=62.58W, energy=127.47J, time=2.04s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5356, power=61.89W, energy=128.67J, time=2.08s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5822, power=62.02W, energy=128.83J, time=2.08s
+[INFO] Saturated energy: power=107.31, J/img=0.0017476520275202469, samples=2
+[INFO] Saturated energy: power=107.61500000000001, J/img=0.0017569551179415467, samples=2
+[INFO] Saturated energy: power=109.39, J/img=0.0018630722021194303, samples=2
+
+[INFO] === Measurement rep 8/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2716, power=63.95W, energy=130.65J, time=2.04s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2401, power=64.53W, energy=137.40J, time=2.13s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5356, power=64.48W, energy=133.29J, time=2.07s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5822, power=63.53W, energy=132.89J, time=2.09s
+[INFO] Saturated energy: power=105.16999999999999, J/img=0.0017176947001106113, samples=2
+[INFO] Saturated energy: power=111.91999999999999, J/img=0.0018253638508779872, samples=2
+[INFO] Saturated energy: power=112.46, J/img=0.0019129273767514534, samples=2
+
+[INFO] === Measurement rep 9/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2716, power=70.44W, energy=145.67J, time=2.07s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2401, power=69.25W, energy=145.33J, time=2.10s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5356, power=71.42W, energy=145.00J, time=2.03s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5822, power=70.76W, energy=147.47J, time=2.08s
+[INFO] Saturated energy: power=107.125, J/img=0.0017473629556984973, samples=2
+[INFO] Saturated energy: power=107.155, J/img=0.0017452523368603988, samples=2
+[INFO] Saturated energy: power=108.83500000000001, J/img=0.0018479773086143955, samples=2
+
+[INFO] === Measurement rep 10/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2716, power=72.75W, energy=150.37J, time=2.07s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2401, power=74.20W, energy=155.24J, time=2.09s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5356, power=77.34W, energy=159.79J, time=2.07s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5822, power=74.57W, energy=155.90J, time=2.09s
+[INFO] Saturated energy: power=112.42500000000001, J/img=0.0018417375136050398, samples=2
+[INFO] Saturated energy: power=108.935, J/img=0.0017720198218060335, samples=2
+[INFO] Saturated energy: power=111.64, J/img=0.0019005565803354135, samples=2
+[INFO] Measuring dataloader floor (no forward passes)...
+[INFO] Loader floor: time=1.91s, energy=113.41J
+[RESULT] Accuracy Original:     0.2401 | Power: 79.71W | Energy: 162.12J
+[RESULT] Accuracy Unstructured: 0.5356 | Power: 84.34W | Energy: 171.35J
+[RESULT] Accuracy Collapsed:    0.5822 | Power: 75.60W | Energy: 205.44J
+[INFO] 10 measurement reps completed; full per-rep values are rows in the CSV.
+[RESULT] Original     FLOPs=1.665e+10 | latency=7.76 ms/batch | throughput=65982.8 img/s | peak_mem=544.3 MiB | feature_maps=444.5 MiB
+[RESULT] Unstructured FLOPs=1.665e+10 | latency=7.71 ms/batch | throughput=66445.2 img/s | peak_mem=544.3 MiB | feature_maps=444.5 MiB
+[RESULT] Collapsed    FLOPs=1.255e+10 | latency=8.13 ms/batch | throughput=63010.6 img/s | peak_mem=424.5 MiB | feature_maps=396.2 MiB
+[RESULT] FLOPs Unstructured (theoretical/effective, kept for back-compat): 9.96e+09
+[RESULT] Storage (state_dict MiB): original=23.4, unstructured=23.4, collapsed=14.0
+
+[INFO] Extracting features and computing CKA...
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 1024), time=1.47s
+[INFO] Computing CKA: features_x=(5120, 1024), features_y=(5120, 1024)
+[INFO] CKA complete: score=1.000000, time=0.56s
+[INFO] CKA self-check (expect ~1.0): 1.000000
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 1024), time=1.52s
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 1024), time=1.81s
+[INFO] Computing CKA: features_x=(5120, 1024), features_y=(5120, 1024)
+[INFO] CKA complete: score=0.415880, time=0.00s
+[INFO] Computing CKA: features_x=(5120, 1024), features_y=(5120, 1024)
+[INFO] CKA complete: score=0.453871, time=0.08s
+
+[INFO] Evaluating Adversarial Robustness...
+[INFO] Running FGSM attack (epsilon=0.03)...
+       -> original Accuracy: 0.0918
+       -> unstructured Accuracy: 0.2422
+       -> collapsed Accuracy: 0.2305
+[INFO] Running PGD attack (epsilon=0.03)...
+       -> original Accuracy: 0.0527
+       -> unstructured Accuracy: 0.1309
+       -> collapsed Accuracy: 0.1367
 
 ======================================================================
 Processing checkpoint 2/2
@@ -77,20 +310,57 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] InceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/InceptionNet_Cifar100_None_scorerall_epochs200_pretrain200/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 344
-[INFO] Weights loaded in 0.60s
+[INFO] Weights loaded in 0.59s
 
 [INFO] Loading original post-finetuning model...
 [INFO] Searching for checkpoint matching: ../Tranfer/InceptionNet_Cifar100_None_scorerall_epochs200_pretrain200
 [INFO] Found matching checkpoint: ../Tranfer/InceptionNet_Cifar100_None_scorerall_epochs200_pretrain200/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Initializing architecture: model=InceptionNet, dataset=Cifar100
 Loading CIFAR-100 data for InceptionNet...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize InceptionNet with kwargs: dict_keys(['num_classes', 'one_batch', 'aux_logits'])
+[DEBUG] InceptionNet successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/InceptionNet_Cifar100_None_scorerall_epochs200_pretrain200/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 344
+[INFO] Weights loaded in 0.58s
+
+[INFO] Loading whole collapsed model artifact...
+[INFO] Searching for checkpoint matching: ../Tranfer/InceptionNet_Cifar100_None_scorerall_epochs200_pretrain200
+[INFO] Found matching checkpoint: ../Tranfer/InceptionNet_Cifar100_None_epochs200_pretrain200/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
+[INFO] Whole-model load completed in 0.04s
+[INFO] Calculating dynamic sparsity to match collapse...
+[INFO] Target unstructured sparsity calculated at: 40.19%
+[INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/InceptionNet_Cifar100_None_epochs200_pretrain200/checkpoints/final_JF_Unstructured_IMP_post200.pt
+[INFO] Initializing architecture: model=InceptionNet, dataset=Cifar100
+Loading CIFAR-100 data for InceptionNet...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize InceptionNet with kwargs: dict_keys(['num_classes', 'one_batch', 'aux_logits'])
+[DEBUG] InceptionNet successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/InceptionNet_Cifar100_None_epochs200_pretrain200/checkpoints/final_JF_Unstructured_IMP_post200.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 344
+[INFO] Weights loaded in 0.15s
+
+[WARN] torch-pruning is required for the structural baseline (pip install torch-pruning). Skipping structural baseline.
+
+[INFO] Evaluating model accuracy, power draw, and energy consumption (10 rep(s))...
+
+[INFO] === Measurement rep 1/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
 Traceback (most recent call last):
-  File "/old_Users/jgafur/LTH/manuscript/Transfer2/main.py", line 160, in process_checkpoint
-    collapsed_model_path = find_matching_checkpoint(model_before_path, checkpoints["collapsed"])
-                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py", line 88, in find_matching_checkpoint
-    raise FileNotFoundError(f"No matching checkpoint found for {base_dir}")
-FileNotFoundError: No matching checkpoint found for ../Tranfer/InceptionNet_Cifar100_None_scorerall_epochs200_pretrain200
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1251, in _try_get_data
+    data = self._data_queue.get(timeout=timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/queue.py", line 180, in get
+    self.not_empty.wait(remaining)
+  File "/Users/jgafur/env/lth_env/lib/python3.11/threading.py", line 331, in wait
+    gotit = waiter.acquire(True, timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/_utils/signal_handling.py", line 73, in handler
+    _error_if_any_worker_fails()
+RuntimeError: DataLoader worker (pid 20468) is killed by signal: Killed. 
 
 The above exception was the direct cause of the following exception:
 
@@ -98,33 +368,171 @@ Traceback (most recent call last):
   File "/old_Users/jgafur/LTH/manuscript/Transfer2/main.py", line 710, in main
     result_rows = process_checkpoint(model_before_path, checkpoints, args, device)
                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/manuscript/Transfer2/main.py", line 170, in process_checkpoint
-    raise FileNotFoundError(
-FileNotFoundError: No matching checkpoint found for ../Tranfer/InceptionNet_Cifar100_None_scorerall_epochs200_pretrain200
-[HINT] No `*_whole.pt` collapsed artifact found for this experiment. Re-run the Tranfer experiments to generate `final_*_whole.pt` artifacts.
-CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
-[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
-[DEBUG] Attempting to initialize InceptionNet with kwargs: dict_keys(['num_classes', 'one_batch', 'aux_logits'])
-[DEBUG] InceptionNet successfully initialized WITH one_batch.
-[INFO] Loading weights: ../Tranfer/InceptionNet_Cifar100_None_scorerall_epochs200_pretrain200/checkpoints/final_JF_Control_Continuted.pt
-[INFO] Checkpoint extracted. Candidate state dict keys: 344
-[INFO] Weights loaded in 0.52s
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/main.py", line 310, in process_checkpoint
+    m["unstructured"] = _eval_one(unstructured_pruning_model, "Unstructured Pruned Model")
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/main.py", line 281, in _eval_one
+    res = evaluate_accuracy(model, test_loader, device, power_interval=args.power_interval, quant=args.quant)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py", line 263, in evaluate_accuracy
+    for batch_idx, (inputs, targets) in enumerate(dataloader):
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 708, in __next__
+    data = self._next_data()
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1458, in _next_data
+    idx, data = self._get_data()
+                ^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1410, in _get_data
+    success, data = self._try_get_data()
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1264, in _try_get_data
+    raise RuntimeError(
+RuntimeError: DataLoader worker (pid(s) 20468) exited unexpectedly
+[INFO] Evaluation complete: acc=0.2716, power=83.61W, energy=176.54J, time=2.11s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2401, power=78.46W, energy=175.39J, time=2.24s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5356, power=80.83W, energy=163.28J, time=2.02s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5822, power=81.07W, energy=168.99J, time=2.08s
+[INFO] Saturated energy: power=109.44999999999999, J/img=0.0017845700486321691, samples=2
+[INFO] Saturated energy: power=105.82499999999999, J/img=0.0017212483802901916, samples=2
+[INFO] Saturated energy: power=110.0, J/img=0.0018761040048737977, samples=2
 
-[INFO] Loading whole collapsed model artifact...
-[INFO] Searching for checkpoint matching: ../Tranfer/InceptionNet_Cifar100_None_scorerall_epochs200_pretrain200
+[INFO] === Measurement rep 2/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2716, power=73.82W, energy=171.36J, time=2.32s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2401, power=70.62W, energy=144.41J, time=2.04s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5356, power=75.00W, energy=151.08J, time=2.01s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5822, power=69.76W, energy=140.07J, time=2.01s
+[INFO] Saturated energy: power=108.41499999999999, J/img=0.0017759803787145453, samples=2
+[INFO] Saturated energy: power=103.92, J/img=0.0016931669446237294, samples=2
+[INFO] Saturated energy: power=106.445, J/img=0.00181266434432473, samples=2
+
+[INFO] === Measurement rep 3/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2716, power=59.63W, energy=127.60J, time=2.14s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2401, power=60.71W, energy=125.94J, time=2.07s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5356, power=59.56W, energy=120.43J, time=2.02s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5822, power=59.70W, energy=120.96J, time=2.03s
+[INFO] Saturated energy: power=102.965, J/img=0.001679163493169665, samples=2
+[INFO] Saturated energy: power=111.705, J/img=0.0018392717805067584, samples=2
+[INFO] Saturated energy: power=112.685, J/img=0.0019178896909579635, samples=2
+
+[INFO] === Measurement rep 4/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2716, power=59.70W, energy=124.74J, time=2.09s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2401, power=60.16W, energy=124.48J, time=2.07s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5356, power=59.91W, energy=120.51J, time=2.01s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5822, power=60.14W, energy=124.45J, time=2.07s
+[INFO] Saturated energy: power=108.095, J/img=0.0017616338542194984, samples=2
+[INFO] Saturated energy: power=111.97, J/img=0.0018182624916004047, samples=2
+[INFO] Saturated energy: power=106.045, J/img=0.0018016784622178056, samples=2
+
+[INFO] === Measurement rep 5/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2716, power=59.72W, energy=120.28J, time=2.01s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2401, power=60.81W, energy=126.58J, time=2.08s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5356, power=60.61W, energy=121.72J, time=2.01s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5822, power=60.42W, energy=121.15J, time=2.00s
+[INFO] Saturated energy: power=112.465, J/img=0.0018307616203781909, samples=2
+[INFO] Saturated energy: power=105.89500000000001, J/img=0.0017208134244034484, samples=2
+[INFO] Saturated energy: power=111.03999999999999, J/img=0.0018757047510554645, samples=2
+
+[INFO] === Measurement rep 6/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2716, power=60.48W, energy=122.29J, time=2.02s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2401, power=61.58W, energy=136.81J, time=2.22s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5356, power=61.46W, energy=122.51J, time=1.99s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5822, power=61.11W, energy=121.45J, time=1.99s
+[INFO] Saturated energy: power=106.45, J/img=0.0017357822819670885, samples=2
+[INFO] Saturated energy: power=109.715, J/img=0.0017871700986520354, samples=2
+[INFO] Saturated energy: power=101.28, J/img=0.0017135077886124876, samples=2
+
+[INFO] === Measurement rep 7/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2716, power=71.50W, energy=244.47J, time=3.42s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2401, power=62.50W, energy=125.09J, time=2.00s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5356, power=62.31W, energy=124.81J, time=2.00s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.5822, power=68.61W, energy=141.28J, time=2.06s
+[INFO] Saturated energy: power=107.05499999999999, J/img=0.0017435077572730178, samples=2
+[INFO] Saturated energy: power=112.315, J/img=0.0018292363649926894, samples=2
+[INFO] Saturated energy: power=107.00999999999999, J/img=0.0018120986974099651, samples=2
+
+[INFO] === Measurement rep 8/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2716, power=63.55W, energy=126.98J, time=2.00s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.2401, power=65.54W, energy=131.25J, time=2.00s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [ERROR] Failed processing checkpoint: ../Tranfer/InceptionNet_Cifar100_None_scorerall_epochs200_pretrain200/checkpoints/final_JF_Control.pt
-[ERROR] FileNotFoundError: No matching checkpoint found for ../Tranfer/InceptionNet_Cifar100_None_scorerall_epochs200_pretrain200
-[HINT] No `*_whole.pt` collapsed artifact found for this experiment. Re-run the Tranfer experiments to generate `final_*_whole.pt` artifacts.
+[ERROR] RuntimeError: DataLoader worker (pid(s) 20468) exited unexpectedly
 
 ======================================================================
 [INFO] Saving final results...
-[ERROR] 0 successful experiments — NOT overwriting 'cka_results_InceptionNet_Cifar100_pre200_post200.csv'. Fix the errors above and rerun.
-[INFO] Total successful experiments: 0
-[INFO] Total runtime: 27.44s
+[INFO] Results successfully saved to 'cka_results_InceptionNet_Cifar100_pre200_post200.csv'
+[INFO] Total successful experiments: 10
+[INFO] Total runtime: 600.45s
 
 ======================================================================
 FINAL RESULTS
 ======================================================================
-Empty DataFrame
-Columns: []
-Index: []
+          model   dataset    gpu_name  pre_epochs  post_epochs                                                                                 model_before  intermediate_epoch  rep  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  flops_original  flops_unstructured  flops_collapsed  flops_unstructured_measured  latency_ms_original  latency_ms_unstructured  latency_ms_collapsed  throughput_imgs_original  throughput_imgs_unstructured  throughput_imgs_collapsed  peak_mem_mb_original  peak_mem_mb_unstructured  peak_mem_mb_collapsed  feature_maps_mb_original  feature_maps_mb_unstructured  feature_maps_mb_collapsed  storage_mb_original  storage_mb_unstructured  storage_mb_collapsed  cka_unstructured  cka_collapsed  acc_structural power_watts_structural energy_joules_structural flops_structural latency_ms_structural throughput_imgs_structural peak_mem_mb_structural feature_maps_mb_structural storage_mb_structural cka_structural params_structural sparsity_structural  gpu_util_original  gpu_clock_mhz_original  gpu_util_unstructured  gpu_clock_mhz_unstructured  gpu_util_collapsed  gpu_clock_mhz_collapsed gpu_util_structural gpu_clock_mhz_structural  eval_elapsed_s_original  eval_elapsed_s_unstructured  eval_elapsed_s_collapsed eval_elapsed_s_structural  n_power_samples_original  n_power_samples_unstructured  n_power_samples_collapsed n_power_samples_structural  loader_time_s  loader_joules  loader_n_samples  power_watts_saturated_original  power_watts_saturated_unstructured  power_watts_saturated_collapsed power_watts_saturated_structural  j_per_img_saturated_original  j_per_img_saturated_unstructured  j_per_img_saturated_collapsed j_per_img_saturated_structural  saturated_imgs_original  saturated_imgs_unstructured  saturated_imgs_collapsed saturated_imgs_structural  n_power_samples_saturated_original  n_power_samples_saturated_unstructured  n_power_samples_saturated_collapsed n_power_samples_saturated_structural  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
+0  InceptionNet  Cifar100  NVIDIA A10         200          200  ../Tranfer/InceptionNet_Cifar100_None_epochs200_pretrain200/checkpoints/final_JF_Control.pt                   0    0              0.2401            0.5356         0.5822                 79.71                  162.12                     84.34                      171.35                  75.60                   205.44    1.664698e+10        9.956195e+09     1.255221e+10                 1.664698e+10             7.759597                 7.705597              8.125622              65982.810024                  66445.211100               63010.557138            544.298828                544.298828             424.464844                444.476562                    444.476562                 396.195312            23.378664                23.378664             13.971376           0.41588       0.453871             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               14.5                  1695.0                   15.5                      1695.0                 1.7                   1695.0                None                     None                    2.034                        2.032                     2.718                      None                         2                             2                          3                       None          1.908         113.41                 2                          103.22                              104.99                           122.44                             None                      0.001662                          0.001684                       0.002071                           None             63098.348864                 63020.106974              60035.756033                      None                                   2                                       2                                    3                                 None               0.091797                   0.242188                0.230469              0.052734                  0.130859               0.136719
+1  InceptionNet  Cifar100  NVIDIA A10         200          200  ../Tranfer/InceptionNet_Cifar100_None_epochs200_pretrain200/checkpoints/final_JF_Control.pt                   0    1              0.2401            0.5356         0.5822                 77.52                  161.79                     78.84                      161.51                  76.78                   159.48    1.664698e+10        9.956195e+09     1.255221e+10                 1.664698e+10             7.800600                 7.741229              8.109283              65635.977086                  66139.370374               63137.515833            552.799805                552.799805             431.606445                444.476562                    444.476562                 396.195312            23.378664                23.378664             13.971376           0.41588       0.453871             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                6.0                  1695.0                   12.5                      1695.0                 6.7                   1695.0                None                     None                    2.087                        2.048                     2.077                      None                         2                             2                          3                       None          1.908         113.41                 2                          102.58                              108.60                           107.78                             None                      0.001665                          0.001761                       0.001826                           None             62109.515176                 62181.448148              59467.599411                      None                                   2                                       2                                    2                                 None               0.091797                   0.242188                0.230469              0.052734                  0.130859               0.136719
+2  InceptionNet  Cifar100  NVIDIA A10         200          200  ../Tranfer/InceptionNet_Cifar100_None_epochs200_pretrain200/checkpoints/final_JF_Control.pt                   0    2              0.2401            0.5356         0.5822                 70.24                  146.95                     64.21                      133.14                  62.56                   135.40    1.664698e+10        9.956195e+09     1.255221e+10                 1.664698e+10             7.752085                 7.741925              8.105458              66046.749503                  66133.424305               63167.316429            557.175781                557.175781             437.740234                444.476562                    444.476562                 396.195312            23.378664                23.378664             13.971376           0.41588       0.453871             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                6.3                  1695.0                    7.3                      1695.0                16.3                   1695.0                None                     None                    2.092                        2.073                     2.164                      None                         3                             3                          3                       None          1.908         113.41                 2                          105.64                               99.75                           105.74                             None                      0.001719                          0.001617                       0.001792                           None             61897.775694                 61968.359615              59624.463094                      None                                   2                                       2                                    2                                 None               0.091797                   0.242188                0.230469              0.052734                  0.130859               0.136719
+3  InceptionNet  Cifar100  NVIDIA A10         200          200  ../Tranfer/InceptionNet_Cifar100_None_epochs200_pretrain200/checkpoints/final_JF_Control.pt                   0    3              0.2401            0.5356         0.5822                 59.00                  118.51                     58.92                      118.84                  58.86                   118.33    1.664698e+10        9.956195e+09     1.255221e+10                 1.664698e+10             7.740733                 7.738106              8.113710              66143.608820                  66166.065388               63103.065804            563.551758                563.551758             441.592773                444.476562                    444.476562                 396.195312            23.378664                23.378664             13.971376           0.41588       0.453871             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                9.5                  1695.0                   14.5                      1695.0                15.0                   1695.0                None                     None                    2.009                        2.017                     2.010                      None                         2                             2                          2                       None          1.908         113.41                 2                          111.17                              106.22                           111.06                             None                      0.001810                          0.001726                       0.001892                           None             61933.798497                 62225.817636              59532.235227                      None                                   2                                       2                                    2                                 None               0.091797                   0.242188                0.230469              0.052734                  0.130859               0.136719
+4  InceptionNet  Cifar100  NVIDIA A10         200          200  ../Tranfer/InceptionNet_Cifar100_None_epochs200_pretrain200/checkpoints/final_JF_Control.pt                   0    4              0.2401            0.5356         0.5822                 59.60                  125.48                     60.66                      124.71                  59.98                   124.75    1.664698e+10        9.956195e+09     1.255221e+10                 1.664698e+10             9.064614                 7.744254              8.117763              56483.373616                  66113.530582               63071.560204            543.267578                544.298828             424.464844                444.476562                    444.476562                 396.195312            23.378664                23.378664             13.971376           0.41588       0.453871             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               13.3                  1695.0                    6.5                      1695.0                11.7                   1695.0                None                     None                    2.105                        2.056                     2.080                      None                         3                             2                          3                       None          1.908         113.41                 2                          108.26                              109.44                           120.14                             None                      0.001830                          0.001781                       0.002054                           None             59509.002296                 61720.428669              59481.049702                      None                                   2                                       2                                    3                                 None               0.091797                   0.242188                0.230469              0.052734                  0.130859               0.136719
+5  InceptionNet  Cifar100  NVIDIA A10         200          200  ../Tranfer/InceptionNet_Cifar100_None_epochs200_pretrain200/checkpoints/final_JF_Control.pt                   0    5              0.2401            0.5356         0.5822                 61.49                  139.13                     60.40                      127.38                  63.52                   128.97    1.664698e+10        9.956195e+09     1.255221e+10                 1.664698e+10             7.792258                 7.768286              8.128585              65706.246513                  65909.001745               62987.588819            552.799805                552.799805             431.606445                444.476562                    444.476562                 396.195312            23.378664                23.378664             13.971376           0.41588       0.453871             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.0                  1695.0                    7.7                      1695.0                14.5                   1695.0                None                     None                    2.262                        2.109                     2.031                      None                         3                             3                          2                       None          1.908         113.41                 2                          106.32                              111.39                           110.80                             None                      0.001732                          0.001811                       0.001886                           None             61881.472863                 61780.903796              59463.744201                      None                                   2                                       2                                    2                                 None               0.091797                   0.242188                0.230469              0.052734                  0.130859               0.136719
+6  InceptionNet  Cifar100  NVIDIA A10         200          200  ../Tranfer/InceptionNet_Cifar100_None_epochs200_pretrain200/checkpoints/final_JF_Control.pt                   0    6              0.2401            0.5356         0.5822                 62.58                  127.47                     61.89                      128.67                  62.02                   128.83    1.664698e+10        9.956195e+09     1.255221e+10                 1.664698e+10             7.742290                 7.717405              8.146445              66130.309222                  66343.545795               62849.502724            557.175781                557.175781             437.740234                444.476562                    444.476562                 396.195312            23.378664                23.378664             13.971376           0.41588       0.453871             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               13.5                  1695.0                   12.3                      1690.0                10.7                   1695.0                None                     None                    2.037                        2.079                     2.077                      None                         2                             3                          3                       None          1.908         113.41                 2                          107.31                              107.62                           109.39                             None                      0.001748                          0.001757                       0.001863                           None             61695.115753                 62144.713827              59167.191295                      None                                   2                                       2                                    2                                 None               0.091797                   0.242188                0.230469              0.052734                  0.130859               0.136719
+7  InceptionNet  Cifar100  NVIDIA A10         200          200  ../Tranfer/InceptionNet_Cifar100_None_epochs200_pretrain200/checkpoints/final_JF_Control.pt                   0    7              0.2401            0.5356         0.5822                 64.53                  137.40                     64.48                      133.29                  63.53                   132.89    1.664698e+10        9.956195e+09     1.255221e+10                 1.664698e+10             7.744754                 7.804488              8.109366              66109.269329                  65603.278998               63136.868366            563.551758                563.551758             441.592773                444.476562                    444.476562                 396.195312            23.378664                23.378664             13.971376           0.41588       0.453871             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               12.3                  1690.0                   14.0                      1687.5                 6.0                   1690.0                None                     None                    2.129                        2.067                     2.092                      None                         3                             2                          3                       None          1.908         113.41                 2                          105.17                              111.92                           112.46                             None                      0.001718                          0.001825                       0.001913                           None             61699.662405                 61607.710784              59057.624526                      None                                   2                                       2                                    2                                 None               0.091797                   0.242188                0.230469              0.052734                  0.130859               0.136719
+8  InceptionNet  Cifar100  NVIDIA A10         200          200  ../Tranfer/InceptionNet_Cifar100_None_epochs200_pretrain200/checkpoints/final_JF_Control.pt                   0    8              0.2401            0.5356         0.5822                 69.25                  145.33                     71.42                      145.00                  70.76                   147.47    1.664698e+10        9.956195e+09     1.255221e+10                 1.664698e+10             7.745826                 7.719886              8.139870              66100.119780                  66322.219676               62900.263949            544.298828                544.298828             424.464844                444.476562                    444.476562                 396.195312            23.378664                23.378664             13.971376           0.41588       0.453871             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                9.0                  1695.0                   13.0                      1695.0                11.0                   1695.0                None                     None                    2.099                        2.030                     2.084                      None                         3                             2                          3                       None          1.908         113.41                 2                          107.12                              107.16                           108.84                             None                      0.001747                          0.001745                       0.001848                           None             61848.387704                 61681.251573              59644.182935                      None                                   2                                       2                                    2                                 None               0.091797                   0.242188                0.230469              0.052734                  0.130859               0.136719
+9  InceptionNet  Cifar100  NVIDIA A10         200          200  ../Tranfer/InceptionNet_Cifar100_None_epochs200_pretrain200/checkpoints/final_JF_Control.pt                   0    9              0.2401            0.5356         0.5822                 74.20                  155.24                     77.34                      159.79                  74.57                   155.90    1.664698e+10        9.956195e+09     1.255221e+10                 1.664698e+10             7.739976                 7.759646              8.135923              66150.075707                  65982.387930               62930.780716            552.799805                552.799805             431.606445                444.476562                    444.476562                 396.195312            23.378664                23.378664             13.971376           0.41588       0.453871             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               11.3                  1690.0                    5.0                      1687.5                 9.0                   1695.0                None                     None                    2.092                        2.066                     2.091                      None                         3                             2                          3                       None          1.908         113.41                 2                          112.43                              108.94                           111.64                             None                      0.001842                          0.001772                       0.001901                           None             61327.714243                 61760.721942              59584.240335                      None                                   2                                       2                                    2                                 None               0.091797                   0.242188                0.230469              0.052734                  0.130859               0.136719
