@@ -180,6 +180,13 @@ def load_weights(model: nn.Module, filepath: str, device: torch.device):
             print(f"\n[CRITICAL WARNING] {len(incompatible_keys.missing_keys)} Missing keys (Expected by Model, missing in Checkpoint File):")
             for key in incompatible_keys.missing_keys:
                 print(f"   -> {key}")
+            # A silently partial load is indistinguishable from a good one in the
+            # CSVs (Oct-2025 XceptionNet/InceptionNet-C100 incidents). Refuse.
+            raise RuntimeError(
+                f"load_weights: checkpoint missing {len(incompatible_keys.missing_keys)} key(s) "
+                f"(first: '{incompatible_keys.missing_keys[0]}'). Fix the key remapping above, "
+                f"do not evaluate a partially-loaded model."
+            ) from None
                 
         if incompatible_keys.unexpected_keys:
             print(f"\n[CRITICAL WARNING] {len(incompatible_keys.unexpected_keys)} Unexpected keys (Found in Checkpoint File, not in Model):")
@@ -193,6 +200,40 @@ def load_weights(model: nn.Module, filepath: str, device: torch.device):
     model.to(device)
     model.eval()
     print(f"[INFO] Weights loaded in {time.time() - start_time:.2f}s\n")
+    return model
+
+
+@torch.no_grad()
+def recalibrate_bn(model: nn.Module, train_loader, device, num_batches: int = 100):
+    """Re-estimate BatchNorm running statistics from real train batches.
+
+    Tranfer-era state-dict checkpoints (Control / Control_Continuted) can carry
+    BN running stats that make eval()-mode accuracy collapse (train-mode
+    accuracy — which uses batch stats — is unaffected; observed 0.30 eval vs
+    0.85 train on identical weights). Resetting and re-averaging over
+    `num_batches` restores the true accuracy without touching the weights.
+    LayerNorm-based models (ConvNeXt) have no BN buffers and are skipped.
+    """
+    bn_layers = [m for m in model.modules()
+                 if isinstance(m, (nn.BatchNorm1d, nn.BatchNorm2d, nn.BatchNorm3d))]
+    if not bn_layers:
+        return model
+    was_training = model.training
+    for m in bn_layers:
+        m.reset_running_stats()
+        m.momentum = None  # exact cumulative average, independent of batch order
+    model.train()
+    it = iter(train_loader)
+    for _ in range(num_batches):
+        try:
+            x, _ = next(it)
+        except StopIteration:
+            it = iter(train_loader)
+            x, _ = next(it)
+        model(x.to(device))
+    model.train(was_training)
+    print(f"[INFO] BN running stats recalibrated over {num_batches} batches "
+          f"({len(bn_layers)} BN layers).")
     return model
 
 

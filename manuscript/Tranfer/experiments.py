@@ -265,6 +265,16 @@ def run_experiment(
         start_epoch = checkpoint['epoch'] + 1
         all_data = checkpoint['data']
         print(f"[✓] Resumed at epoch {start_epoch}")
+
+        # Completed run whose 'final' marker was deleted: the loop below would
+        # execute 0 times and re-save a byte-identical (potentially stale-BN)
+        # final from the replayed state — observed bit-identical checkpoints
+        # after "retraining". Return the recorded metrics instead.
+        if start_epoch >= epochs:
+            print(f"[✓] '{exp_name}' already trained {start_epoch}/{epochs} epochs. "
+                  f"Returning recorded metrics; delete the *_epoch*.pt files too if you "
+                  f"really want to retrain.")
+            return all_data
     
     else:
         print("[•] No intermediate checkpoint found — starting fresh or inheriting from base.")

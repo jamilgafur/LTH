@@ -138,6 +138,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     print("[INFO] Initializing baseline model...")
     base_model, train_loader, test_loader, _ = initialize_architecture(model_name, dataset_name)
     model_before = load_weights(base_model, model_before_path, device)
+    recalibrate_bn(model_before, train_loader, device)
 
     # 2. Load Original Post-Finetuning Model (optional). When Control_Continuted is
     #    still training, run a baseline-only pass: sparsity/IMP/structural and the
@@ -148,6 +149,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
         model_after_path = find_matching_checkpoint(model_before_path, checkpoints["after"])
         original_after_base, _, _, _ = initialize_architecture(model_name, dataset_name)
         original_after_model = load_weights(original_after_base, model_after_path, device)
+        recalibrate_bn(original_after_model, train_loader, device)
     except FileNotFoundError:
         print("[WARN] No Control_Continuted artifact for this dir yet — baseline-only pass.")
         original_after_model = None
@@ -176,6 +178,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     full_collapsed_model_ready.to(device)
     full_collapsed_model_ready.eval()
     print(f"[INFO] Whole-model load completed in {time.time() - load_start_time:.2f}s")
+    recalibrate_bn(full_collapsed_model_ready, train_loader, device)
 
     # 5. Calculate Dynamic Sparsity & Handle IMP Unstructured Pruning
     print("[INFO] Calculating dynamic sparsity to match collapse...")
