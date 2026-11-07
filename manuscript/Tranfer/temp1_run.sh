@@ -60,7 +60,7 @@ for model in "${models[@]}"; do
                 fi
 
                 # Submit discovery job. Will train/inherit Control if needed, then dump JSON
-                command="qsub -q all.q -l ngpus=1,gpu=TRUE -v MODEL=\"$model\",DATASET=\"$dataset\",EXPERIMENT=\"discover\",FLAG=\"$flag\",QUANT=\"$quant_flag\",EPOCHS=\"$EPOCHS\",PRETRAIN=\"$PRETRAIN\",SCORER=\"$SCORER\" submit_job.pbs"
+                command="qsub -q UI-GPU -l ngpus=1,gpu=TRUE -v MODEL=\"$model\",DATASET=\"$dataset\",EXPERIMENT=\"discover\",FLAG=\"$flag\",QUANT=\"$quant_flag\",EPOCHS=\"$EPOCHS\",PRETRAIN=\"$PRETRAIN\",SCORER=\"$SCORER\" submit_job.pbs"
                 
                 echo "Executing: $command"
                 eval "$command"
