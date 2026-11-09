@@ -574,11 +574,13 @@ def auto_recover_metrics(checkpoint_path, experiment_name, base_folder, model=No
                     for inputs, targets in test_loader:
                         inputs, targets = inputs.to(device), targets.to(device)
                         outputs = model(inputs)
-                        _, predicted = outputs.max(1)
+                        main_outputs = outputs[0] if isinstance(outputs, tuple) else outputs
+                        _, predicted = main_outputs.max(1)
                         total += targets.size(0)
                         correct += predicted.eq(targets).sum().item()
                 
-                acc = correct / total if total > 0 else 0.0
+                # Percent, matching the unit used by train_one_epoch/evaluate.
+                acc = 100.0 * correct / total if total > 0 else 0.0
 
         metrics_data[experiment_name] = {
             "final_accuracy": acc,

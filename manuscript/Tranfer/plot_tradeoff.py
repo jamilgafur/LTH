@@ -416,7 +416,7 @@ def generate_control_table(base_path="."):
     latex_lines = [
         "\\begin{table*}[htbp]",
         "    \\centering",
-        "    \\caption{\\textbf{Control Performance and Hardware Metrics for Evaluated Architectures.} Performance of the uncompressed control models following the complete pre-training and finetuning budget. Accuracies denote the maximum top-1 validation recovery. Parameters are reported in millions (M) and FLOPs in billions (G).}",
+        "    \\caption{\\textbf{Control Performance and Hardware Metrics for Evaluated Architectures.} Performance of the uncompressed control models following the complete pre-training and finetuning budget. Accuracies denote the maximum top-1 test-set accuracy. Parameters are reported in millions (M) and FLOPs in billions (G).}",
         "    \\label{tab:control_metrics}",
         "    \\begin{tabular}{l | ccc | ccc | ccc}\\toprule",
         "        \\textbf{Architecture} & \\multicolumn{3}{c|}{\\textbf{CIFAR-10}} & \\multicolumn{3}{c|}{\\textbf{CIFAR-100}} & \\multicolumn{3}{c}{\\textbf{Tiny ImageNet}} \\\\",

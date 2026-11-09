@@ -32,7 +32,7 @@ from utils import *
 from filemanager import *
 from paths import run_diagnostics_dir
 from pyPrune.collapse import collapse_only, wrap_pools_safe
-from trainer import train_one_epoch
+from trainer import train_one_epoch, evaluate
 
 def ensure_dir(directory):
     if not os.path.exists(directory):
@@ -231,7 +231,7 @@ def run_experiment(
     )
 
     start_epoch = 0
-    all_data = {"accuracies": [], "losses": [], "best_acc": 0.0, "patience_counter": 0}
+    all_data = {"accuracies": [], "test_accuracies": [], "losses": [], "best_acc": 0.0, "patience_counter": 0}
 
     # 5. Resume Logic / Inheritance Logic
     if existing_ckpts:
@@ -264,6 +264,8 @@ def run_experiment(
 
         start_epoch = checkpoint['epoch'] + 1
         all_data = checkpoint['data']
+        # Older checkpoints predate test-set tracking.
+        all_data.setdefault("test_accuracies", [])
         print(f"[✓] Resumed at epoch {start_epoch}")
 
         # Completed run whose 'final' marker was deleted: the loop below would
@@ -312,11 +314,15 @@ def run_experiment(
 
         scheduler.step() # Always step the scheduler
 
+        # Reported accuracy must come from the test set; "accuracies" stays the train curve.
+        test_acc = evaluate(model, test_loader, device, quant) if test_loader is not None else acc
+
         all_data["accuracies"].append(acc)
+        all_data["test_accuracies"].append(test_acc)
         all_data["losses"].append(avg_loss)
 
-        if acc > all_data["best_acc"] + 0.05:
-            all_data["best_acc"] = acc
+        if test_acc > all_data["best_acc"] + 0.05:
+            all_data["best_acc"] = test_acc
             all_data["patience_counter"] = 0
         else:
             all_data["patience_counter"] += 1
@@ -367,7 +373,8 @@ def run_experiment(
         "inference_time": infer_time,
         "flops": flops,
         "total_size_mb": total_size_mb,
-        "final_accuracy": all_data["accuracies"][-1] if all_data["accuracies"] else 0,
+        "train_best_acc": max(all_data["accuracies"]) if all_data["accuracies"] else 0,
+        "final_accuracy": max(all_data["test_accuracies"]) if all_data["test_accuracies"] else 0,
     })
 
     run_full_diagnostics(model, data_shape, {exp_name: all_data}, plots_dir, exp_name, 
