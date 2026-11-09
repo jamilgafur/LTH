@@ -40,13 +40,22 @@ def parse_txt_files(file_paths):
                 df = pd.read_csv(io.StringIO(csv_data))
                 
                 if 'Pre_Train_Epochs' not in df.columns:
-                    match = re.search(r'ep(\d+)_(?:pre|post)(\d+)|epochs(\d+)_pretrain(\d+)', header)
+                    # NOTE: transfer.py defines --epochs as post-collapse fine-tune (Stage 2)
+                    # and --pretrain as Stage-1 pretraining, so 'epochs{A}_pretrain{B}' or
+                    # 'ep{A}_pre{B}' means Pre=B / Post=A. Swapping these inverts the budget
+                    # axis of every figure/table downstream.
+                    match = re.search(r'ep(\d+)_(pre|post)(\d+)|epochs(\d+)_pretrain(\d+)', header)
                     if match:
-                        if match.group(1): 
-                            df['Pre_Train_Epochs'] = int(match.group(1))
-                            df['Post_Collapse_Epochs'] = int(match.group(2))
-                        else: 
-                            df['Pre_Train_Epochs'] = int(match.group(3))
+                        if match.group(1):
+                            ep_val, tag, other_val = int(match.group(1)), match.group(2), int(match.group(3))
+                            if tag == 'pre':
+                                df['Pre_Train_Epochs'] = other_val
+                                df['Post_Collapse_Epochs'] = ep_val
+                            else:
+                                df['Pre_Train_Epochs'] = ep_val
+                                df['Post_Collapse_Epochs'] = other_val
+                        else:
+                            df['Pre_Train_Epochs'] = int(match.group(5))
                             df['Post_Collapse_Epochs'] = int(match.group(4))
                     else: continue
                 
@@ -113,8 +122,10 @@ def augment_df_with_json(df, base_path="."):
         
         ep_match = re.search(r'epochs(\d+)_pretrain(\d+)', folder_name)
         if not ep_match: continue
-        
-        pre_train_ep, post_collapse_ep = int(ep_match.group(1)), int(ep_match.group(2))
+
+        # Folder names are epochs{POST-COLLAPSE}_pretrain{PRE} (see transfer.py args);
+        # group(1) is the fine-tune budget, group(2) the pretrain budget.
+        pre_train_ep, post_collapse_ep = int(ep_match.group(2)), int(ep_match.group(1))
         
         try:
             with open(filepath, 'r') as f: data = json.load(f)
@@ -298,9 +309,10 @@ def generate_tables(df):
 
     for arch in architectures:
         best_das = {ds: get_best_delta_acc(df, ds, arch, False) for ds in datasets}
-        
+        arch_tex = arch.replace('_', '\\_')
+
         for i, (pre, fine) in enumerate(epochs_list):
-            row = [f"\\multirow{{3}}{{*}}{{\\textbf{{{arch.replace('_', '\\_')}}}}}" if i == 0 else "", f"{pre}/{fine}"]
+            row = [f"\\multirow{{3}}{{*}}{{\\textbf{{{arch_tex}}}}}" if i == 0 else "", f"{pre}/{fine}"]
             for ds in datasets:
                 m = get_metrics(df, ds, arch, pre=pre, fine=fine, quantized=False)
                 if m is not None:
@@ -334,9 +346,10 @@ def generate_tables(df):
     
     for arch in architectures:
         best_das = {ds: get_best_delta_acc(df, ds, arch, False) for ds in datasets}
-        
+        arch_tex = arch.replace('_', '\\_')
+
         for i, (pre, fine) in enumerate(epochs_list):
-            row = [f"\\multirow{{3}}{{*}}{{\\textbf{{{arch.replace('_', '\\_')}}}}}" if i == 0 else "", f"{pre}/{fine}"]
+            row = [f"\\multirow{{3}}{{*}}{{\\textbf{{{arch_tex}}}}}" if i == 0 else "", f"{pre}/{fine}"]
             for ds in datasets:
                 m_fp32 = get_metrics(df, ds, arch, pre=pre, fine=fine, quantized=False)
                 m_int8 = get_metrics(df, ds, arch, pre=pre, fine=fine, quantized=True)
@@ -414,7 +427,8 @@ def generate_control_table(base_path="."):
     
     architectures = sorted(list(metrics_dict.keys()))
     for arch in architectures:
-        row = [f"        \\textbf{{{arch.replace('_', '\\_')}}}"]
+        arch_tex = arch.replace('_', '\\_')
+        row = [f"        \\textbf{{{arch_tex}}}"]
         for ds in ["CIFAR-10", "CIFAR-100", "Tiny ImageNet"]:
             if ds in metrics_dict[arch]:
                 d = metrics_dict[arch][ds]

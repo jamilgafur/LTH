@@ -309,9 +309,9 @@ def find_baseline(df: pd.DataFrame):
     # Crucial: Phase 2 continued control is the true baseline for Stage 2 comparisons
     control_cont = b_df[b_df["exp_name"].str.lower().str.contains("continuted")]
     if not control_cont.empty:
-        return control_cont.iloc[0] # Avoids .mean() dropping object columns
-        
-    return b_df.iloc[0] # Avoids .mean() dropping object columns
+        return control_cont.sort_values("exp_name").iloc[0] # Deterministic tie-break
+
+    return b_df.sort_values("exp_name").iloc[0] # Deterministic tie-break
 
 def normalize(df: pd.DataFrame) -> pd.DataFrame:
     out = []
@@ -337,12 +337,14 @@ def normalize(df: pd.DataFrame) -> pd.DataFrame:
 
         for _, r in g.iterrows():
             row = r.copy()
+            # Accuracy deltas must not be gated on params availability.
+            row["d_acc"] = r["accuracy"] - b_acc
+            row["baseline_acc"] = b_acc
             if pd.notnull(b_params) and b_params > 0:
-                row["d_acc"] = r["accuracy"] - b_acc 
-                row["baseline_acc"] = b_acc 
                 row["d_params"] = 100 * (1 - r["params"] / b_params)
-                
-                # --- Curve Dynamic Math ---
+
+            # --- Curve Dynamic Math ---
+            if True:
                 r_loss = r.get("loss_curve", [])
                 
                 if len(r_loss) > 5 and len(b_loss_curve) > 5:
@@ -469,6 +471,9 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=figures_dir() / "meth
         
         # [BUG FIX] Add underscores to enforce strict matching so "cifar10" doesn't match "cifar100"
         json_files = [p for p in potential_jsons if f"_{clean_ds}_" in p.name.lower()]
+        # Deterministic scorer universe: prefer the default '_JF' region file; the
+        # '*_scorer<S>_JF' ablation variants must not leak into the main figures.
+        json_files.sort(key=lambda p: ("_scorer" in p.name.lower(), p.name))
         
         verified_idx_ranges = []
         
@@ -761,7 +766,7 @@ def fig4_comprehensive_search_space_map(
     out_dir.mkdir(parents=True, exist_ok=True)
 
     def get_acc_color(d_acc):
-        if pd.isna(d_acc): return "#4C72B0" 
+        if pd.isna(d_acc): return "#808080"  # Gray: missing data must not read as "passing"
         if d_acc >= -2.0: return "#2ca02c"
         if d_acc >= -6.0: return "#ff7f0e"
         return "#d62728"
@@ -805,6 +810,8 @@ def fig4_comprehensive_search_space_map(
 
         potential_jsons = list(Path(".").rglob(f"{arch}*epochs{epochs}_pretrain{pretrain}*_discovered_regions.json"))
         all_jsons = [p for p in potential_jsons if f"_{clean_ds}_" in p.name.lower()]
+        # Prefer the default scorer universe ('_JF'); exclude ablation-scorer variants first.
+        all_jsons.sort(key=lambda p: ("_scorer" in p.name.lower(), p.name))
         
         if not all_jsons: 
             continue
@@ -1417,6 +1424,7 @@ def fig9_flops_vs_memory(
     """
     out_dir.mkdir(parents=True, exist_ok=True)
     plot_df = df.dropna(subset=["flops", "memory"])
+    plot_df = plot_df[plot_df["flops"] > 0]  # log10 binning crashes on flops == 0
     if plot_df.empty:
         logger.warning("[FIG9] No data available for FLOPs vs memory plot.")
         return

@@ -49,9 +49,9 @@ def load_and_compute_deltas():
     df['pre_epochs'] = df['pre_epochs'].astype(int)
     df['post_epochs'] = df['post_epochs'].astype(int)
     
-    # 1. Accuracy Deltas
-    df['delta_acc_imp'] = df['acc_unstructured'] - df['acc_original_after']
-    df['delta_acc_collapse'] = df['acc_collapsed'] - df['acc_original_after']
+    # 1. Accuracy Deltas (percentage points; raw accuracy columns are 0-1 fractions)
+    df['delta_acc_imp'] = (df['acc_unstructured'] - df['acc_original_after']) * 100.0
+    df['delta_acc_collapse'] = (df['acc_collapsed'] - df['acc_original_after']) * 100.0
     
     # 2. Energy Savings (Raw Joules & Hardware-Normalized Relative %)
     df['energy_saved_imp'] = df['energy_joules_original'] - df['energy_joules_unstructured']
@@ -61,11 +61,11 @@ def load_and_compute_deltas():
     df['energy_saved_imp_pct'] = ((df['energy_joules_original'] - df['energy_joules_unstructured']) / safe_orig_energy) * 100.0
     df['energy_saved_collapse_pct'] = ((df['energy_joules_original'] - df['energy_joules_collapsed']) / safe_orig_energy) * 100.0
     
-    # 3. Adversarial Deltas
-    df['delta_fgsm_imp'] = df['adv_acc_FGSM_unstructured'] - df['adv_acc_FGSM_original']
-    df['delta_fgsm_collapse'] = df['adv_acc_FGSM_collapsed'] - df['adv_acc_FGSM_original']
-    df['delta_pgd_imp'] = df['adv_acc_PGD_unstructured'] - df['adv_acc_PGD_original']
-    df['delta_pgd_collapse'] = df['adv_acc_PGD_collapsed'] - df['adv_acc_PGD_original']
+    # 3. Adversarial Deltas (percentage points)
+    df['delta_fgsm_imp'] = (df['adv_acc_FGSM_unstructured'] - df['adv_acc_FGSM_original']) * 100.0
+    df['delta_fgsm_collapse'] = (df['adv_acc_FGSM_collapsed'] - df['adv_acc_FGSM_original']) * 100.0
+    df['delta_pgd_imp'] = (df['adv_acc_PGD_unstructured'] - df['adv_acc_PGD_original']) * 100.0
+    df['delta_pgd_collapse'] = (df['adv_acc_PGD_collapsed'] - df['adv_acc_PGD_original']) * 100.0
 
     if 'flops_original' in df.columns:
         safe_original_flops = df['flops_original'].replace(0, np.nan)
@@ -74,7 +74,7 @@ def load_and_compute_deltas():
         df['flops_reduction_structural_pct'] = (df['flops_original'] - df['flops_structural']) / safe_original_flops
 
     # 4. Structural arm deltas (columns are empty when torch-pruning was unavailable)
-    df['delta_acc_structural'] = df['acc_structural'] - df['acc_original_after']
+    df['delta_acc_structural'] = (df['acc_structural'] - df['acc_original_after']) * 100.0
     df['energy_saved_structural_pct'] = ((df['energy_joules_original'] - df['energy_joules_structural']) / safe_orig_energy) * 100.0
 
     # 5. Efficiency ratios vs original (for speed/memory plots)
@@ -356,7 +356,7 @@ def plot_budget_transfer(df, all_models, dataset, filename):
     handles += [Line2D([], [], ls='-', color='black', label='fp32 (control, solid)'),
                 Line2D([], [], ls='--', color='black', alpha=0.7, label='fp16 (quant, dashed)')]
     ax.legend(handles=handles, title='Model / Universe', bbox_to_anchor=(1.02, 1), loc='upper left')
-    ax.set_ylabel('Accuracy Delta (Collapsed vs Original)', fontsize=12)
+    ax.set_ylabel('Accuracy Delta (pp, Collapsed vs Original)', fontsize=12)
     ax.set_xlabel('Budget (pre / post epochs)', fontsize=11)
     ax.set_title(f'Budget Transfer — How pre/post split affects collapse accuracy\n({dataset})', fontsize=12)
     plt.tight_layout()
@@ -418,7 +418,7 @@ def main():
             columns=['delta_acc_imp', 'delta_acc_collapse', 'delta_acc_structural'],
             labels=['IMP (Unstructured)', 'Collapsed', 'Structural'],
             title=f'Change in Task Accuracy (Compared to Original){title_suffix}',
-            ylabel='Accuracy Delta\n(Higher is Better)',
+            ylabel='Accuracy Delta (pp)\n(Higher is Better)',
             filename=fname('plot_1_delta_accuracy'),
             zero_line=True,
             df_annotations=['acc_unstructured', 'acc_collapsed', 'acc_structural'],
@@ -452,7 +452,7 @@ def main():
         )
 
         # Plot 4: Adversarial Robustness (rows = attack, both universes merged per axes)
-        adv_ylabel = 'Accuracy Delta under Attack\n(Higher is Better)'
+        adv_ylabel = 'Accuracy Delta under Attack (pp)\n(Higher is Better)'
         plot_grid(
             df_fp32=df_fp32, df_quant=df_quant, all_models=all_models,
             rows=[

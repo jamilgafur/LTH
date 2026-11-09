@@ -271,7 +271,7 @@ def plot_accuracy_vs_collapsed_depth(
 ):
     df = pd.DataFrame(collapse_results)
 
-    ensure_dir(save_dir)
+    os.makedirs(save_dir, exist_ok=True)
     plt.figure(figsize=(8, 6))
 
     for (model, dataset), g in df.groupby(["model", "dataset"]):
@@ -387,17 +387,44 @@ def plot_scorer_ablation(ablation, save_dir=None):
     ablation: parsed ablation JSON dict (or a path to it).
     save_dir: output directory (defaults to alongside the JSON path / cwd).
     """
-    if isinstance(ablation, str):
-        import json as _json
-        with open(ablation, "r") as f:
+    import json as _json
+    ablation_path = ablation if isinstance(ablation, str) else None
+    if ablation_path:
+        with open(ablation_path, "r") as f:
             if save_dir is None:
-                save_dir = os.path.dirname(ablation) or "."
+                save_dir = os.path.dirname(ablation_path) or "."
             ablation = _json.load(f)
     if save_dir is None:
         save_dir = "."
     os.makedirs(str(save_dir), exist_ok=True)
 
-    scorers_cfg = ablation.get("scorers", {})
+    scorers_field = ablation.get("scorers", {})
+    if isinstance(scorers_field, dict):
+        # Legacy schema: region configs embedded directly in the ablation JSON.
+        scorers_cfg = scorers_field
+    else:
+        # Current schema: 'scorers' is a list of names; each scorer's region
+        # config lives in a sibling '<model>_<dataset>_epochs<E>_pretrain<P>_scorer<s>_JF_discovered_regions.json'.
+        import glob as _glob
+        search_root = os.path.dirname(ablation_path) if ablation_path else "."
+        model = ablation.get("model", "*")
+        dataset = ablation.get("dataset", "*")
+        epochs = ablation.get("epochs", "*")
+        pretrain = ablation.get("pretrain", "*")
+        scorers_cfg = {}
+        for s in scorers_field:
+            hits = sorted(_glob.glob(os.path.join(
+                search_root,
+                f"{model}_{dataset}_epochs{epochs}_pretrain{pretrain}_scorer{s}_JF_discovered_regions.json")))
+            if not hits and s in ("local_dev", "all"):
+                # Default scorer writes the unsuffixed region file.
+                hits = sorted(_glob.glob(os.path.join(
+                    search_root,
+                    f"{model}_{dataset}_epochs{epochs}_pretrain{pretrain}_JF_discovered_regions.json")))
+            if not hits:
+                continue
+            with open(hits[0], "r") as f:
+                scorers_cfg[s] = _json.load(f)
 
     def region_set(cfg):
         tuples = set()
