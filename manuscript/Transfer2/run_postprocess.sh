@@ -70,7 +70,7 @@ PY
                 fi
 
                 # Submit the post-processing job using SGE GPU flags
-                command="qsub -q UI-GPU -l ngpus=1,gpu=TRUE -v MODEL=\"$model\",DATASET=\"$dataset\",QUANT=\"$quant\",EPOCHS=\"$EPOCHS\",PRETRAIN=\"$PRETRAIN\",REPS=\"$REPS\" submit_postprocess.pbs"
+                command="qsub -q all.q -l ngpus=1,gpu=TRUE -v MODEL=\"$model\",DATASET=\"$dataset\",QUANT=\"$quant\",EPOCHS=\"$EPOCHS\",PRETRAIN=\"$PRETRAIN\",REPS=\"$REPS\" submit_postprocess.pbs"
 
                 echo "Executing: $command"
                 eval "$command"
