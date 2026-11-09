@@ -4,7 +4,8 @@ Why: the training loop historically recorded training accuracy as
 best_acc/final_accuracy (train_one_epoch measures the train batches in train
 mode), so the manuscript tables showed ~99.9% values. This script walks run
 directories, evaluates each saved whole-model checkpoint on the test set with
-trainer.evaluate(), and backfills the corrected values into
+trainer.evaluate() (after BN recalibration — see recalibrate_bn), and backfills
+the corrected values into
 metrics/merged_metrics.json (original saved once as merged_metrics.json.bak).
 Old train-based values are preserved as train_best_acc/train_final_accuracy.
 
@@ -25,6 +26,7 @@ import os
 import shutil
 
 import torch
+import torch.nn as nn
 
 
 def dataset_of(folder_name):
@@ -68,6 +70,38 @@ def fix_legacy_units(metrics):
     return changed
 
 
+def recalibrate_bn(model, train_loader, device, num_batches=100):
+    """Re-estimate BatchNorm running statistics from real train batches.
+
+    Mirrors Transfer2/utils.py:recalibrate_bn — Tranfer-era state-dict
+    checkpoints can carry BN running stats that make eval()-mode accuracy
+    collapse (train-mode accuracy is unaffected; observed 0.30 eval vs 0.85
+    train on identical weights). Resetting and re-averaging over `num_batches`
+    restores the true accuracy without touching the weights. LayerNorm-based
+    models (ConvNeXt) have no BN buffers and are skipped.
+    """
+    bn_layers = [m for m in model.modules()
+                 if isinstance(m, (nn.BatchNorm1d, nn.BatchNorm2d, nn.BatchNorm3d))]
+    if not bn_layers:
+        return model
+    was_training = model.training
+    for m in bn_layers:
+        m.reset_running_stats()
+        m.momentum = None  # exact cumulative average, independent of batch order
+    model.train()
+    it = iter(train_loader)
+    for _ in range(num_batches):
+        try:
+            x, _ = next(it)
+        except StopIteration:
+            it = iter(train_loader)
+            x, _ = next(it)
+        model(x.to(device))
+    model.train(was_training)
+    print(f"[INFO] BN running stats recalibrated over {num_batches} batches ({len(bn_layers)} BN layers).")
+    return model
+
+
 def recompute_run(metrics_path, device):
     from trainer import evaluate
     from utils import load_dataset
@@ -83,6 +117,7 @@ def recompute_run(metrics_path, device):
         metrics = json.load(f)
 
     changed = fix_legacy_units(metrics)
+    train_loader = None
     test_loader = None
 
     for ckpt_path in sorted(glob.glob(os.path.join(run_dir, "checkpoints", "final_*_whole.pt"))):
@@ -93,12 +128,13 @@ def recompute_run(metrics_path, device):
             continue
 
         if test_loader is None:
-            print(f"[•] {folder}: loading {dataset} test set...")
-            test_loader = load_dataset(dataset, arch_of(folder))[1]
+            print(f"[•] {folder}: loading {dataset} train/test sets...")
+            train_loader, test_loader = load_dataset(dataset, arch_of(folder))[:2]
 
         print(f"[•] {folder}/{stem}: evaluating on the {dataset} test set...")
         model = torch.load(ckpt_path, map_location=device, weights_only=False)
         model.to(device)
+        recalibrate_bn(model, train_loader, device)
         acc = evaluate(model, test_loader, device, quant=stem.endswith("_quant"))
         del model
 

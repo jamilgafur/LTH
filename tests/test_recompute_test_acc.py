@@ -1,8 +1,9 @@
 """Tests for recompute_test_acc.py helpers and trainer.evaluate().
 
 The recompute script backfills test-set accuracy into merged_metrics.json.
-Its non-trivial logic is the checkpoint-stem -> metrics-key mapping and the
-legacy 0-1 fraction cleanup; trainer.evaluate() must return percent accuracy
+Its non-trivial logic is the checkpoint-stem -> metrics-key mapping, the
+legacy 0-1 fraction cleanup, and BN recalibration; trainer.evaluate() must
+return percent accuracy
 on the given loader (it is the number the manuscript tables will report).
 """
 
@@ -44,6 +45,21 @@ def test_fix_legacy_units_scales_only_fractions():
     assert metrics["a"]["final_accuracy"] == 94.0
     assert metrics["b"]["final_accuracy"] == 94.0
     assert metrics["c"]["final_accuracy"] == 0.5
+
+
+def test_recalibrate_bn_fixes_broken_running_stats():
+    rc = _load_module("recompute_test_acc", "recompute_test_acc.py")
+    device = torch.device("cpu")
+    model = nn.BatchNorm2d(3)
+    with torch.no_grad():
+        model.running_mean.fill_(999.0)  # simulate corrupt Tranfer-era stats
+        model.running_var.fill_(0.001)
+    x = torch.full((16, 3, 8, 8), 2.0)
+    loader = DataLoader(TensorDataset(x, torch.zeros(16, dtype=torch.long)), batch_size=4)
+
+    rc.recalibrate_bn(model, loader, device, num_batches=4)
+
+    assert torch.allclose(model.running_mean, torch.full((3,), 2.0), atol=1e-5)
 
 
 def test_evaluate_returns_percent_accuracy():
