@@ -72,6 +72,15 @@ def load_and_compute_deltas():
         df['flops_reduction_imp_pct'] = (df['flops_original'] - df['flops_unstructured']) / safe_original_flops
         df['flops_reduction_collapse_pct'] = (df['flops_original'] - df['flops_collapsed']) / safe_original_flops
         df['flops_reduction_structural_pct'] = (df['flops_original'] - df['flops_structural']) / safe_original_flops
+        # IMP sparsity is set to match collapse (main.py), so this IS the design pruning amount
+        df['pruned_imp'] = df['flops_reduction_imp_pct']
+
+    # Fraction of the original model actually removed (params/storage), and storage shrink per arm
+    if 'storage_mb_original' in df.columns:
+        safe_orig_storage = df['storage_mb_original'].replace(0, np.nan)
+        df['pruned_collapse'] = (df['storage_mb_original'] - df['storage_mb_collapsed']) / safe_orig_storage
+        for m in ['unstructured', 'collapsed', 'structural']:
+            df[f'storage_reduction_{m}_pct'] = (df['storage_mb_original'] - df[f'storage_mb_{m}']) / safe_orig_storage
 
     # 4. Structural arm deltas (columns are empty when torch-pruning was unavailable)
     df['delta_acc_structural'] = (df['acc_structural'] - df['acc_original_after']) * 100.0
@@ -392,6 +401,67 @@ def plot_cka_heatmap(df, filename):
     print(f"Saved '{filename}'")
     plt.close()
 
+def plot_pruning_amount(df_fp32, all_models, title, filename):
+    """Fraction of the original model removed per arm; pruning amount is identical
+    across fp32/fp16, so fp32 bars only. IMP sparsity is a design parameter (set to
+    match collapse); collapsed/structural are measured via param/storage counts."""
+    fig, ax = plt.subplots(figsize=(13, 7))
+    sns.set_theme(style="whitegrid")
+    cols = ['pruned_imp', 'pruned_collapse', 'sparsity_structural']
+    labels = ['IMP (Unstructured)', 'Collapsed', 'Structural']
+    dr = draw_bar_panel(ax, df_fp32, all_models, cols, labels, title, legend=True)
+    pad_shared_ylim(ax)
+    annotate_bars(ax, dr[cols], "{val:.1%}")
+    ax.set_ylabel('Fraction of Original Model Pruned\n(Higher = More Removed)', fontsize=12)
+    ax.legend(title='Modification Type', bbox_to_anchor=(1.02, 1), loc='upper left')
+    plt.tight_layout()
+    plt.savefig(filename, bbox_inches='tight')
+    print(f"Saved '{filename}'")
+    plt.close()
+
+def plot_xy_scatter(df_fp32, df_quant, methods, title, xlabel, ylabel, filename,
+                    hzero=False, vzero=False):
+    """Single-axes scatter: color = method; filled = fp32, open = fp16.
+    methods = list of (label, x_col, y_col); rows with any NaN are dropped."""
+    from matplotlib.lines import Line2D
+    fig, ax = plt.subplots(figsize=(14, 8))
+    sns.set_theme(style="whitegrid")
+    colors = sns.color_palette('Set2', max(len(methods), 3))
+
+    for d, filled in [(df_fp32, True), (df_quant, False)]:
+        for (label, xcol, ycol), color in zip(methods, colors):
+            pts = d[['model', xcol, ycol]].dropna()
+            if pts.empty:
+                continue
+            if filled:
+                ax.scatter(pts[xcol], pts[ycol], alpha=0.85, s=70, color=color)
+            else:
+                ax.scatter(pts[xcol], pts[ycol], s=70, facecolors='none',
+                           edgecolors=color, linewidths=1.5)
+    # Label fp32 points only (fp16 sits at nearly the same coordinates)
+    for (label, xcol, ycol), color in zip(methods, colors):
+        pts = df_fp32[['model', xcol, ycol]].dropna()
+        for xi, yi, mdl in zip(pts[xcol], pts[ycol], pts['model']):
+            ax.annotate(mdl, (xi, yi), textcoords='offset points', xytext=(4, 4), fontsize=8)
+
+    if hzero:
+        ax.axhline(0, color='black', lw=1.2, ls='--')
+    if vzero:
+        ax.axvline(0, color='black', lw=1.2, ls='--')
+    handles = [Line2D([], [], marker='o', color='w', markerfacecolor=c, markersize=9, label=l)
+               for (l, _, _), c in zip(methods, colors)]
+    handles += [Line2D([], [], marker='o', color='w', markerfacecolor='#888888', markersize=9, label='fp32 (control, filled)'),
+                Line2D([], [], marker='o', color='w', markerfacecolor='white', markeredgecolor='#888888',
+                       markeredgewidth=1.5, markersize=9, label='fp16 (quant, open)')]
+    ax.legend(handles=handles, title='Modification / Universe', bbox_to_anchor=(1.02, 1), loc='upper left')
+    ax.set_title(title, fontsize=12, fontweight='bold')
+    ax.set_xlabel(xlabel, fontsize=12)
+    ax.set_ylabel(ylabel, fontsize=12)
+    plt.tight_layout()
+    plt.savefig(filename, bbox_inches='tight')
+    print(f"Saved '{filename}'")
+    plt.close()
+
 def main():
     df, all_models = load_and_compute_deltas()
     if df is None:
@@ -536,6 +606,62 @@ def main():
             df_fp32=df_fp32, df_quant=df_quant, all_models=all_models,
             title=f'fp16 PTQ Penalty on Accuracy{title_suffix}',
             filename=fname('plot_10_ptq_penalty')
+        )
+
+        # Plot 13: How much of the original model was pruned (universe-independent)
+        if 'flops_original' in group_df.columns:
+            plot_pruning_amount(
+                df_fp32=df_fp32, all_models=all_models,
+                title=f'Parameter Reduction by Pruning (vs Original){title_suffix}',
+                filename=fname('plot_13_pruning_amount')
+            )
+
+        # Plot 14: On-disk storage reduction (IMP keeps dense zeros, collapse/structural shrink)
+        if 'storage_mb_original' in group_df.columns:
+            plot_universe_comparison(
+                df_fp32=df_fp32, df_quant=df_quant, all_models=all_models,
+                columns=['storage_reduction_unstructured_pct', 'storage_reduction_collapsed_pct', 'storage_reduction_structural_pct'],
+                labels=['IMP (Unstructured)', 'Collapsed', 'Structural'],
+                title=f'Storage Footprint Reduction (vs Original){title_suffix}',
+                ylabel='Storage Reduction (fraction)\n(Higher = Smaller Checkpoint)',
+                filename=fname('plot_14_storage_reduction'),
+                zero_line=False,
+                df_annotations=['storage_reduction_unstructured_pct', 'storage_reduction_collapsed_pct', 'storage_reduction_structural_pct'],
+                anno_fmt="{val:.1%}"
+            )
+
+        # Plot 15: Robustness-vs-accuracy trade-off (structural arm has no adv eval)
+        plot_xy_scatter(
+            df_fp32=df_fp32, df_quant=df_quant,
+            methods=[('IMP (Unstructured)', 'delta_acc_imp', 'delta_pgd_imp'),
+                     ('Collapsed', 'delta_acc_collapse', 'delta_pgd_collapse')],
+            title=f'Robustness vs Accuracy Trade-off (PGD){title_suffix}',
+            xlabel='Clean Accuracy Delta (pp)', ylabel='PGD Accuracy Delta (pp)',
+            filename=fname('plot_15_robustness_vs_accuracy'),
+            hzero=True, vzero=True
+        )
+
+        # Plot 16: CKA vs accuracy retention — does representational similarity predict accuracy kept?
+        plot_xy_scatter(
+            df_fp32=df_fp32, df_quant=df_quant,
+            methods=[('IMP (Unstructured)', 'cka_unstructured', 'delta_acc_imp'),
+                     ('Collapsed', 'cka_collapsed', 'delta_acc_collapse'),
+                     ('Structural', 'cka_structural', 'delta_acc_structural')],
+            title=f'Representational Similarity vs Accuracy Retention{title_suffix}',
+            xlabel='CKA to Original', ylabel='Accuracy Delta (pp)',
+            filename=fname('plot_16_cka_vs_accuracy'),
+            hzero=True
+        )
+
+        # Plot 17: Measured energy savings vs accuracy (real-hardware Pareto)
+        plot_xy_scatter(
+            df_fp32=df_fp32, df_quant=df_quant,
+            methods=[('IMP (Unstructured)', 'energy_saved_imp_pct', 'acc_unstructured'),
+                     ('Collapsed', 'energy_saved_collapse_pct', 'acc_collapsed'),
+                     ('Structural', 'energy_saved_structural_pct', 'acc_structural')],
+            title=f'Energy Savings vs Accuracy (Pareto){title_suffix}',
+            xlabel='Energy Saved vs Original (%)', ylabel='Accuracy (Higher is Better)',
+            filename=fname('plot_17_energy_vs_accuracy')
         )
 
     # Plot 11: Budget-transfer curves (one per dataset, spans all pre/post configs)
