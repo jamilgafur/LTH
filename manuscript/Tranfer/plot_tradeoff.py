@@ -90,7 +90,7 @@ def build_global_controls(base_path="."):
         
         ctrl_key = next((k for k in data.keys() if "Control" in k and "quant" not in k and "Continuted" not in k), None)
         if ctrl_key:
-            acc = data[ctrl_key].get("best_acc", data[ctrl_key].get("final_accuracy", 0))
+            acc = data[ctrl_key].get("train_best_acc", data[ctrl_key].get("best_acc", data[ctrl_key].get("final_accuracy", 0)))
             params = data[ctrl_key].get("param_count", 0)
             flops = data[ctrl_key].get("flops", 0)
             mem = data[ctrl_key].get("total_size_mb", 0)
@@ -141,7 +141,7 @@ def augment_df_with_json(df, base_path="."):
             row_type = "Combined Region" if "Combined" in k else "Individual Set"
             exp_name = k.replace("_quant_JF", "").replace("_JF", "")
             
-            acc = v.get("best_acc", v.get("final_accuracy", 0))
+            acc = v.get("train_best_acc", v.get("best_acc", v.get("final_accuracy", 0)))
             params = v.get("param_count", control_metrics['params'])
             flops = v.get("flops", control_metrics['flops'])
             mem = v.get("total_size_mb", control_metrics['mem'])
@@ -301,7 +301,7 @@ def generate_tables(df):
     # 1. Transposed Hardware Efficiency Table
     latex_hw = [
         "\\begin{table*}[htbp]", "\\centering", 
-        "\\caption{\\textbf{Hardware Efficiency and Predictive Accuracy Trade-offs.} This table presents a condensed, transposed view of the performance metrics for the holistic structural collapse (\\textit{Dynamic\\_Region\\_All\\_Combined}). Results are tracked across varying allocations of pretraining and post-collapse finetuning epochs (Pre/Fine). Reductions in parameters (PR), FLOPs (FR), and memory (MR) are reported as percentages relative to the fully trained, uncompressed Control models. The accuracy change ($\\Delta$A) represents the absolute percentage point difference in top-1 accuracy between the recovered collapsed model and the Control. Bold values indicate the optimal predictive recovery configuration per architecture. Missing values (-) denote incomplete configurations.}",
+        "\\caption{\\textbf{Hardware Efficiency and Predictive Accuracy Trade-offs.} This table presents a condensed, transposed view of the performance metrics for the holistic structural collapse (\\textit{Dynamic\\_Region\\_All\\_Combined}). Results are tracked across varying allocations of pretraining and post-collapse finetuning epochs (Pre/Fine). Reductions in parameters (PR), FLOPs (FR), and memory (MR) are reported as percentages relative to the fully trained, uncompressed Control models. The accuracy change ($\\Delta$A) represents the absolute percentage point difference in top-1 training accuracy between the recovered collapsed model and the Control. Bold values indicate the optimal predictive recovery configuration per architecture. Missing values (-) denote incomplete configurations.}",
         "\\label{tab:consolidated_hardware_efficiency}", "\\resizebox{\\textwidth}{!}{", "\\begin{tabular}{@{}ll | cccc | cccc | cccc@{}}",
         "\\toprule", "\\multirow{2}{*}{\\textbf{Architecture}} & \\multirow{2}{*}{\\textbf{Pre/Fine}} & \\multicolumn{4}{c|}{\\textbf{CIFAR-10}} & \\multicolumn{4}{c|}{\\textbf{CIFAR-100}} & \\multicolumn{4}{c}{\\textbf{Tiny ImageNet}} \\\\",
         "\\cmidrule(l){3-6} \\cmidrule(l){7-10} \\cmidrule(l){11-14}", " & & \\textbf{PR(\\%)} & \\textbf{FR(\\%)} & \\textbf{MR(\\%)} & \\textbf{$\\Delta$A(\\%)} & \\textbf{PR(\\%)} & \\textbf{FR(\\%)} & \\textbf{MR(\\%)} & \\textbf{$\\Delta$A(\\%)} & \\textbf{PR(\\%)} & \\textbf{FR(\\%)} & \\textbf{MR(\\%)} & \\textbf{$\\Delta$A(\\%)} \\\\", "\\midrule"
@@ -400,7 +400,7 @@ def generate_control_table(base_path="."):
                 if not ctrl_key: continue
                 ctrl = data[ctrl_key]
                 
-                acc = ctrl.get("best_acc", ctrl.get("final_accuracy", 0))
+                acc = ctrl.get("train_best_acc", ctrl.get("best_acc", ctrl.get("final_accuracy", 0)))
                 params = ctrl.get("param_count", 0) / 1e6
                 flops = ctrl.get("flops", 0) / 1e9
                 
@@ -416,7 +416,7 @@ def generate_control_table(base_path="."):
     latex_lines = [
         "\\begin{table*}[htbp]",
         "    \\centering",
-        "    \\caption{\\textbf{Control Performance and Hardware Metrics for Evaluated Architectures.} Performance of the uncompressed control models following the complete pre-training and finetuning budget. Accuracies denote the maximum top-1 test-set accuracy. Parameters are reported in millions (M) and FLOPs in billions (G).}",
+        "    \\caption{\\textbf{Control Performance and Hardware Metrics for Evaluated Architectures.} Performance of the uncompressed control models following the complete pre-training and finetuning budget. Accuracies denote the maximum top-1 training accuracy. Parameters are reported in millions (M) and FLOPs in billions (G).}",
         "    \\label{tab:control_metrics}",
         "    \\begin{tabular}{l | ccc | ccc | ccc}\\toprule",
         "        \\textbf{Architecture} & \\multicolumn{3}{c|}{\\textbf{CIFAR-10}} & \\multicolumn{3}{c|}{\\textbf{CIFAR-100}} & \\multicolumn{3}{c}{\\textbf{Tiny ImageNet}} \\\\",

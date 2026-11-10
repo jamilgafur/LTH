@@ -266,7 +266,7 @@ def apply_unstructured_pruning(model: nn.Module, amount: float = 0.2) -> nn.Modu
 # Model Evaluation with Energy Tracking
 # =========================================================
 
-def evaluate_accuracy(model: nn.Module, dataloader, device: torch.device, power_interval: int = 1, quant: bool = False):
+def evaluate_accuracy(model: nn.Module, dataloader, device: torch.device, power_interval: int = 1, quant: bool = False, acc_loader=None):
     """Evaluates top-1 accuracy while profiling power draw (W) and energy (J).
 
     One warmup pass runs untracked first: fills the disk/page cache and autotuner
@@ -284,6 +284,23 @@ def evaluate_accuracy(model: nn.Module, dataloader, device: torch.device, power_
     model.to(device)
     device_type = getattr(device, "type", None) or ("cuda" if torch.cuda.is_available() else "cpu")
     use_autocast = quant and device_type == 'cuda'
+
+    acc_override = None
+    if acc_loader is not None:
+        # Accuracy comes from acc_loader; `dataloader` stays the test-set energy window.
+        correct_acc = total_acc = 0
+        with torch.no_grad():
+            for inputs, targets in acc_loader:
+                inputs, targets = inputs.to(device), targets.to(device)
+                if use_autocast:
+                    with torch.cuda.amp.autocast():
+                        outputs = model(inputs)
+                else:
+                    outputs = model(inputs)
+                _, predicted = outputs.max(1)
+                total_acc += targets.size(0)
+                correct_acc += predicted.eq(targets).sum().item()
+        acc_override = correct_acc / total_acc if total_acc > 0 else 0.0
 
     with torch.no_grad():
         for inputs, _ in dataloader:
@@ -316,7 +333,7 @@ def evaluate_accuracy(model: nn.Module, dataloader, device: torch.device, power_
                     print(f"[INFO] Accuracy evaluation: batch={batch_idx + 1}, samples={total}")
 
     avg_watts, total_joules, elapsed_sec, gpu_util, gpu_clock = tracker.get_results()
-    accuracy = correct / total if total > 0 else 0.0
+    accuracy = acc_override if acc_override is not None else (correct / total if total > 0 else 0.0)
 
     power_str = f"{avg_watts:.2f}W" if avg_watts is not None else "N/A"
     energy_str = f"{total_joules:.2f}J" if total_joules is not None else "N/A"

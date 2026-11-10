@@ -105,6 +105,22 @@ def test_evaluate_calibration_synthetic():
     assert populated[0]["conf"] == pytest.approx(conf, abs=1e-6)
 
 
+# ------------------------------------------------- accuracy split override
+
+def test_evaluate_accuracy_acc_loader_overrides_split():
+    """accuracy must come from acc_loader while the energy window stays on dataloader."""
+    model = FixedLogits([1.0, 0.0])       # always predicts class 0
+    test_loader = _toy_loader([0] * 8)    # 100% if dataloader were used
+    train_loader = _toy_loader([1] * 8)   # 0% on the Train split
+    device = torch.device("cpu")
+
+    acc, *_ = u2.evaluate_accuracy(model, test_loader, device, acc_loader=train_loader)
+    assert acc == pytest.approx(0.0)
+
+    acc, *_ = u2.evaluate_accuracy(model, test_loader, device)  # no override -> dataloader split
+    assert acc == pytest.approx(1.0)
+
+
 # ---------------------------------------------------------------- benchmark dict
 
 def test_benchmark_model_returns_full_metrics_cpu():

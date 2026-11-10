@@ -90,7 +90,7 @@ Result-dict columns (wide CSV), grouped by family:
 when the optional dep runs):
 `acc_{variant}` (variants use names `acc_original_after`, `acc_unstructured`, `acc_collapsed`,
 `acc_structural`), `power_watts_{variant}`, `energy_joules_{variant}` — measured with
-`pyPrune.power.PowerTracker` during full test-set evaluation, after **one untracked warmup
+`pyPrune.power.PowerTracker` during full test-set evaluation (accuracy itself is measured on the training split), after **one untracked warmup
 pass** (warms the disk/page cache and autotuner so the tracked joules reflect compute, not
 dataloader I/O). Joules are avg watts × elapsed over the tracked window; if the sampler
 collects **zero samples** (unsupported driver flags, missing root, region too fast), the

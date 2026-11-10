@@ -281,7 +281,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     def _eval_one(model, label):
         print(f"       -> Evaluating {label}")
         model = model.to(device)
-        res = evaluate_accuracy(model, test_loader, device, power_interval=args.power_interval, quant=args.quant)
+        res = evaluate_accuracy(model, test_loader, device, power_interval=args.power_interval, quant=args.quant, acc_loader=train_loader)
         model = model.to("cpu")
         torch.cuda.empty_cache()
         return res
