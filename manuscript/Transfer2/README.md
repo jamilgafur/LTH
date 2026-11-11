@@ -28,7 +28,7 @@ Per processed `final_JF_Control.pt` ("before") checkpoint:
 | `original` | control after continued fine-tuning | `final_JF_Control_Continuted.pt`, same universe |
 | `collapsed` | variance/change/CKA-selected collapsed model | `final_JF_Dynamic_Region_All_Combined_whole.pt`, per-directory fallback `final_JF_Set_0_whole.pt` (whole-model pickle; a loud `FileNotFoundError` names the fix if absent) |
 | `unstructured` | IMP at param-matched sparsity | trained on the fly if `final_JF_Unstructured_IMP_post{N}.pt` absent (or inherited, see below) |
-| `structural` | L1 filter pruning at param-matched sparsity (torch-pruning DepGraph) | trained on the fly if `final_JF_Structural_L1_post{N}.pt` absent; skipped cleanly (columns `None`) if `torch-pruning` is not installed |
+| `structural` | L1 filter pruning at param-matched sparsity (torch-pruning DepGraph) | trained on the fly if `final_JF_Structural_L1_post{N}.pt` absent; skipped cleanly (columns `None`) if `torch-pruning` is not installed. Both trainers checkpoint per epoch to `*_resume_ckpt.pt` (atomic writes) and resume interrupted runs instead of retraining |
 
 ## CLI Reference (`main.py`)
 

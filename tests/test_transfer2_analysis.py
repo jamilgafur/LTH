@@ -257,3 +257,22 @@ def test_train_structural_import_error_without_torch_pruning(tmp_path):
         u2.train_structural(nn.Sequential(nn.Linear(4, 4)), _toy_loader([0, 1]),
                             torch.device("cpu"), epochs=1, target_sparsity=0.5,
                             save_path=str(tmp_path / "nope.pt"))
+
+
+def test_train_structural_resume_ckpt_not_mistaken_for_final(tmp_path):
+    # An interrupted run's `*_resume_ckpt.pt` must not satisfy the finished-artifact
+    # check: resuming continues training, which requires torch-pruning.
+    pytest.importorskip("torch")
+    try:
+        import torch_pruning  # noqa: F401
+        pytest.skip("torch-pruning installed in this env; ImportError path untestable")
+    except ImportError:
+        pass
+    model = nn.Sequential(nn.Linear(4, 4))
+    torch.save({"model": model, "optimizer_state_dict": {}, "scheduler_state_dict": {},
+                "epoch": 0, "prune_rounds": 0, "original_params": 16},
+               tmp_path / "structural_resume_ckpt.pt")
+    with pytest.raises(ImportError, match="torch-pruning"):
+        u2.train_structural(model, _toy_loader([0, 1]), torch.device("cpu"),
+                            epochs=2, target_sparsity=0.5,
+                            save_path=str(tmp_path / "structural.pt"))

@@ -518,8 +518,11 @@ def train_imp(model, train_loader, device, epochs, target_sparsity, save_path, c
         if prune.is_pruned(module):
             prune.remove(module, name)
         
-    # 9. Save final clean weights and remove temporary resume checkpoint
-    torch.save({'model_state_dict': model.state_dict()}, save_path)
+    # 9. Save final clean weights and remove temporary resume checkpoint.
+    # Atomic write: a kill mid-save must not leave a corrupt final artifact.
+    temp_final_path = f"{save_path}.{os.getpid()}.tmp"
+    torch.save({'model_state_dict': model.state_dict()}, temp_final_path)
+    os.replace(temp_final_path, save_path)
     print(f"[INFO] Final IMP model saved to {save_path}\n")
     
     if os.path.exists(checkpoint_path):
@@ -1504,7 +1507,9 @@ def train_structural(model, train_loader, device, epochs, target_sparsity, save_
 
     Saves/loads a WHOLE-model checkpoint at `save_path` (the architecture changes,
     so a plain state_dict is not enough). Resumable: if `save_path` exists the
-    finished artifact is loaded and training is skipped.
+    finished artifact is loaded and training is skipped; an interrupted run keeps
+    full state (whole pruned model, optimizer, scheduler, epoch, prune rounds) in
+    `*_resume_ckpt.pt` and continues from there — never retrained from scratch.
 
     Raises ImportError if torch-pruning is not installed; the caller decides policy.
     """
@@ -1516,6 +1521,9 @@ def train_structural(model, train_loader, device, epochs, target_sparsity, save_
         loaded.eval()
         return loaded
 
+    base, ext = os.path.splitext(save_path)
+    checkpoint_path = f"{base}_resume_ckpt{ext}"
+
     try:
         import torch_pruning as tp
     except ImportError as e:
@@ -1526,6 +1534,23 @@ def train_structural(model, train_loader, device, epochs, target_sparsity, save_
 
     print(f"\n[INFO] Starting structural L1 filter pruning for {epochs} epochs "
           f"(target param reduction {target_sparsity * 100:.2f}%)...")
+
+    # In-progress checkpoint holds the WHOLE module: the architecture changes as we
+    # prune, so the pruned structure itself must survive a restart.
+    start_epoch = 0
+    prune_rounds = 0
+    optimizer_state = scheduler_state = None
+    if os.path.exists(checkpoint_path):
+        print(f"[INFO] Found existing structural checkpoint at {checkpoint_path}. Resuming training...")
+        checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+        model = checkpoint["model"]
+        start_epoch = checkpoint["epoch"] + 1
+        prune_rounds = checkpoint.get("prune_rounds", 0)
+        original_params = checkpoint["original_params"]
+        optimizer_state = checkpoint.get("optimizer_state_dict")
+        scheduler_state = checkpoint.get("scheduler_state_dict")
+    else:
+        original_params = sum(p.numel() for p in model.parameters())
 
     model.to(device)
     model.eval()  # eval mode for DependencyGraph/example forward (BN batch-stat safety)
@@ -1539,29 +1564,38 @@ def train_structural(model, train_loader, device, epochs, target_sparsity, save_
     ignored_layers = [last_linear] if last_linear is not None else []
 
     max_prune_rounds = max(1, int(epochs * max_prune_fraction))
-    pruner = tp.pruner.MagnitudePruner(
-        model,
-        example_inputs,
-        importance=tp.importance.MagnitudeImportance(p=1),
-        iterative_steps=max_prune_rounds,
-        ch_sparsity=0.10,
-        ignored_layers=ignored_layers,
-        global_pruning=True,
-    )
-
-    original_params = sum(p.numel() for p in model.parameters())
     target_params = original_params * (1.0 - float(target_sparsity))
+
+    remaining_rounds = max(0, max_prune_rounds - prune_rounds)
+    pruner = None
+    if remaining_rounds > 0:
+        # shortcut: a resumed run rebuilds the pruner with only the remaining rounds —
+        # the old pruner's internal mask state is not restorable and the target-param
+        # guard below pins the endpoint; upgrade if a resumed run ever drifts from its
+        # uninterrupted twin.
+        pruner = tp.pruner.MagnitudePruner(
+            model,
+            example_inputs,
+            importance=tp.importance.MagnitudeImportance(p=1),
+            iterative_steps=remaining_rounds,
+            ch_sparsity=0.10,
+            ignored_layers=ignored_layers,
+            global_pruning=True,
+        )
 
     optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.9, weight_decay=5e-4)
     criterion = nn.CrossEntropyLoss()
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
+    if optimizer_state is not None:
+        optimizer.load_state_dict(optimizer_state)
+    if scheduler_state is not None:
+        scheduler.load_state_dict(scheduler_state)
 
     interactive = sys.stderr.isatty()
-    epoch_pbar = tqdm(range(epochs), desc="StructuralL1")
-    prune_rounds = 0
+    epoch_pbar = tqdm(range(start_epoch, epochs), desc="StructuralL1")
     for epoch in epoch_pbar:
         current_params = sum(p.numel() for p in model.parameters())
-        if current_params > target_params and prune_rounds < max_prune_rounds:
+        if pruner is not None and current_params > target_params and prune_rounds < max_prune_rounds:
             try:
                 pruner.step()
                 prune_rounds += 1
@@ -1595,7 +1629,18 @@ def train_structural(model, train_loader, device, epochs, target_sparsity, save_
             del inputs, targets, outputs, loss
         scheduler.step()
 
-        torch.save({"model": model.to("cpu")}, save_path)
+        # Atomic per-epoch checkpoint (same tmp+rename pattern as train_imp):
+        # a kill mid-save must never leave a corrupt pickle behind.
+        temp_ckpt_path = f"{checkpoint_path}.{os.getpid()}.tmp"
+        torch.save({
+            "model": model.to("cpu"),
+            "optimizer_state_dict": optimizer.state_dict(),
+            "scheduler_state_dict": scheduler.state_dict(),
+            "epoch": epoch,
+            "prune_rounds": prune_rounds,
+            "original_params": original_params,
+        }, temp_ckpt_path)
+        os.replace(temp_ckpt_path, checkpoint_path)
         model.to(device)
 
     model.eval()
@@ -1604,6 +1649,12 @@ def train_structural(model, train_loader, device, epochs, target_sparsity, save_
     achieved = 1.0 - (final_params / original_params)
     print(f"[RESULT] Structural sparsity achieved: {achieved * 100:.2f}% "
           f"(target {target_sparsity * 100:.2f}%; {final_params:,} / {original_params:,} params)")
+    # Atomic final write: `save_path` existing == finished artifact (see top of function).
+    temp_final_path = f"{save_path}.{os.getpid()}.tmp"
+    torch.save({"model": model}, temp_final_path)
+    os.replace(temp_final_path, save_path)
+    if os.path.exists(checkpoint_path):
+        os.remove(checkpoint_path)
     torch.cuda.empty_cache()
     return model
 
