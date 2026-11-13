@@ -7,7 +7,7 @@ Starting Comparison Post-Processing Pipeline
 Model: ConvNeXt | Dataset: Cifar100 | Device: cuda
 Epochs Config (override): pre=300, post=100
 Output File: cka_results_ConvNeXt_Cifar100_pre300_post100.csv
-CUDA device: NVIDIA GeForce RTX 2080 Ti
+CUDA device: NVIDIA A100 80GB PCIe
 ======================================================================
 
 ======================================================================
@@ -24,7 +24,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 7.62s
+[INFO] Weights loaded in 5.94s
 
 [INFO] Loading original post-finetuning model...
 [INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_Cifar100_None_epochs100_pretrain300
@@ -37,12 +37,12 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 8.24s
+[INFO] Weights loaded in 6.20s
 
 [INFO] Loading whole collapsed model artifact...
 [INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_Cifar100_None_epochs100_pretrain300
 [INFO] Found matching checkpoint: ../Tranfer/ConvNeXt_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
-[INFO] Whole-model load completed in 0.04s
+[INFO] Whole-model load completed in 0.87s
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 90.65%
 [INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/ConvNeXt_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
@@ -54,12 +54,12 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 1.94s
+[INFO] Weights loaded in 5.79s
 
 
 [INFO] Starting structural L1 filter pruning for 100 epochs (target param reduction 90.65%)...
 [INFO] Found existing structural checkpoint at ../Tranfer/ConvNeXt_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Structural_L1_post100_resume_ckpt.pt. Resuming training...
-StructuralL1:   0%|          | 0/48 [00:00<?, ?it/s]StructuralL1:   0%|          | 0/48 [00:03<?, ?it/s]
+StructuralL1:   0%|          | 0/48 [00:00<?, ?it/s]StructuralL1:   0%|          | 0/48 [00:09<?, ?it/s]
 [WARN] Structural baseline failed for ConvNeXt: The size of tensor a (384) must match the size of tensor b (309) at non-singleton dimension 1. Continuing without it.
 
 [INFO] Evaluating model accuracy, power draw, and energy consumption (10 rep(s))...
