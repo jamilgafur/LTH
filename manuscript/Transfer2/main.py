@@ -309,13 +309,13 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
                 print(f"[CRITICAL WARNING] Re-evaluating healthy 'model_before' ({m['before'][0]*100:.2f}%) on warm cache as the true baseline...")
                 m["original"] = _eval_one(model_before, "healthy 'model_before' (fallback baseline)")
         else:
-            m["original"] = (None,) * 7
+            m["original"] = (None,) * 8
         m["unstructured"] = _eval_one(unstructured_pruning_model, "Unstructured Pruned Model")
         m["collapsed"] = _eval_one(full_collapsed_model_ready, "Collapsed Model")
         if structural_model is not None:
             m["structural"] = _eval_one(structural_model, "Structural L1 Pruned Model")
         else:
-            m["structural"] = (float("nan"),) * 3 + (None,) * 4
+            m["structural"] = (float("nan"),) * 4 + (None,) * 4
         eval_reps.append(m)
 
         b = {}
@@ -333,20 +333,23 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
 
     # Console summary from rep 0 (per-rep numbers land as rows in the CSV)
     m0, b0 = eval_reps[0], bench_reps[0]
-    acc_original, power_original, energy_original = m0["original"][:3]
-    acc_unstructured, power_unstructured, energy_unstructured = m0["unstructured"][:3]
-    acc_collapsed, power_collapsed, energy_collapsed = m0["collapsed"][:3]
-    acc_structural, power_structural, energy_structural = m0["structural"][:3]
+    acc_original, att_original, power_original, energy_original = m0["original"][:4]
+    acc_unstructured, att_unstructured, power_unstructured, energy_unstructured = m0["unstructured"][:4]
+    acc_collapsed, att_collapsed, power_collapsed, energy_collapsed = m0["collapsed"][:4]
+    acc_structural, att_structural, power_structural, energy_structural = m0["structural"][:4]
 
     def _fmt_power(value, unit):
         return f"{value:.2f}{unit}" if value is not None else "N/A"
 
+    def _fmt_acc(train_acc, test_acc):
+        return f"{train_acc:.4f} (test {test_acc:.4f})" if test_acc is not None else f"{train_acc:.4f}"
+
     if acc_original is not None:
-        print(f"[RESULT] Accuracy Original:     {acc_original:.4f} | Power: {_fmt_power(power_original, 'W')} | Energy: {_fmt_power(energy_original, 'J')}")
-    print(f"[RESULT] Accuracy Unstructured: {acc_unstructured:.4f} | Power: {_fmt_power(power_unstructured, 'W')} | Energy: {_fmt_power(energy_unstructured, 'J')}")
-    print(f"[RESULT] Accuracy Collapsed:    {acc_collapsed:.4f} | Power: {_fmt_power(power_collapsed, 'W')} | Energy: {_fmt_power(energy_collapsed, 'J')}")
+        print(f"[RESULT] Accuracy Original:     {_fmt_acc(acc_original, att_original)} | Power: {_fmt_power(power_original, 'W')} | Energy: {_fmt_power(energy_original, 'J')}")
+    print(f"[RESULT] Accuracy Unstructured: {_fmt_acc(acc_unstructured, att_unstructured)} | Power: {_fmt_power(power_unstructured, 'W')} | Energy: {_fmt_power(energy_unstructured, 'J')}")
+    print(f"[RESULT] Accuracy Collapsed:    {_fmt_acc(acc_collapsed, att_collapsed)} | Power: {_fmt_power(power_collapsed, 'W')} | Energy: {_fmt_power(energy_collapsed, 'J')}")
     if structural_model is not None:
-        print(f"[RESULT] Accuracy Structural:   {acc_structural:.4f} | Power: {_fmt_power(power_structural, 'W')} | Energy: {_fmt_power(energy_structural, 'J')}")
+        print(f"[RESULT] Accuracy Structural:   {_fmt_acc(acc_structural, att_structural)} | Power: {_fmt_power(power_structural, 'W')} | Energy: {_fmt_power(energy_structural, 'J')}")
     if reps > 1:
         print(f"[INFO] {reps} measurement reps completed; full per-rep values are rows in the CSV.")
 
@@ -470,8 +473,9 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
                 b["model"] = mname
                 calibration_rows.append(b)
 
-        ood_loader = load_ood_test_loader(dataset_name)
+        ood_loader, ood_source = load_ood_test_loader(dataset_name)
         if ood_loader is not None:
+            analysis_metrics["ood_source"] = ood_source
             for mname, m in models_dict.items():
                 analysis_metrics[f"ood_auroc_{mname}"] = evaluate_ood(m, test_loader, ood_loader, device)
                 print(f"       -> OOD AUROC {mname}: {analysis_metrics[f'ood_auroc_{mname}']:.4f}")
@@ -526,10 +530,10 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
 
     result_rows = []
     for rep, (m, b) in enumerate(zip(eval_reps, bench_reps)):
-        acc_o, pow_o, eng_o, util_o, clk_o, ela_o, npw_o = m["original"]
-        acc_u, pow_u, eng_u, util_u, clk_u, ela_u, npw_u = m["unstructured"]
-        acc_c, pow_c, eng_c, util_c, clk_c, ela_c, npw_c = m["collapsed"]
-        acc_s, pow_s, eng_s, util_s, clk_s, ela_s, npw_s = m["structural"]
+        acc_o, att_o, pow_o, eng_o, util_o, clk_o, ela_o, npw_o = m["original"]
+        acc_u, att_u, pow_u, eng_u, util_u, clk_u, ela_u, npw_u = m["unstructured"]
+        acc_c, att_c, pow_c, eng_c, util_c, clk_c, ela_c, npw_c = m["collapsed"]
+        acc_s, att_s, pow_s, eng_s, util_s, clk_s, ela_s, npw_s = m["structural"]
 
         result_dict = {
             "model": model_name,
@@ -541,8 +545,11 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
             "intermediate_epoch": ckpt_epoch,
             "rep": rep,
             "acc_original_after": acc_o,
+            "acc_test_original_after": att_o,
             "acc_unstructured": acc_u,
+            "acc_test_unstructured": att_u,
             "acc_collapsed": acc_c,
+            "acc_test_collapsed": att_c,
             "power_watts_original": round(pow_o, 2) if pow_o is not None else None,
             "energy_joules_original": round(eng_o, 2) if eng_o is not None else None,
             "power_watts_unstructured": round(pow_u, 2) if pow_u is not None else None,
@@ -572,6 +579,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
             "cka_collapsed": cka_collapsed,
             # Structural L1 baseline (None/NaN when torch-pruning is unavailable)
             "acc_structural": acc_s,
+            "acc_test_structural": att_s,
             "power_watts_structural": (None if pow_s is None or pow_s != pow_s else round(pow_s, 2)),
             "energy_joules_structural": (None if eng_s is None or eng_s != eng_s else round(eng_s, 2)),
             "flops_structural": _bench_field(b, "structural", "flops"),

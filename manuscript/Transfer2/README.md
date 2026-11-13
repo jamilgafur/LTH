@@ -89,8 +89,11 @@ Result-dict columns (wide CSV), grouped by family:
 **Accuracy / energy** (per variant `original`/`unstructured`/`collapsed`, plus `structural`
 when the optional dep runs):
 `acc_{variant}` (variants use names `acc_original_after`, `acc_unstructured`, `acc_collapsed`,
-`acc_structural`), `power_watts_{variant}`, `energy_joules_{variant}` — measured with
-`pyPrune.power.PowerTracker` during full test-set evaluation (accuracy itself is measured on the training split), after **one untracked warmup
+`acc_structural`) and `acc_test_{variant}` (`acc_test_original_after`, `acc_test_unstructured`,
+`acc_test_collapsed`, `acc_test_structural`), `power_watts_{variant}`, `energy_joules_{variant}` —
+`acc_*` is the training-split read (eval mode, after `recalibrate_bn`), `acc_test_*` the
+test-set read from the same tracked window; both measured with
+`pyPrune.power.PowerTracker` during full test-set evaluation after **one untracked warmup
 pass** (warms the disk/page cache and autotuner so the tracked joules reflect compute, not
 dataloader I/O). Joules are avg watts × elapsed over the tracked window; if the sampler
 collects **zero samples** (unsupported driver flags, missing root, region too fast), the
@@ -134,7 +137,9 @@ features, sequential extraction).
 
 **Full-analysis extras** (`--analysis full` only, per variant):
 `ece_{variant}` / `mce_{variant}` (15-bin calibration on the full test set),
-`ood_auroc_{variant}` (max-softmax AUROC vs. SVHN for CIFAR datasets; rank-based, no sklearn)
+`ood_auroc_{variant}` + `ood_source` (max-softmax AUROC; the OOD source is SVHN when staged on
+disk, otherwise the sibling CIFAR test split — CIFAR-10 ↔ CIFAR-100 — recorded per row in
+`ood_source`; rank-based, no sklearn)
 and, with `--corruptions-dir`: `corrupt_mca_{variant}` (mean accuracy over 15 corruptions × 5
 severities; raises a loud `FileNotFoundError` with staging instructions if the dir is missing).
 
@@ -159,7 +164,7 @@ Sibling tooling:
 
 | File | Purpose |
 |---|---|
-| `aggregate_results.py` | pools every `cka_results_*.csv` (any header schema, column-unioned), drops CPU rows when a GPU twin exists, adds within-row variant/original ratios + J/img, saturated-J/img ratios, window-dilution fractions (`loader_frac_*`), `energy_transfer` and the `regime` label, writes `aggregated_rows.csv` / `aggregated_median.csv` — the cross-GPU apples-to-apples tables |
+| `aggregate_results.py` | pools every `cka_results_*.csv` (any header schema, column-unioned), drops CPU rows when a GPU twin exists, adds within-row variant/original ratios + J/img, saturated-J/img ratios, window-dilution fractions (`loader_frac_*`), `energy_transfer` and the `regime` label, writes `aggregated_rows.csv` / `aggregated_median.csv` — the cross-GPU apples-to-apples tables — and flags `pairing_flag=none_token_dir` on rows whose control came from a fallback `_None_` scorer universe (the pairing audit found broken controls there; flagged, never dropped) |
 | `diagnose_cka.py` | audits why a config's CKA is ~0: logs which layer each variant's feature extractor strips, plus drift-reference CKAs (extraction bug vs genuine divergence) |
 | `run_postprocess.sh` | submits the config grid but **skips configs whose CSV already has ≥ REPS GPU (non-CPU) measurement rows in the current schema** (saturated-energy / loader-floor columns present — old-schema rows resubmit), or a `no_collapsed_regions` verdict row while the collapsed artifact is still untrained; CPU-only, marker-with-artifact-now-trained, old-schema and missing configs (re)run |
 

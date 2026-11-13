@@ -4,9 +4,13 @@ For a given config, this prints, per variant (before / after / collapsed):
   - WHICH module extract_features replaces with Identity (asymmetry = bug)
   - feature matrix shape, global std, and stable rank
 and computes reference CKAs that separate extraction bugs from genuine drift:
-  - CKA(after, after)          must be ~1.0 (pipeline sanity)
+  - CKA(after, after pass 2)  two-pass determinism (expect ~1.0)
   - CKA(before, after)         same-universe training drift reference
   - CKA(after, collapsed)      the number reported in the CSV
+
+All variants are BN-recalibrated before extraction, matching main.py's footing,
+and extraction uses the pipeline's 10-batch window so the printed numbers are
+comparable to the CSV cells.
 
 If CKA(before, after) is also ~0 while strip names match, extraction is fine
 and the universes really decorrelate; if strip names differ, extract_features
@@ -20,7 +24,8 @@ import torch
 import torch.nn as nn
 
 from utils import (find_experiment_checkpoints, find_matching_checkpoint,
-                   initialize_architecture, load_weights, load_dataset, compare_CKA)
+                   initialize_architecture, load_weights, load_dataset, compare_CKA,
+                   recalibrate_bn)
 
 
 def strip_with_audit(model, tag):
@@ -51,7 +56,7 @@ def strip_with_audit(model, tag):
     print(f"[AUDIT] {tag}: NO Linear found — features will be raw forward output")
 
 
-def features(model, loader, device, tag, batches=5):
+def features(model, loader, device, tag, batches=10):
     from copy import deepcopy
     m = deepcopy(model)
     strip_with_audit(m, tag)
@@ -89,13 +94,17 @@ def main():
     after_path = find_matching_checkpoint(before_path, ck["after"])
     collapsed_path = find_matching_checkpoint(before_path, ck["collapsed"])
 
-    _, test_loader, _, _, _ = load_dataset(a.dataset, a.model)
+    train_loader, test_loader, _, _, _ = load_dataset(a.dataset, a.model)
 
     base, _, _, _ = initialize_architecture(a.model, a.dataset)
     before = load_weights(base, before_path, device)
+    recalibrate_bn(before, train_loader, device)
     base, _, _, _ = initialize_architecture(a.model, a.dataset)
     after = load_weights(base, after_path, device) if after_path else None
+    if after is not None:
+        recalibrate_bn(after, train_loader, device)
     collapsed = torch.load(collapsed_path, map_location=device, weights_only=False)
+    recalibrate_bn(collapsed, train_loader, device)
 
     f_before = features(before, test_loader, device, "before")
     torch.cuda.empty_cache() if device.type == "cuda" else None
@@ -103,7 +112,9 @@ def main():
     f_coll = features(collapsed, test_loader, device, "collapsed")
 
     if f_after is not None:
-        print(f"CKA(after, after)      = {compare_CKA(f_after, f_after):.4f}  (sanity, expect 1.0)")
+        f_after2 = features(after, test_loader, device, "after (pass 2)")
+        torch.cuda.empty_cache() if device.type == "cuda" else None
+        print(f"CKA(after, after pass 2) = {compare_CKA(f_after, f_after2):.4f}  (two-pass determinism, expect 1.0)")
         print(f"CKA(before, after)     = {compare_CKA(f_before, f_after):.4f}  (drift reference)")
     print(f"CKA(before, collapsed) = {compare_CKA(f_before, f_coll):.4f}  (CSV reports after vs collapsed)")
     if f_after is not None:

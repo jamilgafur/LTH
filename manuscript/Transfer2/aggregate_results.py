@@ -44,6 +44,17 @@ def main():
         return
     df = pd.concat(frames, ignore_index=True)
 
+    # Flag rows whose control came from a fallback `_None_` scorer universe —
+    # the pairing audit found broken controls in these (InceptionNet/Cifar100).
+    # Flag, not drop: other metrics in the row may still be valid; plots filter.
+    if "model_before" in df:
+        df["pairing_flag"] = ""
+        df.loc[df["model_before"].astype(str).str.contains("_None_", regex=False),
+               "pairing_flag"] = "none_token_dir"
+        n_flag = int((df["pairing_flag"] != "").sum())
+        if n_flag:
+            print(f"flagged {n_flag} rows from `_None_`-token dirs (pairing_flag=none_token_dir)")
+
     keys = ["model", "dataset", "pre_epochs", "post_epochs", "quant"]
 
     # drop CPU rows when a GPU row exists for the same config

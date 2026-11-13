@@ -16,8 +16,7 @@ FORCE="${FORCE:-0}"
 echo "=== Submitting CKA Post-Processing Jobs ==="
 
 # Epoch configs as "EPOCHS PRETRAIN" pairs (matches temp1/temp2 arg order)
-configs=("300 100")
-# "200 200" "300 100")
+configs=("100 300" "200 200" "300 100")
 
 for model in "${models[@]}"; do
     for dataset in "${datasets[@]}"; do
@@ -54,7 +53,8 @@ try:
                   for r in rows[1:])
     # Schema gate: rows measured before the saturated-energy / loader-floor
     # columns existed do not count as done, however many reps they have.
-    need = ("j_per_img_saturated_collapsed", "loader_joules", "n_power_samples_collapsed")
+    need = ("j_per_img_saturated_collapsed", "loader_joules", "n_power_samples_collapsed",
+            "acc_test_collapsed")
     schema_ok = all(c in hdr for c in need)
     artifact = glob.glob(
         f"../Tranfer/{model}_{dataset}_*epochs{epochs}_pretrain{pretrain}"

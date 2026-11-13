@@ -274,8 +274,11 @@ def evaluate_accuracy(model: nn.Module, dataloader, device: torch.device, power_
     dominant source of 2-4x energy variance across identical runs).
     quant=True runs the forward pass under fp16 autocast (CUDA only) — the
     PTQ conversion path: the model is the same fp32 artifact, measured as fp16.
-    Returns (accuracy, avg_watts, total_joules, gpu_util_pct, gpu_clock_mhz,
-             elapsed_sec, n_power_samples).
+    Returns (accuracy, test_accuracy, avg_watts, total_joules, gpu_util_pct,
+             gpu_clock_mhz, elapsed_sec, n_power_samples).
+    `accuracy` is the acc_loader (training-split) read when one is passed, the
+    test-set read otherwise; `test_accuracy` is always the `dataloader`
+    (test-set) read from the tracked window — same model, same footing.
     NOTE: the tracked window still contains the data pipeline; measure_loader_floor
     quantifies that share per config.
     """
@@ -334,6 +337,7 @@ def evaluate_accuracy(model: nn.Module, dataloader, device: torch.device, power_
 
     avg_watts, total_joules, elapsed_sec, gpu_util, gpu_clock = tracker.get_results()
     accuracy = acc_override if acc_override is not None else (correct / total if total > 0 else 0.0)
+    test_accuracy = correct / total if total > 0 else 0.0
 
     power_str = f"{avg_watts:.2f}W" if avg_watts is not None else "N/A"
     energy_str = f"{total_joules:.2f}J" if total_joules is not None else "N/A"
@@ -341,7 +345,7 @@ def evaluate_accuracy(model: nn.Module, dataloader, device: torch.device, power_
         f"[INFO] Evaluation complete: acc={accuracy:.4f}, "
         f"power={power_str}, energy={energy_str}, time={elapsed_sec:.2f}s"
     )
-    return accuracy, avg_watts, total_joules, gpu_util, gpu_clock, elapsed_sec, tracker.num_intervals
+    return accuracy, test_accuracy, avg_watts, total_joules, gpu_util, gpu_clock, elapsed_sec, tracker.num_intervals
 
 
 def measure_loader_floor(loader, device, power_interval: int = 1):
@@ -1752,21 +1756,40 @@ def auroc(pos_scores, neg_scores):
 
 def load_ood_test_loader(dataset_name, batch_size: int = 512, data_root: str = "data",
                          num_workers: int = 2):
-    """OOD test loader for MSP-based OOD detection. CIFAR-10/100 -> SVHN (32x32).
-    Returns None (with a warning) when unsupported or the data is not staged."""
+    """OOD test loader for MSP-based OOD detection. Preference: SVHN (32x32)
+    when it is staged on disk; otherwise the sibling CIFAR test split
+    (CIFAR-10 <-> CIFAR-100). Nothing is ever downloaded — compute nodes have
+    no internet. Normalization stays the in-distribution model's.
+    Returns (loader, source_tag) or (None, None)."""
     key = dataset_name.lower()
     if OOD_DATASETS.get(key) != "SVHN":
         print(f"[WARN] No OOD dataset configured for '{dataset_name}'. Skipping OOD evaluation.")
-        return None
+        return None, None
     mean, std = DATASET_NORMS[key]
     tf = transforms.Compose([transforms.ToTensor(), transforms.Normalize(mean, std)])
+
+    if os.path.isdir(os.path.join(data_root, "SVHN")):
+        try:
+            ds = datasets.SVHN(data_root, split="test", download=False, transform=tf)
+            print("[INFO] OOD source: SVHN (staged on disk)")
+            return DataLoader(ds, batch_size=batch_size, shuffle=False, num_workers=num_workers,
+                              pin_memory=True, persistent_workers=(num_workers > 0)), "svhn"
+        except Exception as e:
+            print(f"[WARN] SVHN staged but unreadable ({e}); trying cross-dataset fallback.")
+
+    ood_key = {"cifar10": "cifar100", "cifar100": "cifar10"}.get(key)
+    if ood_key is None:
+        print(f"[WARN] No OOD source for '{dataset_name}'. Skipping OOD evaluation.")
+        return None, None
+    cls = datasets.CIFAR10 if ood_key == "cifar10" else datasets.CIFAR100
     try:
-        ds = datasets.SVHN(data_root, split="test", download=True, transform=tf)
+        ds = cls(data_root, train=False, download=False, transform=tf)
     except Exception as e:
-        print(f"[WARN] SVHN unavailable ({e}). Skipping OOD evaluation.")
-        return None
+        print(f"[WARN] Cross-dataset OOD source unavailable ({e}). Skipping OOD evaluation.")
+        return None, None
+    print(f"[INFO] OOD source: {ood_key} test split (SVHN not staged)")
     return DataLoader(ds, batch_size=batch_size, shuffle=False, num_workers=num_workers,
-                      pin_memory=True, persistent_workers=(num_workers > 0))
+                      pin_memory=True, persistent_workers=(num_workers > 0)), ood_key
 
 
 def evaluate_ood(model, in_loader, ood_loader, device):
