@@ -86,11 +86,13 @@ Result-dict columns (wide CSV), grouped by family:
 **Identity**: `model`, `dataset`, `gpu_name`, `pre_epochs`, `post_epochs`, `model_before`,
 `intermediate_epoch`.
 
-**Accuracy / energy** (per variant `original`/`unstructured`/`collapsed`, plus `structural`
-when the optional dep runs):
-`acc_{variant}` (variants use names `acc_original_after`, `acc_unstructured`, `acc_collapsed`,
-`acc_structural`) and `acc_test_{variant}` (`acc_test_original_after`, `acc_test_unstructured`,
-`acc_test_collapsed`, `acc_test_structural`), `power_watts_{variant}`, `energy_joules_{variant}` —
+**Accuracy / energy** (per variant `original`/`unstructured`/`collapsed`; the `structural`
+variant is retired — older CSVs still carry its columns, new runs leave them empty):
+`acc_before` / `acc_test_before` (the pre-collapse control anchor — lets ΔA be stated
+against the ORIGINAL control, not only the continued one), `acc_{variant}` (variants use
+names `acc_original_after`, `acc_unstructured`, `acc_collapsed`,
+`acc_structural` [legacy]) and `acc_test_{variant}` (`acc_test_original_after`, `acc_test_unstructured`,
+`acc_test_collapsed`, `acc_test_structural` [legacy]), `power_watts_{variant}`, `energy_joules_{variant}` —
 `acc_*` is the training-split read (eval mode, after `recalibrate_bn`), `acc_test_*` the
 test-set read from the same tracked window; both measured with
 `pyPrune.power.PowerTracker` during full test-set evaluation after **one untracked warmup
@@ -165,7 +167,7 @@ Sibling tooling:
 | File | Purpose |
 |---|---|
 | `aggregate_results.py` | pools every `cka_results_*.csv` (any header schema, column-unioned), drops CPU rows when a GPU twin exists, adds within-row variant/original ratios + J/img, saturated-J/img ratios, window-dilution fractions (`loader_frac_*`), `energy_transfer` and the `regime` label, writes `aggregated_rows.csv` / `aggregated_median.csv` — the cross-GPU apples-to-apples tables — and flags `pairing_flag=none_token_dir` on rows whose control came from a fallback `_None_` scorer universe (the pairing audit found broken controls there; flagged, never dropped) |
-| `plot_dissertation.py` | dissertation figure layer: one IEEE vector-PDF figure per proposed-work question (CKA, FGSM/PGD curves, ECE/MCE, OOD AUROC, corruption mCA, fp32-vs-fp16 PTQ, energy transferability, hardware ratios), medians + IQR over reps, consistent Control/IMP/Collapsed/L1-struct palette, `pairing_flag` rows counted not dropped, missing data skips the figure with a `[WARN]` — writes `dissertation_figs/` |
+| `plot_dissertation.py` | dissertation figure layer: one IEEE vector-PDF figure per proposed-work question (CKA, FGSM/PGD curves, ECE/MCE, OOD AUROC, corruption mCA, fp32-vs-fp16 PTQ, energy transferability, hardware ratios), medians + IQR over reps, consistent Control/IMP/Collapsed palette (L1-structural retired, never plotted), `pairing_flag` rows counted not dropped, missing data skips the figure with a `[WARN]` — writes `dissertation_figs/` |
 | `diagnose_cka.py` | audits why a config's CKA is ~0: logs which layer each variant's feature extractor strips, plus drift-reference CKAs (extraction bug vs genuine divergence) |
 | `run_postprocess.sh` | submits the config grid but **skips configs whose CSV already has ≥ REPS GPU (non-CPU) measurement rows in the current schema** (saturated-energy / loader-floor columns present — old-schema rows resubmit), or a `no_collapsed_regions` verdict row while the collapsed artifact is still untrained; CPU-only, marker-with-artifact-now-trained, old-schema and missing configs (re)run |
 
@@ -178,6 +180,16 @@ Compute nodes have no internet; stage once on a login node:
 python main.py --model InceptionNet --dataset Cifar100 \
     --analysis full --corruptions-dir ./corruption_data
 ```
+
+For the grid, export the dir and every submission gets `--corruptions-dir`:
+
+```bash
+CORRUPTIONS_DIR=$PWD/corruption_data ./run_postprocess.sh
+```
+
+Unset (the default), corruption rows are simply absent and the CSV schema is
+unchanged. Corruption mCA lands in `corruption_<stem>.csv` (long format) and
+`corrupt_mca_<variant>` in the main CSV.
 
 ## Where to go next
 

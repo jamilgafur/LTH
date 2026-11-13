@@ -10,6 +10,10 @@ One figure per proposed-work question:
   Q4  fig_energy_transfer.pdf         removed FLOPs vs removed joules per config
       fig_efficiency_{ds}.pdf         hardware ratios vs control
 
+Variant palette is Control / IMP / Collapsed (the L1-structural comparator was
+retired — its artifacts measured at chance on both splits — and is not plotted,
+even where older CSVs still carry its columns).
+
 All summaries are medians with IQR (pooled figures take each config's own median
 first, then the spread across configs). Missing data means a skipped figure with
 a [WARN] — no panel is ever drawn from thin air.
@@ -36,9 +40,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 VARIANTS = [("original", "Control"), ("unstructured", "IMP"),
-            ("collapsed", "Collapsed"), ("structural", "L1-struct")]
-COLORS = {"Control": "#4d4d4d", "IMP": "#1f77b4",
-          "Collapsed": "#d62728", "L1-struct": "#2ca02c"}
+            ("collapsed", "Collapsed")]
+COLORS = {"Control": "#4d4d4d", "IMP": "#1f77b4", "Collapsed": "#d62728"}
 MODEL_ORDER = ["VGG16", "RegNetX_400MF", "XceptionNet", "InceptionNet",
                "MobileNet", "ConvNeXt"]
 DS_LABELS = {"Cifar10": "CIFAR-10", "Cifar100": "CIFAR-100",
@@ -179,8 +182,7 @@ def long_frames(d, prefix):
 def fig_cka(df, ds, out):
     name = f"fig_cka_{ds}.pdf"
     sub = df[df["dataset"] == ds]
-    series = [(c, l) for c, l in [("cka_unstructured", "IMP"), ("cka_collapsed", "Collapsed"),
-                                  ("cka_structural", "L1-struct")]
+    series = [(c, l) for c, l in [("cka_unstructured", "IMP"), ("cka_collapsed", "Collapsed")]
               if c in sub and sub[c].notna().any()]
     if sub.empty or not series:
         warn(name, "no CKA columns with data")
@@ -386,6 +388,48 @@ def fig_energy_transfer(df, out):
     save(fig, out, name)
 
 
+def fig_regime(df, out):
+    """Regime map: does removed compute become removed joules/latency?"""
+    name = "fig_regime.pdf"
+    need = ["flops_collapsed", "flops_original", "j_per_img_saturated_collapsed",
+            "j_per_img_saturated_original", "latency_ms_collapsed", "latency_ms_original"]
+    if not all(c in df for c in need):
+        warn(name, "missing flops/energy/latency columns")
+        return
+    per = df.groupby(CFG, observed=True)[need].median()
+    fr = 1 - per["flops_collapsed"] / per["flops_original"].replace(0, np.nan)
+    jr = per["j_per_img_saturated_collapsed"] / per["j_per_img_saturated_original"].replace(0, np.nan)
+    lr = per["latency_ms_collapsed"] / per["latency_ms_original"].replace(0, np.nan)
+    ok = fr.notna() & (jr.notna() | lr.notna())
+    if not ok.any():
+        warn(name, "no complete flops/energy/latency triples")
+        return
+    # overhead-dominated: FLOPs clearly reduced but the measured ratio did not follow
+    over = ok & (fr >= 0.3) & ((jr >= 1.0) | (lr >= 1.0))
+    fig, ax = plt.subplots()
+    for series, label, marker in [(jr, "saturated J/img", "o"), (lr, "latency", "s")]:
+        good = ok & series.notna() & ~over
+        bad = ok & series.notna() & over
+        ax.scatter(fr[good], series[good], s=16, marker=marker, alpha=0.75,
+                   color="#1f77b4", linewidths=0)
+        ax.scatter(fr[bad], series[bad], s=22, marker=marker, alpha=0.9,
+                   facecolors="none", edgecolors="#d62728", linewidths=1.1)
+    for arch, row in per[ok].iterrows():
+        ax.annotate(str(arch[0]).replace("_400MF", ""), (fr.loc[arch], jr.loc[arch]),
+                    fontsize=5, alpha=0.6, xytext=(2, 2), textcoords="offset points")
+    ax.axhline(1.0, color="#999999", linewidth=0.8, linestyle="--")
+    handles = [plt.Line2D([], [], marker="o", linestyle="", color="#1f77b4", label="saturated J/img"),
+               plt.Line2D([], [], marker="s", linestyle="", color="#1f77b4", label="latency"),
+               plt.Line2D([], [], marker="o", linestyle="", markerfacecolor="none",
+                          markeredgecolor="#d62728", label="overhead-dominated")]
+    ax.legend(handles=handles, frameon=False)
+    ax.set_xlabel("FLOPs removed (fraction of control)")
+    ax.set_ylabel("measured ratio vs control")
+    ax.set_title("Regime map: counted vs measured savings")
+    ax.margins(x=0.08, y=0.1)
+    save(fig, out, name)
+
+
 def fig_efficiency(df, ds, out):
     name = f"fig_efficiency_{ds}.pdf"
     sub = df[df["dataset"] == ds]
@@ -454,6 +498,7 @@ def main():
         fig_ptq(df, ds, out)
         fig_efficiency(df, ds, out)
     fig_energy_transfer(df, out)
+    fig_regime(df, out)
 
 
 if __name__ == "__main__":

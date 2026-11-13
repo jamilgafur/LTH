@@ -29,6 +29,10 @@ REPS="${REPS:-1}"
 #     with --corruptions-dir). Dissertation data needs 'full'.
 ANALYSIS="${ANALYSIS:-full}"
 
+# --- Optional CIFAR-C corruption dir (stage on a login node first, see
+#     README 'Corruption data staging'). Empty = corruption eval is skipped.
+CORRUPTIONS_DIR="${CORRUPTIONS_DIR:-}"
+
 # --- Debug: Show variable values ---
 echo "MODEL=$MODEL"
 echo "DATASET=$DATASET"
@@ -37,6 +41,7 @@ echo "PRETRAIN=$PRETRAIN"
 echo "EPOCHS=$EPOCHS"
 echo "REPS=$REPS"
 echo "ANALYSIS=$ANALYSIS"
+echo "CORRUPTIONS_DIR=$CORRUPTIONS_DIR"
 
 # --- Check for required variables ---
 if [ -z "$MODEL" ] || [ -z "$DATASET" ] || [ -z "$PRETRAIN" ] || [ -z "$EPOCHS" ]; then
@@ -50,11 +55,21 @@ if [ "$QUANT" == "True" ]; then
     QUANT_FLAG="--quant"
 fi
 
+# --- Corruption flag: only when a staged CIFAR-C dir is configured ---
+CORRUPT_FLAG=""
+if [ -n "$CORRUPTIONS_DIR" ]; then
+    if [ -d "$CORRUPTIONS_DIR" ]; then
+        CORRUPT_FLAG="--corruptions-dir $CORRUPTIONS_DIR"
+    else
+        echo "[WARN] CORRUPTIONS_DIR=$CORRUPTIONS_DIR does not exist on $(hostname) — corruption eval skipped" >&2
+    fi
+fi
+
 # --- Prepare output file ---
 OUTPUT_FILE="postprocess_${MODEL}_${DATASET}_pre${PRETRAIN}_ep${EPOCHS}_quant${QUANT}.log"
 
 # --- Run the Python script (single epoch config per job; --pre/--post filter discovery) ---
-echo "Executing: ~/env/lth_env/bin/python main.py --model $MODEL --dataset $DATASET --pre $PRETRAIN --post $EPOCHS --reps $REPS $QUANT_FLAG"
+echo "Executing: ~/env/lth_env/bin/python main.py --model $MODEL --dataset $DATASET --pre $PRETRAIN --post $EPOCHS --reps $REPS $QUANT_FLAG $CORRUPT_FLAG"
 
 time ~/env/lth_env/bin/python main.py \
     --model "$MODEL" \
@@ -63,7 +78,7 @@ time ~/env/lth_env/bin/python main.py \
     --post "$EPOCHS" \
     --reps "$REPS" \
     --analysis "$ANALYSIS" \
-    $QUANT_FLAG > "$OUTPUT_FILE" 2>&1
+    $QUANT_FLAG $CORRUPT_FLAG > "$OUTPUT_FILE" 2>&1
 
 # --- CKA strip/drift audit, appended to this submission's log ---
 echo "--- CKA strip/drift audit ($(date)) ---" >> "$OUTPUT_FILE"

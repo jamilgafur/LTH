@@ -13,6 +13,11 @@ REPS="${REPS:-10}"
 # stage-1/stage-2 rerun changes the region maps).
 FORCE="${FORCE:-0}"
 
+# Optional CIFAR-C corruption dir (stage on a login node first — see README
+# 'Corruption data staging'). Passed to every submission; empty = skipped.
+# e.g. CORRUPTIONS_DIR=$PWD/corruption_data ./run_postprocess.sh
+CORRUPTIONS_DIR="${CORRUPTIONS_DIR:-}"
+
 echo "=== Submitting CKA Post-Processing Jobs ==="
 
 # Epoch configs as "EPOCHS PRETRAIN" pairs (matches temp1/temp2 arg order)
@@ -71,7 +76,7 @@ PY
                 fi
 
                 # Submit the post-processing job using SGE GPU flags
-                command="qsub -q all.q -l ngpus=1,gpu=TRUE -v MODEL=\"$model\",DATASET=\"$dataset\",QUANT=\"$quant\",EPOCHS=\"$EPOCHS\",PRETRAIN=\"$PRETRAIN\",REPS=\"$REPS\" submit_postprocess.pbs"
+                command="qsub -q all.q -l ngpus=1,gpu=TRUE -v MODEL=\"$model\",DATASET=\"$dataset\",QUANT=\"$quant\",EPOCHS=\"$EPOCHS\",PRETRAIN=\"$PRETRAIN\",REPS=\"$REPS\",CORRUPTIONS_DIR=\"$CORRUPTIONS_DIR\" submit_postprocess.pbs"
 
                 echo "Executing: $command"
                 eval "$command"

@@ -236,41 +236,11 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
         unstructured_pruning_model.to("cpu")
         torch.cuda.empty_cache()
 
-    # 5b. Structural pruning baseline (L1 filter importance, matched param count).
-    #     Unlike IMP, this actually shrinks the compute graph, so its measured
-    #     FLOPs/energy are the fair comparator for the collapse claim.
+    # 5b. Structural (L1 filter pruning) comparator retired: its artifacts measured
+    #     at chance on both splits across configs (comparator training never learned),
+    #     and the study design dropped the comparator entirely.
     structural_model = None
-    structural_ckpt_path = os.path.join(checkpoint_dir, f"final_JF_Structural_L1{qs}_post{imp_epochs}.pt")
-    # Same scorer-independence argument as IMP: inherit from the default universe.
-    inherit_from_default_universe(structural_ckpt_path)
-    if os.path.exists(structural_ckpt_path):
-        try:
-            print(f"[INFO] Loading existing structural checkpoint: {structural_ckpt_path}")
-            ckpt = torch.load(structural_ckpt_path, map_location="cpu", weights_only=False)
-            structural_model = ckpt["model"] if isinstance(ckpt, dict) and "model" in ckpt else ckpt
-            structural_model.eval()
-        except Exception as e:
-            print(f"[WARN] Failed to load structural checkpoint ({e}). Will attempt re-training.")
-            structural_model = None
-    if structural_model is None:
-        try:
-            structural_clone = deepcopy(model_before)
-            structural_model = train_structural(
-                model=structural_clone,
-                train_loader=train_loader,
-                device=device,
-                epochs=imp_epochs,
-                target_sparsity=float(target_sparsity),
-                save_path=structural_ckpt_path,
-            )
-        except ImportError as e:
-            print(f"[WARN] {e} Skipping structural baseline.")
-            structural_model = None
-        except Exception as e:
-            print(f"[WARN] Structural baseline failed for {model_name}: {e}. Continuing without it.")
-            structural_model = None
-    structural_param_count = (sum(p.numel() for p in structural_model.parameters())
-                              if structural_model is not None else None)
+    structural_param_count = None
 
     # 6-7. Measure accuracy/power/energy + benchmark efficiency, `args.reps` times.
     # Acc/CKA/adversarial are deterministic; the reps give the noisy power/latency
@@ -346,6 +316,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
 
     if acc_original is not None:
         print(f"[RESULT] Accuracy Original:     {_fmt_acc(acc_original, att_original)} | Power: {_fmt_power(power_original, 'W')} | Energy: {_fmt_power(energy_original, 'J')}")
+    print(f"[RESULT] Accuracy Before (anchor): {_fmt_acc(m0['before'][0], m0['before'][1]) if m0['before'][0] is not None else 'N/A'}")
     print(f"[RESULT] Accuracy Unstructured: {_fmt_acc(acc_unstructured, att_unstructured)} | Power: {_fmt_power(power_unstructured, 'W')} | Energy: {_fmt_power(energy_unstructured, 'J')}")
     print(f"[RESULT] Accuracy Collapsed:    {_fmt_acc(acc_collapsed, att_collapsed)} | Power: {_fmt_power(power_collapsed, 'W')} | Energy: {_fmt_power(energy_collapsed, 'J')}")
     if structural_model is not None:
@@ -530,6 +501,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
 
     result_rows = []
     for rep, (m, b) in enumerate(zip(eval_reps, bench_reps)):
+        acc_b, att_b = m["before"][0], m["before"][1]
         acc_o, att_o, pow_o, eng_o, util_o, clk_o, ela_o, npw_o = m["original"]
         acc_u, att_u, pow_u, eng_u, util_u, clk_u, ela_u, npw_u = m["unstructured"]
         acc_c, att_c, pow_c, eng_c, util_c, clk_c, ela_c, npw_c = m["collapsed"]
@@ -544,6 +516,8 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
             "model_before": model_before_path,
             "intermediate_epoch": ckpt_epoch,
             "rep": rep,
+            "acc_before": acc_b,
+            "acc_test_before": att_b,
             "acc_original_after": acc_o,
             "acc_test_original_after": att_o,
             "acc_unstructured": acc_u,
