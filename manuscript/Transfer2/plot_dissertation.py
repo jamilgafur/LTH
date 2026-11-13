@@ -15,8 +15,10 @@ first, then the spread across configs). Missing data means a skipped figure with
 a [WARN] — no panel is ever drawn from thin air.
 
 Row policy matches aggregate_results.py: verdict rows (no_collapsed_regions) are
-not measurements, `_None_`-token control dirs are broken pairings (excluded),
-and CPU rows shadowed by a GPU twin are dropped.
+not measurements and CPU rows shadowed by a GPU twin are dropped. `_None_`-token
+control dirs carry pairing_flag=none_token_dir: flagged and counted in the run
+summary, never silently dropped (their measured rows are valid; the flag names a
+suspect control pairing, and the near-zero CKA tail is in the named-scorer family).
 
 Usage: python plot_dissertation.py [csv_dir] [out_dir]
        (defaults: . and <csv_dir>/dissertation_figs)
@@ -86,10 +88,13 @@ def load_rows(d):
         return None
     df = pd.concat(frames, ignore_index=True, sort=False)
     df = df[df["model"].astype(str) != "model"]  # header echo rows
-    status = df.get("status", pd.Series("", index=df.index)).astype(str).str.strip()
-    df = df[status.isin(["", "nan", "ok"])]  # verdict rows are not measurements
+    status = df.get("status", pd.Series("", index=df.index)).fillna("").astype(str).str.strip()
+    df = df[status.isin(["", "ok"])]  # verdict rows are not measurements
     before = df.get("model_before", pd.Series("", index=df.index)).astype(str)
-    df = df[~before.str.contains("_None_", regex=False, na=False)]
+    n_flag = int(before.str.contains("_None_", regex=False, na=False).sum())
+    if n_flag:
+        print(f"[INFO] {n_flag} rows carry pairing_flag=none_token_dir "
+              "(suspect control pairing — included, see aggregate_results.py)")
     # CPU rows shadowed by a GPU twin of the same config are dropped
     is_cpu = df.get("gpu_name", pd.Series("", index=df.index)).astype(str).str.upper().eq("CPU")
     if is_cpu.any():
@@ -389,7 +394,8 @@ def fig_efficiency(df, ds, out):
                 ("storage_mb", "Storage"), ("feature_maps_mb", "Feat. maps"),
                 ("peak_mem_mb", "Peak mem")]
     key2label = dict(VARIANTS)
-    present = []
+    present = []  # (family_label, [(ratio_col, variant_key)]) — ratios assigned in one shot
+    new_cols = {}
     for fam, flabel in families:
         cols = []
         for key, _ in VARIANTS[1:]:
@@ -397,12 +403,16 @@ def fig_efficiency(df, ds, out):
             if a not in sub or b not in sub:
                 continue
             rc = f"ratio_{fam}_{key}"
-            sub = sub.assign(**{rc: pd.to_numeric(sub[a], errors="coerce")
-                                / pd.to_numeric(sub[b], errors="coerce").replace(0, np.nan)})
-            if sub[rc].notna().any():
-                cols.append((rc, key))
+            new_cols[rc] = (pd.to_numeric(sub[a], errors="coerce")
+                            / pd.to_numeric(sub[b], errors="coerce").replace(0, np.nan))
+            cols.append((rc, key))
         if cols:
             present.append((flabel, cols))
+    if new_cols:
+        sub = pd.concat([sub, pd.DataFrame(new_cols, index=sub.index)], axis=1)
+    present = [(flabel, [(rc, k) for rc, k in cols if sub[rc].notna().any()])
+               for flabel, cols in present]
+    present = [(flabel, cols) for flabel, cols in present if cols]
     if sub.empty or not present:
         warn(name, "no hardware metric columns with data")
         return
