@@ -7,7 +7,7 @@ Starting Comparison Post-Processing Pipeline
 Model: VGG16 | Dataset: Cifar10 | Device: cuda
 Epochs Config (override): pre=300, post=100
 Output File: cka_results_VGG16_Cifar10_pre300_post100.csv
-CUDA device: NVIDIA A40
+CUDA device: NVIDIA GeForce RTX 2080 Ti
 ======================================================================
 
 ======================================================================
@@ -24,7 +24,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] VGG16 successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_epochs100_pretrain300/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 107
-[INFO] Weights loaded in 0.28s
+[INFO] Weights loaded in 7.00s
 
 [INFO] BN running stats recalibrated over 100 batches (15 BN layers).
 [INFO] Loading original post-finetuning model...
@@ -38,13 +38,13 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] VGG16 successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 107
-[INFO] Weights loaded in 1.99s
+[INFO] Weights loaded in 5.57s
 
 [INFO] BN running stats recalibrated over 100 batches (15 BN layers).
 [INFO] Loading whole collapsed model artifact...
 [INFO] Searching for checkpoint matching: ../Tranfer/VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_epochs100_pretrain300
 [INFO] Found matching checkpoint: ../Tranfer/VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
-[INFO] Whole-model load completed in 0.91s
+[INFO] Whole-model load completed in 1.82s
 [INFO] BN running stats recalibrated over 100 batches (11 BN layers).
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 34.96%
@@ -57,12 +57,53 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] VGG16 successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 107
-[INFO] Weights loaded in 1.54s
+[INFO] Weights loaded in 2.02s
 
-[INFO] Loading existing structural checkpoint: ../Tranfer/VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_epochs100_pretrain300/checkpoints/final_JF_Structural_L1_post100.pt
 
 [INFO] Evaluating model accuracy, power draw, and energy consumption (10 rep(s))...
 
 [INFO] === Measurement rep 1/10 ===
        -> Evaluating Baseline
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
+Traceback (most recent call last):
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/main.py", line 695, in main
+    result_rows = process_checkpoint(model_before_path, checkpoints, args, device)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/main.py", line 283, in process_checkpoint
+    m["unstructured"] = _eval_one(unstructured_pruning_model, "Unstructured Pruned Model")
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/main.py", line 253, in _eval_one
+    model = model.to(device)
+            ^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1343, in to
+    return self._apply(convert)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 903, in _apply
+    module._apply(fn)
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 903, in _apply
+    module._apply(fn)
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 930, in _apply
+    param_applied = fn(param)
+                    ^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1329, in convert
+    return t.to(
+           ^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/_utils/signal_handling.py", line 73, in handler
+    _error_if_any_worker_fails()
+RuntimeError: DataLoader worker (pid 36522) is killed by signal: Killed. 
+[INFO] Evaluation complete: acc=1.0000, power=95.10W, energy=309.25J, time=3.25s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9999, power=93.02W, energy=313.23J, time=3.37s
+       -> Evaluating Unstructured Pruned Model
+[ERROR] Failed processing checkpoint: ../Tranfer/VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+[ERROR] RuntimeError: DataLoader worker (pid 36522) is killed by signal: Killed. 
+
+======================================================================
+Processing checkpoint 2/2
+Path: ../Tranfer/VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+======================================================================
+[INFO] Parsing experiment directory... ../Tranfer/VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+[INFO] Initializing baseline model...
+[INFO] Initializing architecture: model=VGG16, dataset=Cifar10
+Loading CIFAR-10 data...

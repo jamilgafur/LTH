@@ -23,7 +23,7 @@ Loading Tiny ImageNet data for XceptionNet...
 [DEBUG] XceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 6.01s
+[INFO] Weights loaded in 7.20s
 
 [INFO] BN running stats recalibrated over 100 batches (40 BN layers).
 [INFO] Loading original post-finetuning model...
@@ -36,13 +36,13 @@ Loading Tiny ImageNet data for XceptionNet...
 [DEBUG] XceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 2.21s
+[INFO] Weights loaded in 7.24s
 
 [INFO] BN running stats recalibrated over 100 batches (40 BN layers).
 [INFO] Loading whole collapsed model artifact...
 [INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300
 [INFO] Found matching checkpoint: ../Tranfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
-[INFO] Whole-model load completed in 1.99s
+[INFO] Whole-model load completed in 4.26s
 [INFO] BN running stats recalibrated over 100 batches (26 BN layers).
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 49.99%
@@ -54,12 +54,441 @@ Loading Tiny ImageNet data for XceptionNet...
 [DEBUG] XceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 7.63s
+[INFO] Weights loaded in 5.24s
 
-[INFO] Loading existing structural checkpoint: ../Tranfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Structural_L1_post100.pt
 
 [INFO] Evaluating model accuracy, power draw, and energy consumption (10 rep(s))...
 
 [INFO] === Measurement rep 1/10 ===
        -> Evaluating Baseline
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.9183, power=73.65W, energy=834.83J, time=11.34s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8398, power=80.11W, energy=765.48J, time=9.56s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.5507, power=76.44W, energy=874.46J, time=11.44s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8419, power=72.20W, energy=926.01J, time=12.83s
+[INFO] Saturated energy: power=161.105, J/img=0.02508672278770937, samples=2
+[INFO] Saturated energy: power=162.275, J/img=0.023538924371694914, samples=2
+[INFO] Saturated energy: power=190.845, J/img=0.022664973239431965, samples=2
+
+[INFO] === Measurement rep 2/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.9186, power=76.10W, energy=859.89J, time=11.30s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8408, power=77.22W, energy=884.68J, time=11.46s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.5557, power=76.00W, energy=918.88J, time=12.09s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8392, power=72.77W, energy=777.46J, time=10.68s
+[INFO] Saturated energy: power=170.68, J/img=0.02520300815292927, samples=2
+[INFO] Saturated energy: power=198.28666666666666, J/img=0.028931770706048576, samples=3
+[INFO] Saturated energy: power=158.65, J/img=0.018835908878805506, samples=2
+
+[INFO] === Measurement rep 3/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.9193, power=77.01W, energy=883.12J, time=11.47s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8415, power=74.28W, energy=1094.58J, time=14.74s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.5566, power=75.19W, energy=812.89J, time=10.81s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8411, power=74.58W, energy=740.70J, time=9.93s
+[INFO] Saturated energy: power=161.275, J/img=0.023959611140261513, samples=2
+[INFO] Saturated energy: power=163.115, J/img=0.023862278071939257, samples=2
+[INFO] Saturated energy: power=176.24, J/img=0.02057462505609901, samples=2
+
+[INFO] === Measurement rep 4/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.9186, power=75.20W, energy=805.43J, time=10.71s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8411, power=80.21W, energy=702.01J, time=8.75s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.5530, power=77.22W, energy=832.04J, time=10.78s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8400, power=73.95W, energy=871.95J, time=11.79s
+[INFO] Saturated energy: power=170.32, J/img=0.02572345192495145, samples=2
+[INFO] Saturated energy: power=160.385, J/img=0.023666916792346556, samples=2
+[INFO] Saturated energy: power=166.645, J/img=0.019884933324700052, samples=2
+
+[INFO] === Measurement rep 5/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.9187, power=76.26W, energy=787.70J, time=10.33s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8392, power=78.83W, energy=740.16J, time=9.39s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.5539, power=74.49W, energy=808.97J, time=10.86s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8414, power=73.58W, energy=720.35J, time=9.79s
+[INFO] Saturated energy: power=165.58499999999998, J/img=0.024320305734611698, samples=2
+[INFO] Saturated energy: power=174.63, J/img=0.025501520072834356, samples=2
+[INFO] Saturated energy: power=192.08499999999998, J/img=0.022373984017412817, samples=2
+
+[INFO] === Measurement rep 6/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.9192, power=81.32W, energy=681.92J, time=8.39s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8398, power=81.55W, energy=713.01J, time=8.74s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.5569, power=80.33W, energy=713.38J, time=8.88s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8394, power=76.31W, energy=624.24J, time=8.18s
+[INFO] Saturated energy: power=167.16500000000002, J/img=0.0247109369593432, samples=2
+[INFO] Saturated energy: power=171.495, J/img=0.025039832970118883, samples=2
+[INFO] Saturated energy: power=205.365, J/img=0.02394109616883927, samples=2
+
+[INFO] === Measurement rep 7/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.9194, power=78.96W, energy=726.38J, time=9.20s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8418, power=79.03W, energy=788.48J, time=9.98s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.5552, power=77.19W, energy=771.17J, time=9.99s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8403, power=72.18W, energy=741.13J, time=10.27s
+[INFO] Saturated energy: power=176.595, J/img=0.02576438714646631, samples=2
+[INFO] Saturated energy: power=170.31, J/img=0.024824221563111575, samples=2
+[INFO] Saturated energy: power=181.74, J/img=0.021551316348849832, samples=2
+
+[INFO] === Measurement rep 8/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.9194, power=81.06W, energy=673.81J, time=8.31s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8408, power=78.81W, energy=644.37J, time=8.18s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.5545, power=79.85W, energy=645.72J, time=8.09s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8412, power=75.64W, energy=727.63J, time=9.62s
+[INFO] Saturated energy: power=165.14, J/img=0.024136770425494322, samples=2
+[INFO] Saturated energy: power=187.55, J/img=0.0272669354841734, samples=2
+[INFO] Saturated energy: power=195.235, J/img=0.02282424521986464, samples=2
+
+[INFO] === Measurement rep 9/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.9194, power=79.91W, energy=645.34J, time=8.08s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8375, power=81.03W, energy=673.98J, time=8.32s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.5548, power=79.98W, energy=734.01J, time=9.18s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8430, power=72.78W, energy=782.21J, time=10.75s
+[INFO] Saturated energy: power=171.22, J/img=0.02527490003323051, samples=2
+[INFO] Saturated energy: power=178.97, J/img=0.026002326195175472, samples=2
+[INFO] Saturated energy: power=176.89000000000001, J/img=0.02080310103594701, samples=2
+
+[INFO] === Measurement rep 10/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.9200, power=80.77W, energy=639.84J, time=7.92s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8375, power=79.09W, energy=669.81J, time=8.47s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.5541, power=81.25W, energy=657.52J, time=8.09s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8417, power=75.97W, energy=601.43J, time=7.92s
+[INFO] Saturated energy: power=170.13, J/img=0.02493396216526974, samples=2
+[INFO] Saturated energy: power=167.12, J/img=0.024625183094379516, samples=2
+[INFO] Saturated energy: power=183.86, J/img=0.02150379520920573, samples=2
+[INFO] Measuring dataloader floor (no forward passes)...
+[INFO] Loader floor: time=7.59s, energy=476.91J
+[RESULT] Accuracy Original:     0.8398 (test 0.4812) | Power: 80.11W | Energy: 765.48J
+[RESULT] Accuracy Before (anchor): 0.9183 (test 0.4881)
+[RESULT] Accuracy Unstructured: 0.5507 (test 0.4864) | Power: 76.44W | Energy: 874.46J
+[RESULT] Accuracy Collapsed:    0.8419 (test 0.4726) | Power: 72.20W | Energy: 926.01J
+[INFO] 10 measurement reps completed; full per-rep values are rows in the CSV.
+[RESULT] Original     FLOPs=2.415e+10 | latency=11.60 ms/batch | throughput=5517.7 img/s | peak_mem=867.0 MiB | feature_maps=827.4 MiB
+[RESULT] Unstructured FLOPs=2.415e+10 | latency=9.40 ms/batch | throughput=6805.1 img/s | peak_mem=867.0 MiB | feature_maps=827.4 MiB
+[RESULT] Collapsed    FLOPs=1.508e+10 | latency=7.25 ms/batch | throughput=8830.9 img/s | peak_mem=652.3 MiB | feature_maps=662.8 MiB
+[RESULT] FLOPs Unstructured (theoretical/effective, kept for back-compat): 1.21e+10
+[RESULT] Storage (state_dict MiB): original=81.2, unstructured=81.2, collapsed=40.7
+
+[INFO] Extracting features and computing CKA...
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(640, 2048), time=0.69s
+[INFO] Computing CKA: features_x=(640, 2048), features_y=(640, 2048)
+[INFO] CKA complete: score=1.000000, time=2.08s
+[INFO] CKA self-check (expect ~1.0): 1.000000
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(640, 2048), time=0.67s
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(640, 2048), time=0.70s
+[INFO] Computing CKA: features_x=(640, 2048), features_y=(640, 2048)
+[INFO] CKA complete: score=0.728724, time=0.00s
+[INFO] Computing CKA: features_x=(640, 2048), features_y=(640, 2048)
+[INFO] CKA complete: score=0.845942, time=0.00s
+
+[INFO] Evaluating Adversarial Robustness...
+[INFO] Running FGSM attack (epsilon=0.005)...
+       -> original Accuracy: 0.5938
+       -> unstructured Accuracy: 0.4688
+       -> collapsed Accuracy: 0.5781
+[INFO] Running PGD attack (epsilon=0.005)...
+       -> original Accuracy: 0.5938
+       -> unstructured Accuracy: 0.4688
+       -> collapsed Accuracy: 0.5781
+[INFO] Running FGSM attack (epsilon=0.01)...
+       -> original Accuracy: 0.4844
+       -> unstructured Accuracy: 0.2656
+       -> collapsed Accuracy: 0.4375
+[INFO] Running PGD attack (epsilon=0.01)...
+       -> original Accuracy: 0.4531
+       -> unstructured Accuracy: 0.2344
+       -> collapsed Accuracy: 0.4219
+[INFO] Running FGSM attack (epsilon=0.02)...
+       -> original Accuracy: 0.2812
+       -> unstructured Accuracy: 0.1406
+       -> collapsed Accuracy: 0.2812
+[INFO] Running PGD attack (epsilon=0.02)...
+       -> original Accuracy: 0.1094
+       -> unstructured Accuracy: 0.0781
+       -> collapsed Accuracy: 0.1250
+[INFO] Running FGSM attack (epsilon=0.03)...
+       -> original Accuracy: 0.1250
+       -> unstructured Accuracy: 0.0781
+       -> collapsed Accuracy: 0.2031
+[INFO] Running PGD attack (epsilon=0.03)...
+       -> original Accuracy: 0.0469
+       -> unstructured Accuracy: 0.0469
+       -> collapsed Accuracy: 0.0469
+[INFO] Running FGSM attack (epsilon=0.05)...
+       -> original Accuracy: 0.0938
+       -> unstructured Accuracy: 0.0469
+       -> collapsed Accuracy: 0.1094
+[INFO] Running PGD attack (epsilon=0.05)...
+       -> original Accuracy: 0.0000
+       -> unstructured Accuracy: 0.0000
+       -> collapsed Accuracy: 0.0000
+
+[INFO] Full analysis: calibration (ECE/MCE), OOD AUROC, corruptions...
+[WARN] No OOD dataset configured for 'tinyimagenet'. Skipping OOD evaluation.
+[INFO] Appended 30 rows to robustness_curves_cka_results_XceptionNet_tinyimagenet_pre300_post100.csv
+[INFO] Appended 45 rows to calibration_cka_results_XceptionNet_tinyimagenet_pre300_post100.csv
+
+======================================================================
+Processing checkpoint 2/2
+Path: ../Tranfer/XceptionNet_tinyimagenet_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+======================================================================
+[INFO] Parsing experiment directory... ../Tranfer/XceptionNet_tinyimagenet_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+[INFO] Initializing baseline model...
+[INFO] Initializing architecture: model=XceptionNet, dataset=tinyimagenet
+Loading Tiny ImageNet data for XceptionNet...
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
+[DEBUG] Attempting to initialize XceptionNet with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] XceptionNet successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/XceptionNet_tinyimagenet_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 276
+[INFO] Weights loaded in 1.75s
+
+[INFO] BN running stats recalibrated over 100 batches (40 BN layers).
+[INFO] Loading original post-finetuning model...
+[INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_tinyimagenet_None_scorerall_epochs100_pretrain300
+[INFO] Found matching checkpoint: ../Tranfer/XceptionNet_tinyimagenet_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Initializing architecture: model=XceptionNet, dataset=tinyimagenet
+Loading Tiny ImageNet data for XceptionNet...
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
+[DEBUG] Attempting to initialize XceptionNet with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] XceptionNet successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/XceptionNet_tinyimagenet_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 276
+[INFO] Weights loaded in 1.80s
+
+[INFO] BN running stats recalibrated over 100 batches (40 BN layers).
+[INFO] Loading whole collapsed model artifact...
+[INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_tinyimagenet_None_scorerall_epochs100_pretrain300
+[INFO] Found matching checkpoint: ../Tranfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
+[INFO] Whole-model load completed in 1.70s
+[INFO] BN running stats recalibrated over 100 batches (26 BN layers).
+[INFO] Calculating dynamic sparsity to match collapse...
+[INFO] Target unstructured sparsity calculated at: 49.99%
+[INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
+[INFO] Initializing architecture: model=XceptionNet, dataset=tinyimagenet
+Loading Tiny ImageNet data for XceptionNet...
