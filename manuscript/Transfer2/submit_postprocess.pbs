@@ -88,4 +88,15 @@ echo "--- CKA strip/drift audit ($(date)) ---" >> "$OUTPUT_FILE"
     --pre "$PRETRAIN" \
     --post "$EPOCHS" >> "$OUTPUT_FILE" 2>&1 || echo "[WARN] diagnose_cka.py exited nonzero (see above)" >> "$OUTPUT_FILE"
 
+# --- Recalibration-delta exhibit (measurement-foundation table): pre/post BN
+#     recalibration reads of this config's artifacts, appended to the shared
+#     recalibration_delta.csv and to this submission's log ---
+echo "--- recalibration delta ($(date)) ---" >> "$OUTPUT_FILE"
+~/env/lth_env/bin/python recalibration_delta.py \
+    --model "$MODEL" \
+    --dataset "$DATASET" \
+    --pre "$PRETRAIN" \
+    --post "$EPOCHS" \
+    $QUANT_FLAG >> "$OUTPUT_FILE" 2>&1 || echo "[WARN] recalibration_delta.py exited nonzero (see above)" >> "$OUTPUT_FILE"
+
 echo "Job finished."

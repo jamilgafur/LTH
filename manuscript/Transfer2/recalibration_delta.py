@@ -16,6 +16,7 @@ Rows append to recalibration_delta.csv (shared across configs).
 """
 import argparse
 import csv
+import fcntl
 import os
 
 import torch
@@ -111,12 +112,14 @@ def main():
         print(f"\n[INFO] {before_path}")
         rows.extend(process(before_path, checkpoints, args, device))
 
-    write_header = not os.path.exists(args.out) or os.path.getsize(args.out) == 0
+    # Concurrent grid jobs append to one shared CSV: lock, then header-if-new.
     with open(args.out, "a", newline="") as fh:
+        fcntl.flock(fh, fcntl.LOCK_EX)
         writer = csv.DictWriter(fh, fieldnames=FIELDS)
-        if write_header:
+        if os.fstat(fh.fileno()).st_size == 0:
             writer.writeheader()
         writer.writerows(rows)
+        fh.flush()
     print(f"\n[OK] {len(rows)} artifact rows appended to {args.out}")
 
 
