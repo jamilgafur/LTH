@@ -1,0 +1,989 @@
+[INFO] Searching for model checkpoints...
+[INFO] Found 2 'before' checkpoints.
+[INFO] Found 1 collapsed checkpoints.
+[INFO] Found 1 'after' checkpoints.
+======================================================================
+Starting Comparison Post-Processing Pipeline
+Model: RegNetX_400MF | Dataset: tinyimagenet | Device: cuda
+Epochs Config (override): pre=100, post=300
+Output File: cka_results_RegNetX_400MF_tinyimagenet_pre100_post300.csv
+CUDA device: NVIDIA GeForce RTX 2080 Ti
+======================================================================
+
+======================================================================
+Processing checkpoint 1/2
+Path: ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
+======================================================================
+[INFO] Parsing experiment directory... ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
+[INFO] Initializing baseline model...
+[INFO] Initializing architecture: model=RegNetX_400MF, dataset=tinyimagenet
+Loading Tiny ImageNet data for RegNetX_400MF...
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
+[DEBUG] Attempting to initialize RegNetX_400MF with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] RegNetX_400MF successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 428
+[INFO] Weights loaded in 1.43s
+
+[INFO] BN running stats recalibrated over 100 batches (71 BN layers).
+[INFO] Loading original post-finetuning model...
+[INFO] Searching for checkpoint matching: ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100
+[INFO] Found matching checkpoint: ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Initializing architecture: model=RegNetX_400MF, dataset=tinyimagenet
+Loading Tiny ImageNet data for RegNetX_400MF...
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
+[DEBUG] Attempting to initialize RegNetX_400MF with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] RegNetX_400MF successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 428
+[INFO] Weights loaded in 0.89s
+
+[INFO] BN running stats recalibrated over 100 batches (71 BN layers).
+[INFO] Loading whole collapsed model artifact...
+[INFO] Searching for checkpoint matching: ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100
+[INFO] Found matching checkpoint: ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
+[INFO] Whole-model load completed in 0.91s
+[INFO] BN running stats recalibrated over 100 batches (71 BN layers).
+[INFO] Calculating dynamic sparsity to match collapse...
+[INFO] Target unstructured sparsity calculated at: 10.36%
+[INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
+[INFO] Initializing architecture: model=RegNetX_400MF, dataset=tinyimagenet
+Loading Tiny ImageNet data for RegNetX_400MF...
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
+[DEBUG] Attempting to initialize RegNetX_400MF with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] RegNetX_400MF successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 428
+[INFO] Weights loaded in 1.08s
+
+
+[INFO] Evaluating model accuracy, power draw, and energy consumption (10 rep(s))...
+
+[INFO] === Measurement rep 1/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6847, power=67.32W, energy=613.69J, time=9.12s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8017, power=68.03W, energy=520.55J, time=7.65s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4719, power=67.85W, energy=518.59J, time=7.64s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.7778, power=68.38W, energy=514.38J, time=7.52s
+[INFO] Saturated energy: power=95.795, J/img=0.013351716585457325, samples=2
+[INFO] Saturated energy: power=95.515, J/img=0.013255489756915274, samples=2
+[INFO] Saturated energy: power=100.06, J/img=0.013151276761976381, samples=2
+
+[INFO] === Measurement rep 2/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6877, power=67.50W, energy=526.82J, time=7.80s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8034, power=67.27W, energy=518.89J, time=7.71s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4707, power=67.67W, energy=543.78J, time=8.04s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.7777, power=67.60W, energy=511.04J, time=7.56s
+[INFO] Saturated energy: power=95.695, J/img=0.013164229617580184, samples=2
+[INFO] Saturated energy: power=106.82333333333334, J/img=0.014589196526825773, samples=3
+[INFO] Saturated energy: power=99.41999999999999, J/img=0.012965489821431557, samples=2
+
+[INFO] === Measurement rep 3/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6858, power=67.41W, energy=522.10J, time=7.75s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.7984, power=67.46W, energy=545.62J, time=8.09s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4733, power=67.50W, energy=531.83J, time=7.88s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.7761, power=67.66W, energy=542.12J, time=8.01s
+[INFO] Saturated energy: power=96.135, J/img=0.013261075536720455, samples=2
+[INFO] Saturated energy: power=101.075, J/img=0.013851179133128862, samples=2
+[INFO] Saturated energy: power=83.745, J/img=0.01366076893448212, samples=2
+
+[INFO] === Measurement rep 4/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6875, power=67.23W, energy=537.00J, time=7.99s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8010, power=67.29W, energy=520.04J, time=7.73s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4722, power=66.94W, energy=515.74J, time=7.70s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.7752, power=67.31W, energy=509.60J, time=7.57s
+[INFO] Saturated energy: power=96.065, J/img=0.013189088340084105, samples=2
+[INFO] Saturated energy: power=102.78999999999999, J/img=0.014183299892271559, samples=2
+[INFO] Saturated energy: power=99.38, J/img=0.01303076008738329, samples=2
+
+[INFO] === Measurement rep 5/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6872, power=67.60W, energy=526.07J, time=7.78s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8022, power=67.62W, energy=518.32J, time=7.66s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4728, power=67.33W, energy=514.61J, time=7.64s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.7777, power=67.14W, energy=528.70J, time=7.87s
+[INFO] Saturated energy: power=86.82333333333334, J/img=0.01490504968236538, samples=3
+[INFO] Saturated energy: power=94.66, J/img=0.013067832562353526, samples=2
+[INFO] Saturated energy: power=98.1, J/img=0.012844288689219606, samples=2
+
+[INFO] === Measurement rep 6/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6860, power=67.54W, energy=513.38J, time=7.60s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8029, power=67.77W, energy=517.63J, time=7.64s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4731, power=67.48W, energy=529.79J, time=7.85s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.7795, power=68.22W, energy=518.08J, time=7.59s
+[INFO] Saturated energy: power=86.58, J/img=0.01456431732816811, samples=2
+[INFO] Saturated energy: power=95.695, J/img=0.013246509102826707, samples=2
+[INFO] Saturated energy: power=102.48500000000001, J/img=0.013319013720101193, samples=2
+
+[INFO] === Measurement rep 7/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6852, power=67.25W, energy=517.83J, time=7.70s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8032, power=67.45W, energy=520.77J, time=7.72s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4688, power=67.91W, energy=536.12J, time=7.89s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.7789, power=68.67W, energy=520.22J, time=7.58s
+[INFO] Saturated energy: power=96.545, J/img=0.01327242865540315, samples=2
+[INFO] Saturated energy: power=107.47666666666667, J/img=0.014815057887813671, samples=3
+[INFO] Saturated energy: power=100.66, J/img=0.013045562035078374, samples=2
+
+[INFO] === Measurement rep 8/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6855, power=67.24W, energy=521.25J, time=7.75s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8027, power=67.41W, energy=539.06J, time=8.00s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4741, power=67.36W, energy=521.41J, time=7.74s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.7764, power=68.23W, energy=506.66J, time=7.43s
+[INFO] Saturated energy: power=83.245, J/img=0.014141850314530972, samples=2
+[INFO] Saturated energy: power=105.22333333333331, J/img=0.014431226368183671, samples=3
+[INFO] Saturated energy: power=101.97, J/img=0.013285482549531892, samples=2
+
+[INFO] === Measurement rep 9/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6892, power=67.60W, energy=519.05J, time=7.68s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8028, power=67.80W, energy=513.14J, time=7.57s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4720, power=66.41W, energy=816.08J, time=12.29s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.7782, power=67.96W, energy=516.07J, time=7.59s
+[INFO] Saturated energy: power=105.52333333333333, J/img=0.014537960302025036, samples=3
+[INFO] Saturated energy: power=89.485, J/img=0.015231440407400196, samples=2
+[INFO] Saturated energy: power=99.5, J/img=0.012915171552526116, samples=2
+
+[INFO] === Measurement rep 10/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6865, power=67.43W, energy=517.94J, time=7.68s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8046, power=67.80W, energy=530.43J, time=7.82s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4702, power=68.07W, energy=515.74J, time=7.58s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.7783, power=68.48W, energy=509.84J, time=7.45s
+[INFO] Saturated energy: power=95.185, J/img=0.01333349162985881, samples=2
+[INFO] Saturated energy: power=96.4, J/img=0.013232898686129974, samples=2
+[INFO] Saturated energy: power=99.39, J/img=0.013156026060215565, samples=2
+[INFO] Measuring dataloader floor (no forward passes)...
+[INFO] Loader floor: time=6.98s, energy=451.79J
+[RESULT] Accuracy Original:     0.8017 (test 0.3497) | Power: 68.03W | Energy: 520.55J
+[RESULT] Accuracy Before (anchor): 0.6847 (test 0.3798)
+[RESULT] Accuracy Unstructured: 0.4719 (test 0.4183) | Power: 67.85W | Energy: 518.59J
+[RESULT] Accuracy Collapsed:    0.7778 (test 0.3583) | Power: 68.38W | Energy: 514.38J
+[INFO] 10 measurement reps completed; full per-rep values are rows in the CSV.
+[RESULT] Original     FLOPs=2.114e+09 | latency=9.45 ms/batch | throughput=6773.8 img/s | peak_mem=172.9 MiB | feature_maps=184.0 MiB
+[RESULT] Unstructured FLOPs=2.114e+09 | latency=9.40 ms/batch | throughput=6806.4 img/s | peak_mem=172.9 MiB | feature_maps=184.0 MiB
+[RESULT] Collapsed    FLOPs=1.898e+09 | latency=9.03 ms/batch | throughput=7088.5 img/s | peak_mem=169.1 MiB | feature_maps=171.1 MiB
+[RESULT] FLOPs Unstructured (theoretical/effective, kept for back-compat): 1.89e+09
+[RESULT] Storage (state_dict MiB): original=18.8, unstructured=18.8, collapsed=16.9
+
+[INFO] Extracting features and computing CKA...
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(640, 384), time=0.76s
+[INFO] Computing CKA: features_x=(640, 384), features_y=(640, 384)
+[INFO] CKA complete: score=1.000000, time=0.10s
+[INFO] CKA self-check (expect ~1.0): 1.000000
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(640, 384), time=0.61s
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(640, 384), time=0.63s
+[INFO] Computing CKA: features_x=(640, 384), features_y=(640, 384)
+[INFO] CKA complete: score=0.046412, time=0.00s
+[INFO] Computing CKA: features_x=(640, 384), features_y=(640, 384)
+[INFO] CKA complete: score=0.000589, time=0.00s
+
+[INFO] Evaluating Adversarial Robustness...
+[INFO] Running FGSM attack (epsilon=0.005)...
+       -> original Accuracy: 0.4219
+       -> unstructured Accuracy: 0.3594
+       -> collapsed Accuracy: 0.3594
+[INFO] Running PGD attack (epsilon=0.005)...
+       -> original Accuracy: 0.4219
+       -> unstructured Accuracy: 0.3438
+       -> collapsed Accuracy: 0.3281
+[INFO] Running FGSM attack (epsilon=0.01)...
+       -> original Accuracy: 0.2500
+       -> unstructured Accuracy: 0.1875
+       -> collapsed Accuracy: 0.2031
+[INFO] Running PGD attack (epsilon=0.01)...
+       -> original Accuracy: 0.2188
+       -> unstructured Accuracy: 0.1562
+       -> collapsed Accuracy: 0.1562
+[INFO] Running FGSM attack (epsilon=0.02)...
+       -> original Accuracy: 0.1094
+       -> unstructured Accuracy: 0.0469
+       -> collapsed Accuracy: 0.1250
+[INFO] Running PGD attack (epsilon=0.02)...
+       -> original Accuracy: 0.0156
+       -> unstructured Accuracy: 0.0156
+       -> collapsed Accuracy: 0.0156
+[INFO] Running FGSM attack (epsilon=0.03)...
+       -> original Accuracy: 0.0469
+       -> unstructured Accuracy: 0.0156
+       -> collapsed Accuracy: 0.0625
+[INFO] Running PGD attack (epsilon=0.03)...
+       -> original Accuracy: 0.0000
+       -> unstructured Accuracy: 0.0000
+       -> collapsed Accuracy: 0.0000
+[INFO] Running FGSM attack (epsilon=0.05)...
+       -> original Accuracy: 0.0469
+       -> unstructured Accuracy: 0.0000
+       -> collapsed Accuracy: 0.0312
+[INFO] Running PGD attack (epsilon=0.05)...
+       -> original Accuracy: 0.0000
+       -> unstructured Accuracy: 0.0000
+       -> collapsed Accuracy: 0.0000
+
+[INFO] Full analysis: calibration (ECE/MCE), OOD AUROC, corruptions...
+[WARN] No OOD dataset configured for 'tinyimagenet'. Skipping OOD evaluation.
+[INFO] Appended 30 rows to robustness_curves_cka_results_RegNetX_400MF_tinyimagenet_pre100_post300.csv
+[INFO] Appended 45 rows to calibration_cka_results_RegNetX_400MF_tinyimagenet_pre100_post300.csv
+
+======================================================================
+Processing checkpoint 2/2
+Path: ../Tranfer/RegNetX_400MF_tinyimagenet_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt
+======================================================================
+[INFO] Parsing experiment directory... ../Tranfer/RegNetX_400MF_tinyimagenet_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt
+[INFO] Initializing baseline model...
+[INFO] Initializing architecture: model=RegNetX_400MF, dataset=tinyimagenet
+Loading Tiny ImageNet data for RegNetX_400MF...
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
+[DEBUG] Attempting to initialize RegNetX_400MF with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] RegNetX_400MF successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/RegNetX_400MF_tinyimagenet_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 428
+[INFO] Weights loaded in 0.67s
+
+[INFO] BN running stats recalibrated over 100 batches (71 BN layers).
+[INFO] Loading original post-finetuning model...
+[INFO] Searching for checkpoint matching: ../Tranfer/RegNetX_400MF_tinyimagenet_None_scorerall_epochs300_pretrain100
+[INFO] Found matching checkpoint: ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Initializing architecture: model=RegNetX_400MF, dataset=tinyimagenet
+Loading Tiny ImageNet data for RegNetX_400MF...
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
+[DEBUG] Attempting to initialize RegNetX_400MF with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] RegNetX_400MF successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 428
+[INFO] Weights loaded in 0.11s
+
+[INFO] BN running stats recalibrated over 100 batches (71 BN layers).
+[INFO] Loading whole collapsed model artifact...
+[INFO] Searching for checkpoint matching: ../Tranfer/RegNetX_400MF_tinyimagenet_None_scorerall_epochs300_pretrain100
+[INFO] Found matching checkpoint: ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
+[INFO] Whole-model load completed in 0.10s
+[INFO] BN running stats recalibrated over 100 batches (71 BN layers).
+[INFO] Calculating dynamic sparsity to match collapse...
+[INFO] Target unstructured sparsity calculated at: 10.36%
+[INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
+[INFO] Initializing architecture: model=RegNetX_400MF, dataset=tinyimagenet
+Loading Tiny ImageNet data for RegNetX_400MF...
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
+[DEBUG] Attempting to initialize RegNetX_400MF with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] RegNetX_400MF successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 428
+[INFO] Weights loaded in 0.10s
+
+
+[INFO] Evaluating model accuracy, power draw, and energy consumption (10 rep(s))...
+
+[INFO] === Measurement rep 1/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6875, power=67.30W, energy=557.03J, time=8.28s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8024, power=67.46W, energy=511.09J, time=7.58s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4716, power=67.58W, energy=518.65J, time=7.67s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.7756, power=67.28W, energy=508.53J, time=7.56s
+[INFO] Saturated energy: power=98.38499999999999, J/img=0.013470016869189945, samples=2
+[INFO] Saturated energy: power=105.535, J/img=0.014771167947765852, samples=2
+[INFO] Saturated energy: power=99.60499999999999, J/img=0.013002556752166187, samples=2
+
+[INFO] === Measurement rep 2/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6873, power=67.17W, energy=508.64J, time=7.57s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8006, power=67.84W, energy=517.42J, time=7.63s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4712, power=66.98W, energy=515.47J, time=7.70s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.7755, power=67.89W, energy=515.37J, time=7.59s
+[INFO] Saturated energy: power=95.89, J/img=0.013283787161144655, samples=2
+[INFO] Saturated energy: power=95.815, J/img=0.013279424372256326, samples=2
+[INFO] Saturated energy: power=100.135, J/img=0.012926157686905172, samples=2
+
+[INFO] === Measurement rep 3/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6875, power=67.55W, energy=531.21J, time=7.86s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8036, power=67.08W, energy=520.00J, time=7.75s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4731, power=67.43W, energy=524.59J, time=7.78s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.7761, power=67.81W, energy=513.99J, time=7.58s
+[INFO] Saturated energy: power=88.74666666666667, J/img=0.015058687545065385, samples=3
+[INFO] Saturated energy: power=95.78999999999999, J/img=0.013245301068711437, samples=2
+[INFO] Saturated energy: power=110.49333333333334, J/img=0.014414712477157268, samples=3
+
+[INFO] === Measurement rep 4/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6865, power=67.77W, energy=511.88J, time=7.55s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8042, power=67.22W, energy=506.53J, time=7.54s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4723, power=67.47W, energy=507.40J, time=7.52s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.7777, power=67.24W, energy=507.40J, time=7.55s
+[INFO] Saturated energy: power=95.61500000000001, J/img=0.013262159065199845, samples=2
+[INFO] Saturated energy: power=102.16499999999999, J/img=0.01412368358897143, samples=2
+[INFO] Saturated energy: power=100.16999999999999, J/img=0.01292733869271078, samples=2
+
+[INFO] === Measurement rep 5/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6876, power=67.06W, energy=547.84J, time=8.17s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8021, power=67.09W, energy=509.39J, time=7.59s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4700, power=67.38W, energy=508.02J, time=7.54s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.7768, power=67.33W, energy=519.44J, time=7.71s
+[INFO] Saturated energy: power=98.505, J/img=0.013479427719974648, samples=2
+[INFO] Saturated energy: power=98.66, J/img=0.013493657915812472, samples=2
+[INFO] Saturated energy: power=110.55999999999999, J/img=0.014295708649471156, samples=3
+
+[INFO] === Measurement rep 6/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6880, power=67.23W, energy=523.61J, time=7.79s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8012, power=67.42W, energy=519.93J, time=7.71s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4700, power=67.06W, energy=520.05J, time=7.75s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.7774, power=67.77W, energy=523.75J, time=7.73s
+[INFO] Saturated energy: power=95.03, J/img=0.013366424499212631, samples=2
+[INFO] Saturated energy: power=97.75999999999999, J/img=0.013507398976045741, samples=2
+[INFO] Saturated energy: power=100.21000000000001, J/img=0.012916466824435554, samples=2
+
+[INFO] === Measurement rep 7/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6873, power=67.33W, energy=520.55J, time=7.73s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8020, power=66.85W, energy=548.66J, time=8.21s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4717, power=67.26W, energy=516.45J, time=7.68s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.7768, power=67.79W, energy=504.61J, time=7.44s
+[INFO] Saturated energy: power=95.81, J/img=0.013120645344581294, samples=2
+[INFO] Saturated energy: power=96.705, J/img=0.013287164352948097, samples=2
+[INFO] Saturated energy: power=111.18666666666667, J/img=0.014495994249363904, samples=3
+
+[INFO] === Measurement rep 8/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6845, power=67.35W, energy=508.54J, time=7.55s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8031, power=67.34W, energy=511.96J, time=7.60s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4723, power=67.26W, energy=511.62J, time=7.61s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.7769, power=67.78W, energy=511.44J, time=7.55s
+[INFO] Saturated energy: power=97.5, J/img=0.013525817329925588, samples=2
+[INFO] Saturated energy: power=101.195, J/img=0.013900803055972119, samples=2
+[INFO] Saturated energy: power=99.185, J/img=0.013065183013677597, samples=2
+
+[INFO] === Measurement rep 9/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6867, power=67.78W, energy=526.92J, time=7.77s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8028, power=67.80W, energy=526.14J, time=7.76s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4711, power=67.35W, energy=525.71J, time=7.81s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.7771, power=68.32W, energy=521.40J, time=7.63s
+[INFO] Saturated energy: power=96.33, J/img=0.013122223016213286, samples=2
+[INFO] Saturated energy: power=98.925, J/img=0.01364189349972692, samples=2
+[INFO] Saturated energy: power=100.13, J/img=0.01302538459520202, samples=2
+
+[INFO] === Measurement rep 10/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6885, power=67.68W, energy=533.80J, time=7.89s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.8025, power=67.37W, energy=528.16J, time=7.84s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4698, power=67.66W, energy=514.67J, time=7.61s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.7756, power=67.75W, energy=515.53J, time=7.61s
+[INFO] Saturated energy: power=98.0, J/img=0.013386484799963055, samples=2
+[INFO] Saturated energy: power=105.54333333333334, J/img=0.014520770594261696, samples=3
+[INFO] Saturated energy: power=101.11, J/img=0.013305624733877731, samples=2
+[INFO] Measuring dataloader floor (no forward passes)...
+[INFO] Loader floor: time=7.02s, energy=453.81J
+[RESULT] Accuracy Original:     0.8024 (test 0.3488) | Power: 67.46W | Energy: 511.09J
+[RESULT] Accuracy Before (anchor): 0.6875 (test 0.3813)
+[RESULT] Accuracy Unstructured: 0.4716 (test 0.4183) | Power: 67.58W | Energy: 518.65J
+[RESULT] Accuracy Collapsed:    0.7756 (test 0.3567) | Power: 67.28W | Energy: 508.53J
+[INFO] 10 measurement reps completed; full per-rep values are rows in the CSV.
+[RESULT] Original     FLOPs=2.114e+09 | latency=9.29 ms/batch | throughput=6886.5 img/s | peak_mem=196.9 MiB | feature_maps=184.0 MiB
+[RESULT] Unstructured FLOPs=2.114e+09 | latency=9.47 ms/batch | throughput=6759.0 img/s | peak_mem=196.9 MiB | feature_maps=184.0 MiB
+[RESULT] Collapsed    FLOPs=1.898e+09 | latency=8.84 ms/batch | throughput=7242.5 img/s | peak_mem=193.2 MiB | feature_maps=171.1 MiB
+[RESULT] FLOPs Unstructured (theoretical/effective, kept for back-compat): 1.89e+09
+[RESULT] Storage (state_dict MiB): original=18.8, unstructured=18.8, collapsed=16.9
+
+[INFO] Extracting features and computing CKA...
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(640, 384), time=0.58s
+[INFO] Computing CKA: features_x=(640, 384), features_y=(640, 384)
+[INFO] CKA complete: score=1.000000, time=0.00s
+[INFO] CKA self-check (expect ~1.0): 1.000000
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(640, 384), time=0.64s
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(640, 384), time=0.64s
+[INFO] Computing CKA: features_x=(640, 384), features_y=(640, 384)
+[INFO] CKA complete: score=0.049775, time=0.00s
+[INFO] Computing CKA: features_x=(640, 384), features_y=(640, 384)
+[INFO] CKA complete: score=0.000683, time=0.00s
+
+[INFO] Evaluating Adversarial Robustness...
+[INFO] Running FGSM attack (epsilon=0.005)...
+       -> original Accuracy: 0.4375
+       -> unstructured Accuracy: 0.3594
+       -> collapsed Accuracy: 0.3594
+[INFO] Running PGD attack (epsilon=0.005)...
+       -> original Accuracy: 0.4219
+       -> unstructured Accuracy: 0.3438
+       -> collapsed Accuracy: 0.3281
+[INFO] Running FGSM attack (epsilon=0.01)...
+       -> original Accuracy: 0.2500
+       -> unstructured Accuracy: 0.1875
+       -> collapsed Accuracy: 0.1875
+[INFO] Running PGD attack (epsilon=0.01)...
+       -> original Accuracy: 0.2031
+       -> unstructured Accuracy: 0.1562
+       -> collapsed Accuracy: 0.1406
+[INFO] Running FGSM attack (epsilon=0.02)...
+       -> original Accuracy: 0.1406
+       -> unstructured Accuracy: 0.0469
+       -> collapsed Accuracy: 0.1094
+[INFO] Running PGD attack (epsilon=0.02)...
+       -> original Accuracy: 0.0312
+       -> unstructured Accuracy: 0.0156
+       -> collapsed Accuracy: 0.0312
+[INFO] Running FGSM attack (epsilon=0.03)...
+       -> original Accuracy: 0.0312
+       -> unstructured Accuracy: 0.0156
+       -> collapsed Accuracy: 0.0625
+[INFO] Running PGD attack (epsilon=0.03)...
+       -> original Accuracy: 0.0000
+       -> unstructured Accuracy: 0.0000
+       -> collapsed Accuracy: 0.0000
+[INFO] Running FGSM attack (epsilon=0.05)...
+       -> original Accuracy: 0.0312
+       -> unstructured Accuracy: 0.0000
+       -> collapsed Accuracy: 0.0469
+[INFO] Running PGD attack (epsilon=0.05)...
+       -> original Accuracy: 0.0000
+       -> unstructured Accuracy: 0.0000
+       -> collapsed Accuracy: 0.0000
+
+[INFO] Full analysis: calibration (ECE/MCE), OOD AUROC, corruptions...
+[WARN] No OOD dataset configured for 'tinyimagenet'. Skipping OOD evaluation.
+[INFO] Appended 30 rows to robustness_curves_cka_results_RegNetX_400MF_tinyimagenet_pre100_post300.csv
+[INFO] Appended 45 rows to calibration_cka_results_RegNetX_400MF_tinyimagenet_pre100_post300.csv
+
+======================================================================
+[INFO] Saving final results...
+[INFO] Results successfully saved to 'cka_results_RegNetX_400MF_tinyimagenet_pre100_post300.csv'
+[INFO] Total successful experiments: 20
+[INFO] Total runtime: 11209.57s
+
+======================================================================
+FINAL RESULTS
+======================================================================
+            model       dataset                    gpu_name  pre_epochs  post_epochs                                                                                                model_before  intermediate_epoch  rep  acc_before  acc_test_before  acc_original_after  acc_test_original_after  acc_unstructured  acc_test_unstructured  acc_collapsed  acc_test_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  flops_original  flops_unstructured  flops_collapsed  flops_unstructured_measured  latency_ms_original  latency_ms_unstructured  latency_ms_collapsed  throughput_imgs_original  throughput_imgs_unstructured  throughput_imgs_collapsed  peak_mem_mb_original  peak_mem_mb_unstructured  peak_mem_mb_collapsed  feature_maps_mb_original  feature_maps_mb_unstructured  feature_maps_mb_collapsed  storage_mb_original  storage_mb_unstructured  storage_mb_collapsed  cka_unstructured  cka_collapsed  acc_structural  acc_test_structural power_watts_structural energy_joules_structural flops_structural latency_ms_structural throughput_imgs_structural peak_mem_mb_structural feature_maps_mb_structural storage_mb_structural cka_structural params_structural sparsity_structural  gpu_util_original  gpu_clock_mhz_original  gpu_util_unstructured  gpu_clock_mhz_unstructured  gpu_util_collapsed  gpu_clock_mhz_collapsed gpu_util_structural gpu_clock_mhz_structural  eval_elapsed_s_original  eval_elapsed_s_unstructured  eval_elapsed_s_collapsed eval_elapsed_s_structural  n_power_samples_original  n_power_samples_unstructured  n_power_samples_collapsed n_power_samples_structural  loader_time_s  loader_joules  loader_n_samples  power_watts_saturated_original  power_watts_saturated_unstructured  power_watts_saturated_collapsed power_watts_saturated_structural  j_per_img_saturated_original  j_per_img_saturated_unstructured  j_per_img_saturated_collapsed j_per_img_saturated_structural  saturated_imgs_original  saturated_imgs_unstructured  saturated_imgs_collapsed saturated_imgs_structural  n_power_samples_saturated_original  n_power_samples_saturated_unstructured  n_power_samples_saturated_collapsed n_power_samples_saturated_structural  adv_acc_FGSM_eps0.005_original  adv_acc_FGSM_eps0.005_unstructured  adv_acc_FGSM_eps0.005_collapsed  adv_acc_PGD_eps0.005_original  adv_acc_PGD_eps0.005_unstructured  adv_acc_PGD_eps0.005_collapsed  adv_acc_FGSM_eps0.01_original  adv_acc_FGSM_eps0.01_unstructured  adv_acc_FGSM_eps0.01_collapsed  adv_acc_PGD_eps0.01_original  adv_acc_PGD_eps0.01_unstructured  adv_acc_PGD_eps0.01_collapsed  adv_acc_FGSM_eps0.02_original  adv_acc_FGSM_eps0.02_unstructured  adv_acc_FGSM_eps0.02_collapsed  adv_acc_PGD_eps0.02_original  adv_acc_PGD_eps0.02_unstructured  adv_acc_PGD_eps0.02_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed  adv_acc_FGSM_eps0.05_original  adv_acc_FGSM_eps0.05_unstructured  adv_acc_FGSM_eps0.05_collapsed  adv_acc_PGD_eps0.05_original  adv_acc_PGD_eps0.05_unstructured  adv_acc_PGD_eps0.05_collapsed  ece_original  mce_original  ece_unstructured  mce_unstructured  ece_collapsed  mce_collapsed
+0   RegNetX_400MF  tinyimagenet  NVIDIA GeForce RTX 2080 Ti         100          300            ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    0     0.68468           0.3798             0.80166                   0.3497           0.47194                 0.4183        0.77783              0.3583                 68.03                  520.55                     67.85                      518.59                  68.38                   514.38    2.113503e+09        1.894604e+09     1.897955e+09                 2.113503e+09             9.448210                 9.402933              9.028672               6773.770153                   6806.387020                7088.528538            172.882812                172.882812             169.050781                184.017578                    184.017578                 171.142578             18.78158                 18.78158             16.865953          0.046412       0.000589             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.1                  1350.0                   10.6                      1350.0                10.4                   1350.0                None                     None                    7.651                        7.643                     7.522                      None                         8                             8                          8                       None          6.981         451.79                 7                           95.80                               95.52                           100.06                             None                      0.013352                          0.013255                       0.013151                           None              7217.908339                  7248.870819               7656.546503                      None                                   2                                       2                                    2                                 None                        0.421875                            0.359375                         0.359375                       0.421875                            0.34375                        0.328125                           0.25                             0.1875                        0.203125                      0.218750                           0.15625                       0.156250                       0.109375                           0.046875                        0.125000                      0.015625                          0.015625                       0.015625               0.046875                   0.015625                  0.0625                   0.0                       0.0                    0.0                       0.046875                                0.0                        0.031250                           0.0                               0.0                            0.0      0.383756      0.542446           0.08539          0.162045       0.361219       0.541882
+1   RegNetX_400MF  tinyimagenet  NVIDIA GeForce RTX 2080 Ti         100          300            ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    1     0.68771           0.3798             0.80341                   0.3497           0.47068                 0.4183        0.77771              0.3583                 67.27                  518.89                     67.67                      543.78                  67.60                   511.04    2.113503e+09        1.894604e+09     1.897955e+09                 2.113503e+09             9.461963                 9.375494              9.370755               6763.924019                   6826.306651                6829.759074            189.687500                189.687500             185.855469                184.017578                    184.017578                 171.142578             18.78158                 18.78158             16.865953          0.046412       0.000589             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.1                  1350.0                    9.8                      1350.0                10.2                   1350.0                None                     None                    7.714                        8.035                     7.560                      None                         8                             8                          8                       None          6.981         451.79                 7                           95.69                              106.82                            99.42                             None                      0.013164                          0.014589                       0.012965                           None              7312.765103                  7365.166282               7715.959476                      None                                   2                                       3                                    2                                 None                        0.421875                            0.359375                         0.359375                       0.421875                            0.34375                        0.328125                           0.25                             0.1875                        0.203125                      0.218750                           0.15625                       0.156250                       0.109375                           0.046875                        0.125000                      0.015625                          0.015625                       0.015625               0.046875                   0.015625                  0.0625                   0.0                       0.0                    0.0                       0.046875                                0.0                        0.031250                           0.0                               0.0                            0.0      0.383756      0.542446           0.08539          0.162045       0.361219       0.541882
+2   RegNetX_400MF  tinyimagenet  NVIDIA GeForce RTX 2080 Ti         100          300            ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    2     0.68583           0.3798             0.79844                   0.3497           0.47326                 0.4183        0.77606              0.3583                 67.46                  545.62                     67.50                      531.83                  67.66                   542.12    2.113503e+09        1.894604e+09     1.897955e+09                 2.113503e+09             9.276486                 9.290206              8.846746               6899.163822                   6888.974980                7234.298689            206.492188                206.492188             202.660156                184.017578                    184.017578                 171.142578             18.78158                 18.78158             16.865953          0.046412       0.000589             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.2                  1350.0                    9.9                      1350.0                 9.9                   1350.0                None                     None                    8.089                        7.879                     8.013                      None                         9                             8                          8                       None          6.981         451.79                 7                           96.14                              101.08                            83.75                             None                      0.013261                          0.013851                       0.013661                           None              7291.953871                  7340.326980               6166.515801                      None                                   2                                       2                                    2                                 None                        0.421875                            0.359375                         0.359375                       0.421875                            0.34375                        0.328125                           0.25                             0.1875                        0.203125                      0.218750                           0.15625                       0.156250                       0.109375                           0.046875                        0.125000                      0.015625                          0.015625                       0.015625               0.046875                   0.015625                  0.0625                   0.0                       0.0                    0.0                       0.046875                                0.0                        0.031250                           0.0                               0.0                            0.0      0.383756      0.542446           0.08539          0.162045       0.361219       0.541882
+3   RegNetX_400MF  tinyimagenet  NVIDIA GeForce RTX 2080 Ti         100          300            ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    3     0.68753           0.3798             0.80103                   0.3497           0.47220                 0.4183        0.77521              0.3583                 67.29                  520.04                     66.94                      515.74                  67.31                   509.60    2.113503e+09        1.894604e+09     1.897955e+09                 2.113503e+09             9.373398                 9.379093              8.856360               6827.833151                   6823.687689                7226.445093            223.296875                223.296875             219.464844                184.017578                    184.017578                 171.142578             18.78158                 18.78158             16.865953          0.046412       0.000589             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                9.9                  1350.0                   10.2                      1350.0                10.2                   1350.0                None                     None                    7.728                        7.704                     7.570                      None                         8                             8                          8                       None          6.981         451.79                 7                           96.06                              102.79                            99.38                             None                      0.013189                          0.014183                       0.013031                           None              7326.912328                  7289.856435               7674.263953                      None                                   2                                       2                                    2                                 None                        0.421875                            0.359375                         0.359375                       0.421875                            0.34375                        0.328125                           0.25                             0.1875                        0.203125                      0.218750                           0.15625                       0.156250                       0.109375                           0.046875                        0.125000                      0.015625                          0.015625                       0.015625               0.046875                   0.015625                  0.0625                   0.0                       0.0                    0.0                       0.046875                                0.0                        0.031250                           0.0                               0.0                            0.0      0.383756      0.542446           0.08539          0.162045       0.361219       0.541882
+4   RegNetX_400MF  tinyimagenet  NVIDIA GeForce RTX 2080 Ti         100          300            ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    4     0.68716           0.3798             0.80223                   0.3497           0.47275                 0.4183        0.77771              0.3583                 67.62                  518.32                     67.33                      514.61                  67.14                   528.70    2.113503e+09        1.894604e+09     1.897955e+09                 2.113503e+09             9.410638                 9.342426              8.848507               6800.813833                   6850.469337                7232.858470            240.101562                240.101562             236.269531                184.017578                    184.017578                 171.142578             18.78158                 18.78158             16.865953          0.046412       0.000589             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.1                  1350.0                   10.1                      1350.0                 9.6                   1350.0                None                     None                    7.665                        7.643                     7.875                      None                         8                             8                          8                       None          6.981         451.79                 7                           86.82                               94.66                            98.10                             None                      0.014905                          0.013068                       0.012844                           None              5857.549736                  7286.016092               7684.936009                      None                                   3                                       2                                    2                                 None                        0.421875                            0.359375                         0.359375                       0.421875                            0.34375                        0.328125                           0.25                             0.1875                        0.203125                      0.218750                           0.15625                       0.156250                       0.109375                           0.046875                        0.125000                      0.015625                          0.015625                       0.015625               0.046875                   0.015625                  0.0625                   0.0                       0.0                    0.0                       0.046875                                0.0                        0.031250                           0.0                               0.0                            0.0      0.383756      0.542446           0.08539          0.162045       0.361219       0.541882
+5   RegNetX_400MF  tinyimagenet  NVIDIA GeForce RTX 2080 Ti         100          300            ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    5     0.68598           0.3798             0.80290                   0.3497           0.47308                 0.4183        0.77949              0.3583                 67.77                  517.63                     67.48                      529.79                  68.22                   518.08    2.113503e+09        1.894604e+09     1.897955e+09                 2.113503e+09             9.256451                 9.558302              8.803691               6914.096822                   6695.749587                7269.678016            256.906250                172.882812             169.050781                184.017578                    184.017578                 171.142578             18.78158                 18.78158             16.865953          0.046412       0.000589             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.0                  1350.0                    9.9                      1350.0                10.2                   1350.0                None                     None                    7.638                        7.851                     7.594                      None                         8                             8                          8                       None          6.981         451.79                 7                           86.58                               95.69                           102.49                             None                      0.014564                          0.013247                       0.013319                           None              5977.905322                  7266.068214               7742.504420                      None                                   2                                       2                                    2                                 None                        0.421875                            0.359375                         0.359375                       0.421875                            0.34375                        0.328125                           0.25                             0.1875                        0.203125                      0.218750                           0.15625                       0.156250                       0.109375                           0.046875                        0.125000                      0.015625                          0.015625                       0.015625               0.046875                   0.015625                  0.0625                   0.0                       0.0                    0.0                       0.046875                                0.0                        0.031250                           0.0                               0.0                            0.0      0.383756      0.542446           0.08539          0.162045       0.361219       0.541882
+6   RegNetX_400MF  tinyimagenet  NVIDIA GeForce RTX 2080 Ti         100          300            ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    6     0.68515           0.3798             0.80320                   0.3497           0.46875                 0.4183        0.77893              0.3583                 67.45                  520.77                     67.91                      536.12                  68.67                   520.22    2.113503e+09        1.894604e+09     1.897955e+09                 2.113503e+09             9.393992                 9.289941              8.968656               6812.865112                   6889.172006                7135.963280            189.687500                189.687500             185.855469                184.017578                    184.017578                 171.142578             18.78158                 18.78158             16.865953          0.046412       0.000589             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                9.9                  1350.0                    9.6                      1350.0                10.1                   1350.0                None                     None                    7.721                        7.895                     7.576                      None                         8                             8                          8                       None          6.981         451.79                 7                           96.55                              107.48                           100.66                             None                      0.013272                          0.014815                       0.013046                           None              7317.609012                  7296.795624               7764.024998                      None                                   2                                       3                                    2                                 None                        0.421875                            0.359375                         0.359375                       0.421875                            0.34375                        0.328125                           0.25                             0.1875                        0.203125                      0.218750                           0.15625                       0.156250                       0.109375                           0.046875                        0.125000                      0.015625                          0.015625                       0.015625               0.046875                   0.015625                  0.0625                   0.0                       0.0                    0.0                       0.046875                                0.0                        0.031250                           0.0                               0.0                            0.0      0.383756      0.542446           0.08539          0.162045       0.361219       0.541882
+7   RegNetX_400MF  tinyimagenet  NVIDIA GeForce RTX 2080 Ti         100          300            ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    7     0.68552           0.3798             0.80274                   0.3497           0.47411                 0.4183        0.77639              0.3583                 67.41                  539.06                     67.36                      521.41                  68.23                   506.66    2.113503e+09        1.894604e+09     1.897955e+09                 2.113503e+09             9.246918                 9.225850              8.925088               6921.224667                   6937.030508                7170.797701            206.492188                206.492188             202.660156                184.017578                    184.017578                 171.142578             18.78158                 18.78158             16.865953          0.046412       0.000589             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                9.9                  1350.0                    9.9                      1350.0                10.4                   1350.0                None                     None                    7.997                        7.740                     7.425                      None                         8                             8                          8                       None          6.981         451.79                 7                           83.25                              105.22                           101.97                             None                      0.014142                          0.014431                       0.013285                           None              5919.398187                  7333.966732               7722.670976                      None                                   2                                       3                                    2                                 None                        0.421875                            0.359375                         0.359375                       0.421875                            0.34375                        0.328125                           0.25                             0.1875                        0.203125                      0.218750                           0.15625                       0.156250                       0.109375                           0.046875                        0.125000                      0.015625                          0.015625                       0.015625               0.046875                   0.015625                  0.0625                   0.0                       0.0                    0.0                       0.046875                                0.0                        0.031250                           0.0                               0.0                            0.0      0.383756      0.542446           0.08539          0.162045       0.361219       0.541882
+8   RegNetX_400MF  tinyimagenet  NVIDIA GeForce RTX 2080 Ti         100          300            ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    8     0.68924           0.3798             0.80280                   0.3497           0.47203                 0.4183        0.77821              0.3583                 67.80                  513.14                     66.41                      816.08                  67.96                   516.07    2.113503e+09        1.894604e+09     1.897955e+09                 2.113503e+09             9.305485                 9.372594              8.700789               6877.664291                   6828.419443                7355.654940            223.296875                223.296875             219.464844                184.017578                    184.017578                 171.142578             18.78158                 18.78158             16.865953          0.046412       0.000589             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.5                  1350.0                    6.4                      1350.0                 9.9                   1350.0                None                     None                    7.569                       12.289                     7.593                      None                         8                            13                          8                       None          6.981         451.79                 7                          105.52                               89.48                            99.50                             None                      0.014538                          0.015231                       0.012915                           None              7301.736405                  5907.445386               7752.111690                      None                                   3                                       2                                    2                                 None                        0.421875                            0.359375                         0.359375                       0.421875                            0.34375                        0.328125                           0.25                             0.1875                        0.203125                      0.218750                           0.15625                       0.156250                       0.109375                           0.046875                        0.125000                      0.015625                          0.015625                       0.015625               0.046875                   0.015625                  0.0625                   0.0                       0.0                    0.0                       0.046875                                0.0                        0.031250                           0.0                               0.0                            0.0      0.383756      0.542446           0.08539          0.162045       0.361219       0.541882
+9   RegNetX_400MF  tinyimagenet  NVIDIA GeForce RTX 2080 Ti         100          300            ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    9     0.68646           0.3798             0.80465                   0.3497           0.47018                 0.4183        0.77830              0.3583                 67.80                  530.43                     68.07                      515.74                  68.48                   509.84    2.113503e+09        1.894604e+09     1.897955e+09                 2.113503e+09             9.477787                 9.214117              8.733770               6752.631030                   6945.863683                7327.878170            240.101562                240.101562             236.269531                184.017578                    184.017578                 171.142578             18.78158                 18.78158             16.865953          0.046412       0.000589             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.1                  1350.0                   10.4                      1350.0                10.4                   1350.0                None                     None                    7.824                        7.577                     7.445                      None                         8                             8                          8                       None          6.981         451.79                 7                           95.19                               96.40                            99.39                             None                      0.013333                          0.013233                       0.013156                           None              7180.799786                  7327.435496               7602.051403                      None                                   2                                       2                                    2                                 None                        0.421875                            0.359375                         0.359375                       0.421875                            0.34375                        0.328125                           0.25                             0.1875                        0.203125                      0.218750                           0.15625                       0.156250                       0.109375                           0.046875                        0.125000                      0.015625                          0.015625                       0.015625               0.046875                   0.015625                  0.0625                   0.0                       0.0                    0.0                       0.046875                                0.0                        0.031250                           0.0                               0.0                            0.0      0.383756      0.542446           0.08539          0.162045       0.361219       0.541882
+10  RegNetX_400MF  tinyimagenet  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/RegNetX_400MF_tinyimagenet_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    0     0.68750           0.3813             0.80236                   0.3488           0.47157                 0.4183        0.77560              0.3567                 67.46                  511.09                     67.58                      518.65                  67.28                   508.53    2.113503e+09        1.894604e+09     1.897955e+09                 2.113503e+09             9.293488                 9.468840              8.836746               6886.542436                   6759.011644                7242.485252            196.893555                196.893555             193.186523                184.017578                    184.017578                 171.142578             18.78158                 18.78158             16.865953          0.049775       0.000683             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.2                  1350.0                   10.5                      1350.0                10.2                   1350.0                None                     None                    7.576                        7.674                     7.558                      None                         8                             8                          8                       None          7.022         453.81                 7                           98.38                              105.53                            99.60                             None                      0.013470                          0.014771                       0.013003                           None              7347.633137                  7187.064082               7708.847773                      None                                   2                                       2                                    2                                 None                        0.437500                            0.359375                         0.359375                       0.421875                            0.34375                        0.328125                           0.25                             0.1875                        0.187500                      0.203125                           0.15625                       0.140625                       0.140625                           0.046875                        0.109375                      0.031250                          0.015625                       0.031250               0.031250                   0.015625                  0.0625                   0.0                       0.0                    0.0                       0.031250                                0.0                        0.046875                           0.0                               0.0                            0.0      0.384182      0.546623           0.08539          0.162045       0.360547       0.526203
+11  RegNetX_400MF  tinyimagenet  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/RegNetX_400MF_tinyimagenet_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    1     0.68727           0.3813             0.80065                   0.3488           0.47120                 0.4183        0.77548              0.3567                 67.84                  517.42                     66.98                      515.47                  67.89                   515.37    2.113503e+09        1.894604e+09     1.897955e+09                 2.113503e+09             9.339523                 9.502874              8.656211               6852.598164                   6734.804891                7393.534876            213.698242                213.698242             209.991211                184.017578                    184.017578                 171.142578             18.78158                 18.78158             16.865953          0.049775       0.000683             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.1                  1350.0                   10.0                      1350.0                10.2                   1350.0                None                     None                    7.627                        7.695                     7.591                      None                         8                             8                          8                       None          7.022         453.81                 7                           95.89                               95.81                           100.14                             None                      0.013284                          0.013279                       0.012926                           None              7262.198271                  7258.600657               7795.539887                      None                                   2                                       2                                    2                                 None                        0.437500                            0.359375                         0.359375                       0.421875                            0.34375                        0.328125                           0.25                             0.1875                        0.187500                      0.203125                           0.15625                       0.140625                       0.140625                           0.046875                        0.109375                      0.031250                          0.015625                       0.031250               0.031250                   0.015625                  0.0625                   0.0                       0.0                    0.0                       0.031250                                0.0                        0.046875                           0.0                               0.0                            0.0      0.384182      0.546623           0.08539          0.162045       0.360547       0.526203
+12  RegNetX_400MF  tinyimagenet  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/RegNetX_400MF_tinyimagenet_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    2     0.68753           0.3813             0.80357                   0.3488           0.47309                 0.4183        0.77608              0.3567                 67.08                  520.00                     67.43                      524.59                  67.81                   513.99    2.113503e+09        1.894604e+09     1.897955e+09                 2.113503e+09             9.373568                 9.457774              8.919238               6827.709638                   6766.919744                7175.500602            230.502930                230.502930             226.795898                184.017578                    184.017578                 171.142578             18.78158                 18.78158             16.865953          0.049775       0.000683             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                9.9                  1350.0                   10.5                      1350.0                10.0                   1350.0                None                     None                    7.751                        7.780                     7.580                      None                         8                             8                          8                       None          7.022         453.81                 7                           88.75                               95.79                           110.49                             None                      0.015059                          0.013245                       0.014415                           None              5927.045533                  7275.006305               7713.532801                      None                                   3                                       2                                    3                                 None                        0.437500                            0.359375                         0.359375                       0.421875                            0.34375                        0.328125                           0.25                             0.1875                        0.187500                      0.203125                           0.15625                       0.140625                       0.140625                           0.046875                        0.109375                      0.031250                          0.015625                       0.031250               0.031250                   0.015625                  0.0625                   0.0                       0.0                    0.0                       0.031250                                0.0                        0.046875                           0.0                               0.0                            0.0      0.384182      0.546623           0.08539          0.162045       0.360547       0.526203
+13  RegNetX_400MF  tinyimagenet  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/RegNetX_400MF_tinyimagenet_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    3     0.68651           0.3813             0.80422                   0.3488           0.47234                 0.4183        0.77770              0.3567                 67.22                  506.53                     67.47                      507.40                  67.24                   507.40    2.113503e+09        1.894604e+09     1.897955e+09                 2.113503e+09             9.286786                 9.299040              8.921645               6891.512601                   6882.430816                7173.565101            180.382812                180.382812             176.675781                184.017578                    184.017578                 171.142578             18.78158                 18.78158             16.865953          0.049775       0.000683             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.4                  1350.0                   10.4                      1350.0                10.4                   1350.0                None                     None                    7.535                        7.521                     7.546                      None                         8                             8                          8                       None          7.022         453.81                 7                           95.62                              102.16                           100.17                             None                      0.013262                          0.014124                       0.012927                           None              7252.571095                  7276.891681               7797.604108                      None                                   2                                       2                                    2                                 None                        0.437500                            0.359375                         0.359375                       0.421875                            0.34375                        0.328125                           0.25                             0.1875                        0.187500                      0.203125                           0.15625                       0.140625                       0.140625                           0.046875                        0.109375                      0.031250                          0.015625                       0.031250               0.031250                   0.015625                  0.0625                   0.0                       0.0                    0.0                       0.031250                                0.0                        0.046875                           0.0                               0.0                            0.0      0.384182      0.546623           0.08539          0.162045       0.360547       0.526203
+14  RegNetX_400MF  tinyimagenet  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/RegNetX_400MF_tinyimagenet_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    4     0.68761           0.3813             0.80210                   0.3488           0.47003                 0.4183        0.77683              0.3567                 67.09                  509.39                     67.38                      508.02                  67.33                   519.44    2.113503e+09        1.894604e+09     1.897955e+09                 2.113503e+09             9.165531                 9.298152              8.986370               6982.683079                   6883.088118                7121.897137            197.187500                197.187500             193.480469                184.017578                    184.017578                 171.142578             18.78158                 18.78158             16.865953          0.049775       0.000683             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.0                  1350.0                   10.4                      1350.0                10.0                   1350.0                None                     None                    7.593                        7.540                     7.714                      None                         8                             8                          8                       None          7.022         453.81                 7                           98.50                               98.66                           110.56                             None                      0.013479                          0.013494                       0.014296                           None              7352.321700                  7355.163361               7782.547204                      None                                   2                                       2                                    3                                 None                        0.437500                            0.359375                         0.359375                       0.421875                            0.34375                        0.328125                           0.25                             0.1875                        0.187500                      0.203125                           0.15625                       0.140625                       0.140625                           0.046875                        0.109375                      0.031250                          0.015625                       0.031250               0.031250                   0.015625                  0.0625                   0.0                       0.0                    0.0                       0.031250                                0.0                        0.046875                           0.0                               0.0                            0.0      0.384182      0.546623           0.08539          0.162045       0.360547       0.526203
+15  RegNetX_400MF  tinyimagenet  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/RegNetX_400MF_tinyimagenet_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    5     0.68799           0.3813             0.80121                   0.3488           0.46999                 0.4183        0.77738              0.3567                 67.42                  519.93                     67.06                      520.05                  67.77                   523.75    2.113503e+09        1.894604e+09     1.897955e+09                 2.113503e+09             9.412514                 9.451650              8.738984               6799.458940                   6771.304755                7323.505788            213.992188                213.992188             210.285156                184.017578                    184.017578                 171.142578             18.78158                 18.78158             16.865953          0.049775       0.000683             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.2                  1350.0                   10.0                      1350.0                 9.9                   1350.0                None                     None                    7.711                        7.755                     7.728                      None                         8                             8                          8                       None          7.022         453.81                 7                           95.03                               97.76                           100.21                             None                      0.013366                          0.013507                       0.012916                           None              7152.871042                  7280.697139               7807.751164                      None                                   2                                       2                                    2                                 None                        0.437500                            0.359375                         0.359375                       0.421875                            0.34375                        0.328125                           0.25                             0.1875                        0.187500                      0.203125                           0.15625                       0.140625                       0.140625                           0.046875                        0.109375                      0.031250                          0.015625                       0.031250               0.031250                   0.015625                  0.0625                   0.0                       0.0                    0.0                       0.031250                                0.0                        0.046875                           0.0                               0.0                            0.0      0.384182      0.546623           0.08539          0.162045       0.360547       0.526203
+16  RegNetX_400MF  tinyimagenet  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/RegNetX_400MF_tinyimagenet_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    6     0.68732           0.3813             0.80199                   0.3488           0.47168                 0.4183        0.77675              0.3567                 66.85                  548.66                     67.26                      516.45                  67.79                   504.61    2.113503e+09        1.894604e+09     1.897955e+09                 2.113503e+09             9.434224                 9.475590              8.922707               6783.811697                   6754.196571                7172.711010            230.796875                230.796875             227.089844                184.017578                    184.017578                 171.142578             18.78158                 18.78158             16.865953          0.049775       0.000683             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                9.4                  1350.0                    9.9                      1350.0                10.5                   1350.0                None                     None                    8.207                        7.678                     7.444                      None                         9                             8                          8                       None          7.022         453.81                 7                           95.81                               96.70                           111.19                             None                      0.013121                          0.013287                       0.014496                           None              7346.143166                  7321.536686               7718.767276                      None                                   2                                       2                                    3                                 None                        0.437500                            0.359375                         0.359375                       0.421875                            0.34375                        0.328125                           0.25                             0.1875                        0.187500                      0.203125                           0.15625                       0.140625                       0.140625                           0.046875                        0.109375                      0.031250                          0.015625                       0.031250               0.031250                   0.015625                  0.0625                   0.0                       0.0                    0.0                       0.031250                                0.0                        0.046875                           0.0                               0.0                            0.0      0.384182      0.546623           0.08539          0.162045       0.360547       0.526203
+17  RegNetX_400MF  tinyimagenet  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/RegNetX_400MF_tinyimagenet_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    7     0.68449           0.3813             0.80307                   0.3488           0.47231                 0.4183        0.77694              0.3567                 67.34                  511.96                     67.26                      511.62                  67.78                   511.44    2.113503e+09        1.894604e+09     1.897955e+09                 2.113503e+09             9.541595                 9.446264              8.812725               6707.473906                   6775.165272                7262.226149            247.601562                247.601562             176.675781                184.017578                    184.017578                 171.142578             18.78158                 18.78158             16.865953          0.049775       0.000683             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.1                  1350.0                   10.4                      1350.0                10.1                   1350.0                None                     None                    7.603                        7.607                     7.546                      None                         8                             8                          8                       None          7.022         453.81                 7                           97.50                              101.19                            99.19                             None                      0.013526                          0.013901                       0.013065                           None              7251.664060                  7323.315154               7638.459625                      None                                   2                                       2                                    2                                 None                        0.437500                            0.359375                         0.359375                       0.421875                            0.34375                        0.328125                           0.25                             0.1875                        0.187500                      0.203125                           0.15625                       0.140625                       0.140625                           0.046875                        0.109375                      0.031250                          0.015625                       0.031250               0.031250                   0.015625                  0.0625                   0.0                       0.0                    0.0                       0.031250                                0.0                        0.046875                           0.0                               0.0                            0.0      0.384182      0.546623           0.08539          0.162045       0.360547       0.526203
+18  RegNetX_400MF  tinyimagenet  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/RegNetX_400MF_tinyimagenet_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    8     0.68674           0.3813             0.80276                   0.3488           0.47106                 0.4183        0.77708              0.3567                 67.80                  526.14                     67.35                      525.71                  68.32                   521.40    2.113503e+09        1.894604e+09     1.897955e+09                 2.113503e+09             9.301926                 9.396026              8.898755               6880.295301                   6811.390545                7192.017174            197.187500                197.187500             193.480469                184.017578                    184.017578                 171.142578             18.78158                 18.78158             16.865953          0.049775       0.000683             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                9.8                  1350.0                   10.0                      1350.0                10.1                   1350.0                None                     None                    7.760                        7.805                     7.631                      None                         8                             8                          8                       None          7.022         453.81                 7                           96.33                               98.92                           100.13                             None                      0.013122                          0.013642                       0.013025                           None              7385.355099                  7294.370026               7735.656767                      None                                   2                                       2                                    2                                 None                        0.437500                            0.359375                         0.359375                       0.421875                            0.34375                        0.328125                           0.25                             0.1875                        0.187500                      0.203125                           0.15625                       0.140625                       0.140625                           0.046875                        0.109375                      0.031250                          0.015625                       0.031250               0.031250                   0.015625                  0.0625                   0.0                       0.0                    0.0                       0.031250                                0.0                        0.046875                           0.0                               0.0                            0.0      0.384182      0.546623           0.08539          0.162045       0.360547       0.526203
+19  RegNetX_400MF  tinyimagenet  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/RegNetX_400MF_tinyimagenet_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    9     0.68851           0.3813             0.80254                   0.3488           0.46983                 0.4183        0.77562              0.3567                 67.37                  528.16                     67.66                      514.67                  67.75                   515.53    2.113503e+09        1.894604e+09     1.897955e+09                 2.113503e+09             9.699280                 9.218194              8.851904               6598.427941                   6942.791824                7230.082920            213.992188                213.992188             210.285156                184.017578                    184.017578                 171.142578             18.78158                 18.78158             16.865953          0.049775       0.000683             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                9.6                  1350.0                   10.1                      1350.0                10.2                   1350.0                None                     None                    7.840                        7.607                     7.609                      None                         8                             8                          8                       None          7.022         453.81                 7                           98.00                              105.54                           101.11                             None                      0.013386                          0.014521                       0.013306                           None              7365.870392                  7341.061598               7646.785908                      None                                   2                                       3                                    2                                 None                        0.437500                            0.359375                         0.359375                       0.421875                            0.34375                        0.328125                           0.25                             0.1875                        0.187500                      0.203125                           0.15625                       0.140625                       0.140625                           0.046875                        0.109375                      0.031250                          0.015625                       0.031250               0.031250                   0.015625                  0.0625                   0.0                       0.0                    0.0                       0.031250                                0.0                        0.046875                           0.0                               0.0                            0.0      0.384182      0.546623           0.08539          0.162045       0.360547       0.526203
+--- CKA strip/drift audit (Sat Nov 14 21:54:30 CST 2026) ---
+[INFO] Searching for checkpoint matching: ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100
+[INFO] Found matching checkpoint: ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Searching for checkpoint matching: ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100
+[INFO] Found matching checkpoint: ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
+Loading Tiny ImageNet data for RegNetX_400MF...
+[INFO] Initializing architecture: model=RegNetX_400MF, dataset=tinyimagenet
+Loading Tiny ImageNet data for RegNetX_400MF...
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
+[DEBUG] Attempting to initialize RegNetX_400MF with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] RegNetX_400MF successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 428
+[INFO] Weights loaded in 0.11s
+
+[INFO] BN running stats recalibrated over 100 batches (71 BN layers).
+[INFO] Initializing architecture: model=RegNetX_400MF, dataset=tinyimagenet
+Loading Tiny ImageNet data for RegNetX_400MF...
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
+[DEBUG] Attempting to initialize RegNetX_400MF with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] RegNetX_400MF successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 428
+[INFO] Weights loaded in 0.33s
+
+[INFO] BN running stats recalibrated over 100 batches (71 BN layers).
+[INFO] BN running stats recalibrated over 100 batches (71 BN layers).
+[AUDIT] before: replaced 'before.fc' (nn.Linear) with Identity
+[AUDIT] before: features shape=(640, 384) std=0.827 stable_rank=216.8
+[AUDIT] after: replaced 'after.fc' (nn.Linear) with Identity
+[AUDIT] after: features shape=(640, 384) std=1.234 stable_rank=84.9
+[AUDIT] collapsed: replaced 'collapsed.fc' (nn.Linear) with Identity
+[AUDIT] collapsed: features shape=(640, 384) std=10834.656 stable_rank=1.0
+[AUDIT] after (pass 2): replaced 'after (pass 2).fc' (nn.Linear) with Identity
+[AUDIT] after (pass 2): features shape=(640, 384) std=1.234 stable_rank=84.9
+[INFO] Computing CKA: features_x=(640, 384), features_y=(640, 384)
+[INFO] CKA complete: score=1.000000, time=0.03s
+CKA(after, after pass 2) = 1.0000  (two-pass determinism, expect 1.0)
+[INFO] Computing CKA: features_x=(640, 384), features_y=(640, 384)
+[INFO] CKA complete: score=0.071250, time=0.00s
+CKA(before, after)     = 0.0712  (drift reference)
+[INFO] Computing CKA: features_x=(640, 384), features_y=(640, 384)
+[INFO] CKA complete: score=0.010453, time=0.00s
+CKA(before, collapsed) = 0.0105  (CSV reports after vs collapsed)
+[INFO] Computing CKA: features_x=(640, 384), features_y=(640, 384)
+[INFO] CKA complete: score=0.000658, time=0.00s
+CKA(after, collapsed)  = 0.0007  (the CSV number)
+--- recalibration delta (Sat Nov 14 21:55:20 CST 2026) ---
+
+[INFO] ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
+Traceback (most recent call last):
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/recalibration_delta.py", line 127, in <module>
+    main()
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/recalibration_delta.py", line 113, in main
+    rows.extend(process(before_path, checkpoints, args, device))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/recalibration_delta.py", line 46, in process
+    model_name, dataset_name, *_ = parse_directory_context(before_path, args.model, args.dataset)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^
+NameError: name 'parse_directory_context' is not defined
+[WARN] recalibration_delta.py exited nonzero (see above)

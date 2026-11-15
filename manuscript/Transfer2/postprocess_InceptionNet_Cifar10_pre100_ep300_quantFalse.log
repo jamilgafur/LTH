@@ -1,0 +1,764 @@
+[INFO] Searching for model checkpoints...
+[INFO] Found 2 'before' checkpoints.
+[INFO] Found 1 collapsed checkpoints.
+[INFO] Found 2 'after' checkpoints.
+======================================================================
+Starting Comparison Post-Processing Pipeline
+Model: InceptionNet | Dataset: Cifar10 | Device: cuda
+Epochs Config (override): pre=100, post=300
+Output File: cka_results_InceptionNet_Cifar10_pre100_post300.csv
+CUDA device: NVIDIA GeForce RTX 2080 Ti
+======================================================================
+
+======================================================================
+Processing checkpoint 1/2
+Path: ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
+======================================================================
+[INFO] Parsing experiment directory... ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
+[INFO] Initializing baseline model...
+[INFO] Initializing architecture: model=InceptionNet, dataset=Cifar10
+Loading CIFAR-10 data for InceptionNet...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize InceptionNet with kwargs: dict_keys(['num_classes', 'one_batch', 'aux_logits'])
+[DEBUG] InceptionNet successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 344
+[INFO] Weights loaded in 1.00s
+
+[INFO] BN running stats recalibrated over 100 batches (57 BN layers).
+[INFO] Loading original post-finetuning model...
+[INFO] Searching for checkpoint matching: ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100
+[INFO] Found matching checkpoint: ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Initializing architecture: model=InceptionNet, dataset=Cifar10
+Loading CIFAR-10 data for InceptionNet...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize InceptionNet with kwargs: dict_keys(['num_classes', 'one_batch', 'aux_logits'])
+[DEBUG] InceptionNet successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 344
+[INFO] Weights loaded in 1.51s
+
+[INFO] BN running stats recalibrated over 100 batches (57 BN layers).
+[INFO] Loading whole collapsed model artifact...
+[INFO] Searching for checkpoint matching: ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100
+[INFO] Found matching checkpoint: ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
+[INFO] Whole-model load completed in 2.19s
+[INFO] BN running stats recalibrated over 100 batches (21 BN layers).
+[INFO] Calculating dynamic sparsity to match collapse...
+[INFO] Target unstructured sparsity calculated at: 42.27%
+[INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
+[INFO] Initializing architecture: model=InceptionNet, dataset=Cifar10
+Loading CIFAR-10 data for InceptionNet...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize InceptionNet with kwargs: dict_keys(['num_classes', 'one_batch', 'aux_logits'])
+[DEBUG] InceptionNet successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 344
+[INFO] Weights loaded in 2.11s
+
+
+[INFO] Evaluating model accuracy, power draw, and energy consumption (10 rep(s))...
+
+[INFO] === Measurement rep 1/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9844, power=71.08W, energy=184.47J, time=2.60s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9913, power=72.77W, energy=191.99J, time=2.64s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9821, power=66.49W, energy=182.01J, time=2.74s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9998, power=64.06W, energy=161.53J, time=2.52s
+[INFO] Saturated energy: power=174.93, J/img=0.004124942097344442, samples=2
+[INFO] Saturated energy: power=159.65, J/img=0.003795429626903073, samples=2
+[INFO] Saturated energy: power=155.06, J/img=0.0025924573297354766, samples=2
+
+[INFO] === Measurement rep 2/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9857, power=69.41W, energy=181.18J, time=2.61s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9914, power=64.69W, energy=168.81J, time=2.61s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9820, power=70.35W, energy=182.19J, time=2.59s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9998, power=66.89W, energy=168.97J, time=2.53s
+[INFO] Saturated energy: power=164.8, J/img=0.00391497300062553, samples=2
+[INFO] Saturated energy: power=171.14999999999998, J/img=0.004037607340337318, samples=2
+[INFO] Saturated energy: power=160.97, J/img=0.0026668910692571155, samples=2
+
+[INFO] === Measurement rep 3/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9842, power=71.51W, energy=187.20J, time=2.62s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9919, power=71.91W, energy=187.91J, time=2.61s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9825, power=69.04W, energy=180.15J, time=2.61s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9997, power=69.24W, energy=187.41J, time=2.71s
+[INFO] Saturated energy: power=167.935, J/img=0.004033190552713122, samples=2
+[INFO] Saturated energy: power=187.93999999999997, J/img=0.00444595799474659, samples=3
+[INFO] Saturated energy: power=155.125, J/img=0.0025820506616274557, samples=2
+
+[INFO] === Measurement rep 4/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9843, power=74.38W, energy=196.53J, time=2.64s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9921, power=74.98W, energy=196.44J, time=2.62s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9827, power=66.63W, energy=175.42J, time=2.63s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9998, power=69.56W, energy=179.99J, time=2.59s
+[INFO] Saturated energy: power=168.31, J/img=0.0039912075331120424, samples=2
+[INFO] Saturated energy: power=158.735, J/img=0.003752165343556329, samples=2
+[INFO] Saturated energy: power=158.24, J/img=0.0026260999404679876, samples=2
+
+[INFO] === Measurement rep 5/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9838, power=72.32W, energy=188.74J, time=2.61s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9914, power=66.66W, energy=173.53J, time=2.60s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9829, power=70.45W, energy=187.77J, time=2.67s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9997, power=67.89W, energy=177.78J, time=2.62s
+[INFO] Saturated energy: power=188.35333333333332, J/img=0.004484128983594088, samples=3
+[INFO] Saturated energy: power=171.69, J/img=0.004071683061269886, samples=2
+[INFO] Saturated energy: power=157.93, J/img=0.002639606094701176, samples=2
+
+[INFO] === Measurement rep 6/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9834, power=64.56W, energy=172.11J, time=2.67s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9920, power=71.91W, energy=186.92J, time=2.60s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9825, power=73.85W, energy=191.27J, time=2.59s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9999, power=71.46W, energy=181.88J, time=2.55s
+[INFO] Saturated energy: power=158.475, J/img=0.003747794136730393, samples=2
+[INFO] Saturated energy: power=162.785, J/img=0.00384640962767978, samples=2
+[INFO] Saturated energy: power=159.14499999999998, J/img=0.0026350833184551445, samples=2
+
+[INFO] === Measurement rep 7/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9840, power=67.84W, energy=178.26J, time=2.63s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9911, power=74.24W, energy=196.31J, time=2.64s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9823, power=63.83W, energy=168.84J, time=2.65s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9997, power=70.44W, energy=180.80J, time=2.57s
+[INFO] Saturated energy: power=173.45499999999998, J/img=0.00408900970409061, samples=2
+[INFO] Saturated energy: power=162.98000000000002, J/img=0.003826496374018179, samples=2
+[INFO] Saturated energy: power=164.2, J/img=0.002725427649632285, samples=2
+
+[INFO] === Measurement rep 8/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9843, power=72.93W, energy=190.82J, time=2.62s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9917, power=65.49W, energy=172.90J, time=2.64s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9834, power=68.26W, energy=179.69J, time=2.63s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9998, power=63.43W, energy=168.83J, time=2.66s
+[INFO] Saturated energy: power=156.1, J/img=0.0036985325652275636, samples=2
+[INFO] Saturated energy: power=174.86, J/img=0.004170851672124683, samples=2
+[INFO] Saturated energy: power=156.695, J/img=0.002629911336564244, samples=2
+
+[INFO] === Measurement rep 9/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9839, power=70.48W, energy=184.83J, time=2.62s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9914, power=74.01W, energy=196.27J, time=2.65s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9830, power=74.01W, energy=193.97J, time=2.62s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9998, power=69.57W, energy=175.39J, time=2.52s
+[INFO] Saturated energy: power=165.95, J/img=0.0039951045666650935, samples=2
+[INFO] Saturated energy: power=168.05, J/img=0.003944053324327494, samples=2
+[INFO] Saturated energy: power=156.33499999999998, J/img=0.002608686238408909, samples=2
+
+[INFO] === Measurement rep 10/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9842, power=73.19W, energy=191.78J, time=2.62s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9918, power=71.40W, energy=186.23J, time=2.61s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9835, power=67.14W, energy=174.76J, time=2.60s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9997, power=67.61W, energy=171.91J, time=2.54s
+[INFO] Saturated energy: power=197.29, J/img=0.0046672755292153905, samples=3
+[INFO] Saturated energy: power=156.78, J/img=0.0037289471412924203, samples=2
+[INFO] Saturated energy: power=156.355, J/img=0.0026273194859978448, samples=2
+[INFO] Measuring dataloader floor (no forward passes)...
+[INFO] Loader floor: time=2.32s, energy=149.53J
+[RESULT] Accuracy Original:     0.9913 (test 0.8466) | Power: 72.77W | Energy: 191.99J
+[RESULT] Accuracy Before (anchor): 0.9844 (test 0.8447)
+[RESULT] Accuracy Unstructured: 0.9821 (test 0.8365) | Power: 66.49W | Energy: 182.01J
+[RESULT] Accuracy Collapsed:    0.9998 (test 0.8663) | Power: 64.06W | Energy: 161.53J
+[INFO] 10 measurement reps completed; full per-rep values are rows in the CSV.
+[RESULT] Original     FLOPs=1.660e+10 | latency=15.34 ms/batch | throughput=33379.0 img/s | peak_mem=599.2 MiB | feature_maps=444.3 MiB
+[RESULT] Unstructured FLOPs=1.660e+10 | latency=14.12 ms/batch | throughput=36257.6 img/s | peak_mem=599.2 MiB | feature_maps=444.3 MiB
+[RESULT] Collapsed    FLOPs=1.287e+10 | latency=9.79 ms/batch | throughput=52271.7 img/s | peak_mem=428.0 MiB | feature_maps=410.9 MiB
+[RESULT] FLOPs Unstructured (theoretical/effective, kept for back-compat): 9.58e+09
+[RESULT] Storage (state_dict MiB): original=23.0, unstructured=23.0, collapsed=13.3
+
+[INFO] Extracting features and computing CKA...
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 1024), time=1.73s
+[INFO] Computing CKA: features_x=(5120, 1024), features_y=(5120, 1024)
+[INFO] CKA complete: score=1.000000, time=0.31s
+[INFO] CKA self-check (expect ~1.0): 1.000000
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 1024), time=2.10s
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 1024), time=2.30s
+[INFO] Computing CKA: features_x=(5120, 1024), features_y=(5120, 1024)
+[INFO] CKA complete: score=0.733613, time=0.00s
+[INFO] Computing CKA: features_x=(5120, 1024), features_y=(5120, 1024)
+[INFO] CKA complete: score=0.788096, time=0.00s
+
+[INFO] Evaluating Adversarial Robustness...
+[INFO] Running FGSM attack (epsilon=0.005)...
+       -> original Accuracy: 0.7637
+       -> unstructured Accuracy: 0.7715
+       -> collapsed Accuracy: 0.8086
+[INFO] Running PGD attack (epsilon=0.005)...
+       -> original Accuracy: 0.7598
+       -> unstructured Accuracy: 0.7578
+       -> collapsed Accuracy: 0.8086
+[INFO] Running FGSM attack (epsilon=0.01)...
+       -> original Accuracy: 0.6602
+       -> unstructured Accuracy: 0.6953
+       -> collapsed Accuracy: 0.7188
+[INFO] Running PGD attack (epsilon=0.01)...
+       -> original Accuracy: 0.6328
+       -> unstructured Accuracy: 0.6699
+       -> collapsed Accuracy: 0.7012
+[INFO] Running FGSM attack (epsilon=0.02)...
+       -> original Accuracy: 0.5215
+       -> unstructured Accuracy: 0.5508
+       -> collapsed Accuracy: 0.5898
+[INFO] Running PGD attack (epsilon=0.02)...
+       -> original Accuracy: 0.4121
+       -> unstructured Accuracy: 0.4355
+       -> collapsed Accuracy: 0.5059
+[INFO] Running FGSM attack (epsilon=0.03)...
+       -> original Accuracy: 0.4219
+       -> unstructured Accuracy: 0.4219
+       -> collapsed Accuracy: 0.4629
+[INFO] Running PGD attack (epsilon=0.03)...
+       -> original Accuracy: 0.2559
+       -> unstructured Accuracy: 0.2949
+       -> collapsed Accuracy: 0.3027
+[INFO] Running FGSM attack (epsilon=0.05)...
+       -> original Accuracy: 0.2949
+       -> unstructured Accuracy: 0.2832
+       -> collapsed Accuracy: 0.2734
+[INFO] Running PGD attack (epsilon=0.05)...
+       -> original Accuracy: 0.0664
+       -> unstructured Accuracy: 0.0781
+       -> collapsed Accuracy: 0.0840
+
+[INFO] Full analysis: calibration (ECE/MCE), OOD AUROC, corruptions...
+[INFO] OOD source: cifar100 test split (SVHN not staged)
+       -> OOD AUROC original: 0.7644
+       -> OOD AUROC unstructured: 0.7707
+       -> OOD AUROC collapsed: 0.7805
+[INFO] Appended 30 rows to robustness_curves_cka_results_InceptionNet_Cifar10_pre100_post300.csv
+[INFO] Appended 45 rows to calibration_cka_results_InceptionNet_Cifar10_pre100_post300.csv
+
+======================================================================
+Processing checkpoint 2/2
+Path: ../Tranfer/InceptionNet_Cifar10_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt
+======================================================================
+[INFO] Parsing experiment directory... ../Tranfer/InceptionNet_Cifar10_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt
+[INFO] Initializing baseline model...
+[INFO] Initializing architecture: model=InceptionNet, dataset=Cifar10
+Loading CIFAR-10 data for InceptionNet...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize InceptionNet with kwargs: dict_keys(['num_classes', 'one_batch', 'aux_logits'])
+[DEBUG] InceptionNet successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/InceptionNet_Cifar10_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 344
+[INFO] Weights loaded in 0.82s
+
+[INFO] BN running stats recalibrated over 100 batches (57 BN layers).
+[INFO] Loading original post-finetuning model...
+[INFO] Searching for checkpoint matching: ../Tranfer/InceptionNet_Cifar10_None_scorerall_epochs300_pretrain100
+[INFO] Found matching checkpoint: ../Tranfer/InceptionNet_Cifar10_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Initializing architecture: model=InceptionNet, dataset=Cifar10
+Loading CIFAR-10 data for InceptionNet...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize InceptionNet with kwargs: dict_keys(['num_classes', 'one_batch', 'aux_logits'])
+[DEBUG] InceptionNet successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/InceptionNet_Cifar10_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 344
+[INFO] Weights loaded in 0.54s
+
+[INFO] BN running stats recalibrated over 100 batches (57 BN layers).
+[INFO] Loading whole collapsed model artifact...
+[INFO] Searching for checkpoint matching: ../Tranfer/InceptionNet_Cifar10_None_scorerall_epochs300_pretrain100
+[INFO] Found matching checkpoint: ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
+[INFO] Whole-model load completed in 0.19s
+[INFO] BN running stats recalibrated over 100 batches (21 BN layers).
+[INFO] Calculating dynamic sparsity to match collapse...
+[INFO] Target unstructured sparsity calculated at: 42.27%
+[INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
+[INFO] Initializing architecture: model=InceptionNet, dataset=Cifar10
+Loading CIFAR-10 data for InceptionNet...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize InceptionNet with kwargs: dict_keys(['num_classes', 'one_batch', 'aux_logits'])
+[DEBUG] InceptionNet successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 344
+[INFO] Weights loaded in 0.11s
+
+
+[INFO] Evaluating model accuracy, power draw, and energy consumption (10 rep(s))...
+
+[INFO] === Measurement rep 1/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9846, power=69.11W, energy=183.86J, time=2.66s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9917, power=70.16W, energy=183.49J, time=2.62s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9820, power=72.89W, energy=188.20J, time=2.58s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9999, power=64.94W, energy=163.57J, time=2.52s
+[INFO] Saturated energy: power=161.475, J/img=0.0037933428499465145, samples=2
+[INFO] Saturated energy: power=157.6, J/img=0.003735165903905788, samples=2
+[INFO] Saturated energy: power=157.8, J/img=0.0026239858739832535, samples=2
+
+[INFO] === Measurement rep 2/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9835, power=72.90W, energy=188.44J, time=2.58s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9918, power=73.44W, energy=193.85J, time=2.64s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9824, power=73.91W, energy=191.11J, time=2.59s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9999, power=71.69W, energy=184.23J, time=2.57s
+[INFO] Saturated energy: power=159.385, J/img=0.0037763465271180795, samples=2
+[INFO] Saturated energy: power=165.765, J/img=0.003924397265825777, samples=2
+[INFO] Saturated energy: power=188.14666666666665, J/img=0.0031360574691974242, samples=3
+
+[INFO] === Measurement rep 3/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9849, power=77.33W, energy=202.40J, time=2.62s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9912, power=68.19W, energy=176.90J, time=2.59s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9836, power=66.17W, energy=175.44J, time=2.65s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9998, power=62.94W, energy=163.19J, time=2.59s
+[INFO] Saturated energy: power=159.72, J/img=0.003811483833938837, samples=2
+[INFO] Saturated energy: power=174.22, J/img=0.0041438535463177795, samples=2
+[INFO] Saturated energy: power=186.24666666666667, J/img=0.0031395812401617015, samples=3
+
+[INFO] === Measurement rep 4/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9853, power=68.03W, energy=173.14J, time=2.54s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9916, power=74.10W, energy=189.53J, time=2.56s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9831, power=68.62W, energy=177.15J, time=2.58s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9998, power=65.24W, energy=166.78J, time=2.56s
+[INFO] Saturated energy: power=169.995, J/img=0.004008504872455702, samples=2
+[INFO] Saturated energy: power=159.31, J/img=0.003791880903991334, samples=2
+[INFO] Saturated energy: power=157.7, J/img=0.002656833961797886, samples=2
+
+[INFO] === Measurement rep 5/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9847, power=71.35W, energy=186.61J, time=2.62s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9916, power=67.99W, energy=175.76J, time=2.59s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9832, power=63.34W, energy=164.71J, time=2.60s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9998, power=68.26W, energy=171.69J, time=2.52s
+[INFO] Saturated energy: power=159.675, J/img=0.003742851128793388, samples=2
+[INFO] Saturated energy: power=159.895, J/img=0.0038066457025001223, samples=2
+[INFO] Saturated energy: power=157.225, J/img=0.002635256401659485, samples=2
+
+[INFO] === Measurement rep 6/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9841, power=73.97W, energy=192.10J, time=2.60s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9908, power=67.02W, energy=172.67J, time=2.58s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9832, power=63.39W, energy=164.30J, time=2.59s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9998, power=69.38W, energy=175.45J, time=2.53s
+[INFO] Saturated energy: power=160.905, J/img=0.003795669421338906, samples=2
+[INFO] Saturated energy: power=159.71, J/img=0.003794641006367663, samples=2
+[INFO] Saturated energy: power=161.3, J/img=0.0027082238498916653, samples=2
+
+[INFO] === Measurement rep 7/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9843, power=72.96W, energy=192.21J, time=2.63s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9904, power=64.24W, energy=166.65J, time=2.59s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9828, power=67.85W, energy=175.39J, time=2.58s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9998, power=74.86W, energy=188.68J, time=2.52s
+[INFO] Saturated energy: power=155.195, J/img=0.003638022531522438, samples=2
+[INFO] Saturated energy: power=160.4, J/img=0.003808242706469743, samples=2
+[INFO] Saturated energy: power=159.22, J/img=0.0026572474975817663, samples=2
+
+[INFO] === Measurement rep 8/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9846, power=69.13W, energy=178.32J, time=2.58s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9902, power=77.52W, energy=252.27J, time=3.25s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9831, power=65.55W, energy=173.17J, time=2.64s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9999, power=68.95W, energy=173.55J, time=2.52s
+[INFO] Saturated energy: power=159.84, J/img=0.003852614473733233, samples=2
+[INFO] Saturated energy: power=164.5, J/img=0.003930605823795, samples=2
+[INFO] Saturated energy: power=163.785, J/img=0.0027660832414703337, samples=2
+
+[INFO] === Measurement rep 9/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9839, power=65.58W, energy=172.83J, time=2.64s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9921, power=68.79W, energy=178.03J, time=2.59s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9836, power=75.20W, energy=194.40J, time=2.59s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9996, power=69.73W, energy=177.61J, time=2.55s
+[INFO] Saturated energy: power=159.015, J/img=0.003744560683558801, samples=2
+[INFO] Saturated energy: power=189.65, J/img=0.004459209673777444, samples=3
+[INFO] Saturated energy: power=186.29333333333332, J/img=0.0031099388830143687, samples=3
+
+[INFO] === Measurement rep 10/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9840, power=80.74W, energy=224.76J, time=2.78s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9912, power=70.89W, energy=182.68J, time=2.58s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9825, power=75.67W, energy=196.77J, time=2.60s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9997, power=70.70W, energy=181.91J, time=2.57s
+[INFO] Saturated energy: power=160.175, J/img=0.0037825705885781193, samples=2
+[INFO] Saturated energy: power=171.415, J/img=0.0040431912403141035, samples=2
+[INFO] Saturated energy: power=161.565, J/img=0.0027085186459441133, samples=2
+[INFO] Measuring dataloader floor (no forward passes)...
+[INFO] Loader floor: time=2.31s, energy=148.17J
+[RESULT] Accuracy Original:     0.9917 (test 0.8463) | Power: 70.16W | Energy: 183.49J
+[RESULT] Accuracy Before (anchor): 0.9846 (test 0.8445)
+[RESULT] Accuracy Unstructured: 0.9820 (test 0.8365) | Power: 72.89W | Energy: 188.20J
+[RESULT] Accuracy Collapsed:    0.9999 (test 0.8660) | Power: 64.94W | Energy: 163.57J
+[INFO] 10 measurement reps completed; full per-rep values are rows in the CSV.
+[RESULT] Original     FLOPs=1.660e+10 | latency=15.20 ms/batch | throughput=33690.8 img/s | peak_mem=608.0 MiB | feature_maps=444.3 MiB
+[RESULT] Unstructured FLOPs=1.660e+10 | latency=14.09 ms/batch | throughput=36329.1 img/s | peak_mem=608.0 MiB | feature_maps=444.3 MiB
+[RESULT] Collapsed    FLOPs=1.287e+10 | latency=9.64 ms/batch | throughput=53111.7 img/s | peak_mem=440.8 MiB | feature_maps=410.9 MiB
+[RESULT] FLOPs Unstructured (theoretical/effective, kept for back-compat): 9.58e+09
+[RESULT] Storage (state_dict MiB): original=23.0, unstructured=23.0, collapsed=13.3
+
+[INFO] Extracting features and computing CKA...
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 1024), time=1.76s
+[INFO] Computing CKA: features_x=(5120, 1024), features_y=(5120, 1024)
+[INFO] CKA complete: score=1.000000, time=0.00s
+[INFO] CKA self-check (expect ~1.0): 1.000000
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 1024), time=2.38s
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 1024), time=2.30s
+[INFO] Computing CKA: features_x=(5120, 1024), features_y=(5120, 1024)
+[INFO] CKA complete: score=0.734115, time=0.00s
+[INFO] Computing CKA: features_x=(5120, 1024), features_y=(5120, 1024)
+[INFO] CKA complete: score=0.788008, time=0.00s
+
+[INFO] Evaluating Adversarial Robustness...
+[INFO] Running FGSM attack (epsilon=0.005)...
+       -> original Accuracy: 0.7617
+       -> unstructured Accuracy: 0.7715
+       -> collapsed Accuracy: 0.8086
+[INFO] Running PGD attack (epsilon=0.005)...
+       -> original Accuracy: 0.7578
+       -> unstructured Accuracy: 0.7578
+       -> collapsed Accuracy: 0.8086
+[INFO] Running FGSM attack (epsilon=0.01)...
+       -> original Accuracy: 0.6621
+       -> unstructured Accuracy: 0.6953
+       -> collapsed Accuracy: 0.7207
+[INFO] Running PGD attack (epsilon=0.01)...
+       -> original Accuracy: 0.6348
+       -> unstructured Accuracy: 0.6699
+       -> collapsed Accuracy: 0.7012
+[INFO] Running FGSM attack (epsilon=0.02)...
+       -> original Accuracy: 0.5195
+       -> unstructured Accuracy: 0.5508
+       -> collapsed Accuracy: 0.5918
+[INFO] Running PGD attack (epsilon=0.02)...
+       -> original Accuracy: 0.4102
+       -> unstructured Accuracy: 0.4355
+       -> collapsed Accuracy: 0.5078
+[INFO] Running FGSM attack (epsilon=0.03)...
+       -> original Accuracy: 0.4199
+       -> unstructured Accuracy: 0.4219
+       -> collapsed Accuracy: 0.4648
+[INFO] Running PGD attack (epsilon=0.03)...
+       -> original Accuracy: 0.2598
+       -> unstructured Accuracy: 0.2949
+       -> collapsed Accuracy: 0.3047
+[INFO] Running FGSM attack (epsilon=0.05)...
+       -> original Accuracy: 0.2949
+       -> unstructured Accuracy: 0.2832
+       -> collapsed Accuracy: 0.2773
+[INFO] Running PGD attack (epsilon=0.05)...
+       -> original Accuracy: 0.0684
+       -> unstructured Accuracy: 0.0781
+       -> collapsed Accuracy: 0.0859
+
+[INFO] Full analysis: calibration (ECE/MCE), OOD AUROC, corruptions...
+[INFO] OOD source: cifar100 test split (SVHN not staged)
+       -> OOD AUROC original: 0.7642
+       -> OOD AUROC unstructured: 0.7707
+       -> OOD AUROC collapsed: 0.7805
+[INFO] Appended 30 rows to robustness_curves_cka_results_InceptionNet_Cifar10_pre100_post300.csv
+[INFO] Appended 45 rows to calibration_cka_results_InceptionNet_Cifar10_pre100_post300.csv
+
+======================================================================
+[INFO] Saving final results...
+[INFO] Results successfully saved to 'cka_results_InceptionNet_Cifar10_pre100_post300.csv'
+[INFO] Total successful experiments: 20
+[INFO] Total runtime: 2804.63s
+
+======================================================================
+FINAL RESULTS
+======================================================================
+           model  dataset                    gpu_name  pre_epochs  post_epochs                                                                                          model_before  intermediate_epoch  rep  acc_before  acc_test_before  acc_original_after  acc_test_original_after  acc_unstructured  acc_test_unstructured  acc_collapsed  acc_test_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  flops_original  flops_unstructured  flops_collapsed  flops_unstructured_measured  latency_ms_original  latency_ms_unstructured  latency_ms_collapsed  throughput_imgs_original  throughput_imgs_unstructured  throughput_imgs_collapsed  peak_mem_mb_original  peak_mem_mb_unstructured  peak_mem_mb_collapsed  feature_maps_mb_original  feature_maps_mb_unstructured  feature_maps_mb_collapsed  storage_mb_original  storage_mb_unstructured  storage_mb_collapsed  cka_unstructured  cka_collapsed  acc_structural  acc_test_structural power_watts_structural energy_joules_structural flops_structural latency_ms_structural throughput_imgs_structural peak_mem_mb_structural feature_maps_mb_structural storage_mb_structural cka_structural params_structural sparsity_structural  gpu_util_original  gpu_clock_mhz_original  gpu_util_unstructured  gpu_clock_mhz_unstructured  gpu_util_collapsed  gpu_clock_mhz_collapsed gpu_util_structural gpu_clock_mhz_structural  eval_elapsed_s_original  eval_elapsed_s_unstructured  eval_elapsed_s_collapsed eval_elapsed_s_structural  n_power_samples_original  n_power_samples_unstructured  n_power_samples_collapsed n_power_samples_structural  loader_time_s  loader_joules  loader_n_samples  power_watts_saturated_original  power_watts_saturated_unstructured  power_watts_saturated_collapsed power_watts_saturated_structural  j_per_img_saturated_original  j_per_img_saturated_unstructured  j_per_img_saturated_collapsed j_per_img_saturated_structural  saturated_imgs_original  saturated_imgs_unstructured  saturated_imgs_collapsed saturated_imgs_structural  n_power_samples_saturated_original  n_power_samples_saturated_unstructured  n_power_samples_saturated_collapsed n_power_samples_saturated_structural  adv_acc_FGSM_eps0.005_original  adv_acc_FGSM_eps0.005_unstructured  adv_acc_FGSM_eps0.005_collapsed  adv_acc_PGD_eps0.005_original  adv_acc_PGD_eps0.005_unstructured  adv_acc_PGD_eps0.005_collapsed  adv_acc_FGSM_eps0.01_original  adv_acc_FGSM_eps0.01_unstructured  adv_acc_FGSM_eps0.01_collapsed  adv_acc_PGD_eps0.01_original  adv_acc_PGD_eps0.01_unstructured  adv_acc_PGD_eps0.01_collapsed  adv_acc_FGSM_eps0.02_original  adv_acc_FGSM_eps0.02_unstructured  adv_acc_FGSM_eps0.02_collapsed  adv_acc_PGD_eps0.02_original  adv_acc_PGD_eps0.02_unstructured  adv_acc_PGD_eps0.02_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed  adv_acc_FGSM_eps0.05_original  adv_acc_FGSM_eps0.05_unstructured  adv_acc_FGSM_eps0.05_collapsed  adv_acc_PGD_eps0.05_original  adv_acc_PGD_eps0.05_unstructured  adv_acc_PGD_eps0.05_collapsed  ece_original  mce_original  ece_unstructured  mce_unstructured  ece_collapsed  mce_collapsed ood_source  ood_auroc_original  ood_auroc_unstructured  ood_auroc_collapsed
+0   InceptionNet  Cifar10  NVIDIA GeForce RTX 2080 Ti         100          300            ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    0     0.98436           0.8447             0.99134                   0.8466           0.98206                 0.8365        0.99976              0.8663                 72.77                  191.99                     66.49                      182.01                  64.06                   161.53    1.659979e+10        9.583012e+09     1.286596e+10                 1.659979e+10            15.338998                14.121179              9.794976              33378.971992                  36257.595138               52271.694971            599.224609                599.224609             427.976562                444.300781                    444.300781                 410.894531            23.026735                23.026735             13.279955          0.733613       0.788096             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               12.0                  1350.0                   12.3                      1350.0                 9.0                   1350.0                None                     None                    2.638                        2.738                     2.522                      None                         3                             3                          3                       None           2.32         149.53                 3                          174.93                              159.65                           155.06                             None                      0.004125                          0.003795                       0.002592                           None             42564.766637                 42214.530219              60104.450775                      None                                   2                                       2                                    2                                 None                        0.763672                            0.771484                         0.808594                       0.759766                           0.757812                        0.808594                       0.660156                           0.695312                        0.718750                      0.632812                          0.669922                       0.701172                       0.521484                           0.550781                        0.589844                      0.412109                          0.435547                       0.505859               0.421875                   0.421875                0.462891              0.255859                  0.294922               0.302734                       0.294922                           0.283203                        0.273438                      0.066406                          0.078125                       0.083984      0.122281      0.371173          0.113322          0.358189       0.111628       0.449180   cifar100            0.764414                0.770679             0.780514
+1   InceptionNet  Cifar10  NVIDIA GeForce RTX 2080 Ti         100          300            ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    1     0.98572           0.8447             0.99142                   0.8466           0.98198                 0.8365        0.99982              0.8663                 64.69                  168.81                     70.35                      182.19                  66.89                   168.97    1.659979e+10        9.583012e+09     1.286596e+10                 1.659979e+10            15.223941                14.105562              9.647286              33631.239550                  36297.739370               53071.919194            601.359375                601.359375             430.111328                444.300781                    444.300781                 410.894531            23.026735                23.026735             13.279955          0.733613       0.788096             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               11.7                  1350.0                   12.7                      1350.0                 9.0                   1350.0                None                     None                    2.610                        2.590                     2.526                      None                         3                             3                          3                       None           2.32         149.53                 3                          164.80                              171.15                           160.97                             None                      0.003915                          0.004038                       0.002667                           None             42263.912325                 42537.784554              60787.402031                      None                                   2                                       2                                    2                                 None                        0.763672                            0.771484                         0.808594                       0.759766                           0.757812                        0.808594                       0.660156                           0.695312                        0.718750                      0.632812                          0.669922                       0.701172                       0.521484                           0.550781                        0.589844                      0.412109                          0.435547                       0.505859               0.421875                   0.421875                0.462891              0.255859                  0.294922               0.302734                       0.294922                           0.283203                        0.273438                      0.066406                          0.078125                       0.083984      0.122281      0.371173          0.113322          0.358189       0.111628       0.449180   cifar100            0.764414                0.770679             0.780514
+2   InceptionNet  Cifar10  NVIDIA GeForce RTX 2080 Ti         100          300            ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    2     0.98418           0.8447             0.99186                   0.8466           0.98246                 0.8365        0.99974              0.8663                 71.91                  187.91                     69.04                      180.15                  69.24                   187.41    1.659979e+10        9.583012e+09     1.286596e+10                 1.659979e+10            15.215554                14.149982              9.653496              33649.777804                  36183.790577               53037.780154            603.494141                603.494141             432.246094                444.300781                    444.300781                 410.894531            23.026735                23.026735             13.279955          0.733613       0.788096             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               11.3                  1350.0                   12.7                      1350.0                 8.0                   1350.0                None                     None                    2.613                        2.609                     2.707                      None                         3                             3                          3                       None           2.32         149.53                 3                          167.94                              187.94                           155.12                             None                      0.004033                          0.004446                       0.002582                           None             41866.139190                 42504.535875              60371.653484                      None                                   2                                       3                                    2                                 None                        0.763672                            0.771484                         0.808594                       0.759766                           0.757812                        0.808594                       0.660156                           0.695312                        0.718750                      0.632812                          0.669922                       0.701172                       0.521484                           0.550781                        0.589844                      0.412109                          0.435547                       0.505859               0.421875                   0.421875                0.462891              0.255859                  0.294922               0.302734                       0.294922                           0.283203                        0.273438                      0.066406                          0.078125                       0.083984      0.122281      0.371173          0.113322          0.358189       0.111628       0.449180   cifar100            0.764414                0.770679             0.780514
+3   InceptionNet  Cifar10  NVIDIA GeForce RTX 2080 Ti         100          300            ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    3     0.98430           0.8447             0.99206                   0.8466           0.98272                 0.8365        0.99980              0.8663                 74.98                  196.44                     66.63                      175.42                  69.56                   179.99    1.659979e+10        9.583012e+09     1.286596e+10                 1.659979e+10            15.227930                14.243624              9.909803              33622.430318                  35945.907978               51666.010513            605.628906                605.628906             434.380859                444.300781                    444.300781                 410.894531            23.026735                23.026735             13.279955          0.733613       0.788096             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               12.0                  1350.0                   13.0                      1350.0                 9.0                   1350.0                None                     None                    2.620                        2.633                     2.587                      None                         3                             3                          3                       None           2.32         149.53                 3                          168.31                              158.74                           158.24                             None                      0.003991                          0.003752                       0.002626                           None             42463.849947                 42455.865231              60551.804083                      None                                   2                                       2                                    2                                 None                        0.763672                            0.771484                         0.808594                       0.759766                           0.757812                        0.808594                       0.660156                           0.695312                        0.718750                      0.632812                          0.669922                       0.701172                       0.521484                           0.550781                        0.589844                      0.412109                          0.435547                       0.505859               0.421875                   0.421875                0.462891              0.255859                  0.294922               0.302734                       0.294922                           0.283203                        0.273438                      0.066406                          0.078125                       0.083984      0.122281      0.371173          0.113322          0.358189       0.111628       0.449180   cifar100            0.764414                0.770679             0.780514
+4   InceptionNet  Cifar10  NVIDIA GeForce RTX 2080 Ti         100          300            ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    4     0.98378           0.8447             0.99136                   0.8466           0.98292                 0.8365        0.99970              0.8663                 66.66                  173.53                     70.45                      187.77                  67.89                   177.78    1.659979e+10        9.583012e+09     1.286596e+10                 1.659979e+10            15.239288                14.134493              9.788296              33597.370384                  36223.443337               52307.367858            599.224609                599.224609             427.976562                444.300781                    444.300781                 410.894531            23.026735                23.026735             13.279955          0.733613       0.788096             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               12.7                  1350.0                   12.7                      1350.0                 8.3                   1350.0                None                     None                    2.603                        2.665                     2.619                      None                         3                             3                          3                       None           2.32         149.53                 3                          188.35                              171.69                           157.93                             None                      0.004484                          0.004072                       0.002640                           None             42267.738708                 42341.810299              60120.235855                      None                                   3                                       2                                    2                                 None                        0.763672                            0.771484                         0.808594                       0.759766                           0.757812                        0.808594                       0.660156                           0.695312                        0.718750                      0.632812                          0.669922                       0.701172                       0.521484                           0.550781                        0.589844                      0.412109                          0.435547                       0.505859               0.421875                   0.421875                0.462891              0.255859                  0.294922               0.302734                       0.294922                           0.283203                        0.273438                      0.066406                          0.078125                       0.083984      0.122281      0.371173          0.113322          0.358189       0.111628       0.449180   cifar100            0.764414                0.770679             0.780514
+5   InceptionNet  Cifar10  NVIDIA GeForce RTX 2080 Ti         100          300            ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    5     0.98340           0.8447             0.99196                   0.8466           0.98250                 0.8365        0.99990              0.8663                 71.91                  186.92                     73.85                      191.27                  71.46                   181.88    1.659979e+10        9.583012e+09     1.286596e+10                 1.659979e+10            15.192259                14.297638              9.642882              33701.373464                  35810.109690               53096.161585            601.359375                601.359375             430.111328                444.300781                    444.300781                 410.894531            23.026735                23.026735             13.279955          0.733613       0.788096             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               12.7                  1350.0                   11.7                      1350.0                 9.0                   1350.0                None                     None                    2.599                        2.590                     2.545                      None                         3                             3                          3                       None           2.32         149.53                 3                          158.47                              162.78                           159.14                             None                      0.003748                          0.003846                       0.002635                           None             42460.788810                 42679.460027              60723.732872                      None                                   2                                       2                                    2                                 None                        0.763672                            0.771484                         0.808594                       0.759766                           0.757812                        0.808594                       0.660156                           0.695312                        0.718750                      0.632812                          0.669922                       0.701172                       0.521484                           0.550781                        0.589844                      0.412109                          0.435547                       0.505859               0.421875                   0.421875                0.462891              0.255859                  0.294922               0.302734                       0.294922                           0.283203                        0.273438                      0.066406                          0.078125                       0.083984      0.122281      0.371173          0.113322          0.358189       0.111628       0.449180   cifar100            0.764414                0.770679             0.780514
+6   InceptionNet  Cifar10  NVIDIA GeForce RTX 2080 Ti         100          300            ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    6     0.98398           0.8447             0.99108                   0.8466           0.98228                 0.8365        0.99968              0.8663                 74.24                  196.31                     63.83                      168.84                  70.44                   180.80    1.659979e+10        9.583012e+09     1.286596e+10                 1.659979e+10            15.201768                13.908723              9.653144              33680.292939                  36811.430782               53039.714828            603.494141                603.494141             432.246094                444.300781                    444.300781                 410.894531            23.026735                23.026735             13.279955          0.733613       0.788096             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               12.0                  1350.0                   12.7                      1350.0                 9.0                   1350.0                None                     None                    2.644                        2.645                     2.567                      None                         3                             3                          3                       None           2.32         149.53                 3                          173.45                              162.98                           164.20                             None                      0.004089                          0.003826                       0.002725                           None             42594.110102                 42741.177218              60652.967657                      None                                   2                                       2                                    2                                 None                        0.763672                            0.771484                         0.808594                       0.759766                           0.757812                        0.808594                       0.660156                           0.695312                        0.718750                      0.632812                          0.669922                       0.701172                       0.521484                           0.550781                        0.589844                      0.412109                          0.435547                       0.505859               0.421875                   0.421875                0.462891              0.255859                  0.294922               0.302734                       0.294922                           0.283203                        0.273438                      0.066406                          0.078125                       0.083984      0.122281      0.371173          0.113322          0.358189       0.111628       0.449180   cifar100            0.764414                0.770679             0.780514
+7   InceptionNet  Cifar10  NVIDIA GeForce RTX 2080 Ti         100          300            ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    7     0.98426           0.8447             0.99172                   0.8466           0.98338                 0.8365        0.99976              0.8663                 65.49                  172.90                     68.26                      179.69                  63.43                   168.83    1.659979e+10        9.583012e+09     1.286596e+10                 1.659979e+10            15.260950                14.766461              9.939005              33549.679688                  34673.169619               51514.212323            605.628906                605.628906             434.380859                444.300781                    444.300781                 410.894531            23.026735                23.026735             13.279955          0.733613       0.788096             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               11.0                  1350.0                   12.0                      1350.0                 8.7                   1350.0                None                     None                    2.640                        2.632                     2.662                      None                         3                             3                          3                       None           2.32         149.53                 3                          156.10                              174.86                           156.69                             None                      0.003699                          0.004171                       0.002630                           None             42458.056687                 42149.288683              59888.305404                      None                                   2                                       2                                    2                                 None                        0.763672                            0.771484                         0.808594                       0.759766                           0.757812                        0.808594                       0.660156                           0.695312                        0.718750                      0.632812                          0.669922                       0.701172                       0.521484                           0.550781                        0.589844                      0.412109                          0.435547                       0.505859               0.421875                   0.421875                0.462891              0.255859                  0.294922               0.302734                       0.294922                           0.283203                        0.273438                      0.066406                          0.078125                       0.083984      0.122281      0.371173          0.113322          0.358189       0.111628       0.449180   cifar100            0.764414                0.770679             0.780514
+8   InceptionNet  Cifar10  NVIDIA GeForce RTX 2080 Ti         100          300            ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    8     0.98394           0.8447             0.99138                   0.8466           0.98304                 0.8365        0.99976              0.8663                 74.01                  196.27                     74.01                      193.97                  69.57                   175.39    1.659979e+10        9.583012e+09     1.286596e+10                 1.659979e+10            15.323891                14.555010              9.812200              33411.879069                  35176.891939               52179.939270            599.224609                599.224609             427.976562                444.300781                    444.300781                 410.894531            23.026735                23.026735             13.279955          0.733613       0.788096             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               11.0                  1350.0                   12.0                      1350.0                 9.0                   1350.0                None                     None                    2.652                        2.621                     2.521                      None                         3                             3                          3                       None           2.32         149.53                 3                          165.95                              168.05                           156.33                             None                      0.003995                          0.003944                       0.002609                           None             41741.938191                 42781.211063              60379.707372                      None                                   2                                       2                                    2                                 None                        0.763672                            0.771484                         0.808594                       0.759766                           0.757812                        0.808594                       0.660156                           0.695312                        0.718750                      0.632812                          0.669922                       0.701172                       0.521484                           0.550781                        0.589844                      0.412109                          0.435547                       0.505859               0.421875                   0.421875                0.462891              0.255859                  0.294922               0.302734                       0.294922                           0.283203                        0.273438                      0.066406                          0.078125                       0.083984      0.122281      0.371173          0.113322          0.358189       0.111628       0.449180   cifar100            0.764414                0.770679             0.780514
+9   InceptionNet  Cifar10  NVIDIA GeForce RTX 2080 Ti         100          300            ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    9     0.98418           0.8447             0.99178                   0.8466           0.98352                 0.8365        0.99972              0.8663                 71.40                  186.23                     67.14                      174.76                  67.61                   171.91    1.659979e+10        9.583012e+09     1.286596e+10                 1.659979e+10            15.216934                14.103898              9.781702              33646.724756                  36302.022005               52342.627116            601.359375                601.359375             430.111328                444.300781                    444.300781                 410.894531            23.026735                23.026735             13.279955          0.733613       0.788096             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               12.0                  1350.0                   11.0                      1350.0                 9.0                   1350.0                None                     None                    2.608                        2.603                     2.543                      None                         3                             3                          3                       None           2.32         149.53                 3                          197.29                              156.78                           156.35                             None                      0.004667                          0.003729                       0.002627                           None             42576.999128                 42230.399312              59800.099255                      None                                   3                                       2                                    2                                 None                        0.763672                            0.771484                         0.808594                       0.759766                           0.757812                        0.808594                       0.660156                           0.695312                        0.718750                      0.632812                          0.669922                       0.701172                       0.521484                           0.550781                        0.589844                      0.412109                          0.435547                       0.505859               0.421875                   0.421875                0.462891              0.255859                  0.294922               0.302734                       0.294922                           0.283203                        0.273438                      0.066406                          0.078125                       0.083984      0.122281      0.371173          0.113322          0.358189       0.111628       0.449180   cifar100            0.764414                0.770679             0.780514
+10  InceptionNet  Cifar10  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/InceptionNet_Cifar10_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    0     0.98456           0.8445             0.99166                   0.8463           0.98198                 0.8365        0.99986              0.8660                 70.16                  183.49                     72.89                      188.20                  64.94                   163.57    1.659979e+10        9.583012e+09     1.286596e+10                 1.659979e+10            15.197043                14.093371              9.640064              33690.764416                  36329.136068               53111.680055            607.994141                607.994141             440.785156                444.300781                    444.300781                 410.894531            23.026735                23.026735             13.279955          0.734115       0.788008             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               11.7                  1350.0                   12.0                      1350.0                 9.0                   1350.0                None                     None                    2.615                        2.582                     2.519                      None                         3                             3                          3                       None           2.31         148.17                 3                          161.47                              157.60                           157.80                             None                      0.003793                          0.003735                       0.002624                           None             42880.743533                 42344.060614              60501.000043                      None                                   2                                       2                                    2                                 None                        0.761719                            0.771484                         0.808594                       0.757812                           0.757812                        0.808594                       0.662109                           0.695312                        0.720703                      0.634766                          0.669922                       0.701172                       0.519531                           0.550781                        0.591797                      0.410156                          0.435547                       0.507812               0.419922                   0.421875                0.464844              0.259766                  0.294922               0.304688                       0.294922                           0.283203                        0.277344                      0.068359                          0.078125                       0.085938      0.122516      0.378465          0.113322          0.358189       0.111757       0.439442   cifar100            0.764194                0.770679             0.780538
+11  InceptionNet  Cifar10  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/InceptionNet_Cifar10_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    1     0.98354           0.8445             0.99178                   0.8463           0.98244                 0.8365        0.99988              0.8660                 73.44                  193.85                     73.91                      191.11                  71.69                   184.23    1.659979e+10        9.583012e+09     1.286596e+10                 1.659979e+10            15.229821                13.913368              9.649888              33618.255102                  36799.141569               53057.610535            603.724609                603.724609             436.515625                444.300781                    444.300781                 410.894531            23.026735                23.026735             13.279955          0.734115       0.788008             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               13.0                  1350.0                   12.0                      1350.0                 9.0                   1350.0                None                     None                    2.640                        2.586                     2.570                      None                         3                             3                          3                       None           2.31         148.17                 3                          159.38                              165.76                           188.15                             None                      0.003776                          0.003924                       0.003136                           None             42592.798380                 42529.583782              60434.952766                      None                                   2                                       2                                    3                                 None                        0.761719                            0.771484                         0.808594                       0.757812                           0.757812                        0.808594                       0.662109                           0.695312                        0.720703                      0.634766                          0.669922                       0.701172                       0.519531                           0.550781                        0.591797                      0.410156                          0.435547                       0.507812               0.419922                   0.421875                0.464844              0.259766                  0.294922               0.304688                       0.294922                           0.283203                        0.277344                      0.068359                          0.078125                       0.085938      0.122516      0.378465          0.113322          0.358189       0.111757       0.439442   cifar100            0.764194                0.770679             0.780538
+12  InceptionNet  Cifar10  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/InceptionNet_Cifar10_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    2     0.98486           0.8445             0.99124                   0.8463           0.98362                 0.8365        0.99984              0.8660                 68.19                  176.90                     66.17                      175.44                  62.94                   163.19    1.659979e+10        9.583012e+09     1.286596e+10                 1.659979e+10            15.193336                14.118890              9.762669              33698.984849                  36263.474951               52444.676166            605.859375                605.859375             438.650391                444.300781                    444.300781                 410.894531            23.026735                23.026735             13.279955          0.734115       0.788008             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               12.0                  1350.0                   12.0                      1350.0                 8.3                   1350.0                None                     None                    2.594                        2.652                     2.593                      None                         3                             3                          3                       None           2.31         148.17                 3                          159.72                              174.22                           186.25                             None                      0.003811                          0.004144                       0.003140                           None             42057.507352                 42199.593065              59757.752035                      None                                   2                                       2                                    3                                 None                        0.761719                            0.771484                         0.808594                       0.757812                           0.757812                        0.808594                       0.662109                           0.695312                        0.720703                      0.634766                          0.669922                       0.701172                       0.519531                           0.550781                        0.591797                      0.410156                          0.435547                       0.507812               0.419922                   0.421875                0.464844              0.259766                  0.294922               0.304688                       0.294922                           0.283203                        0.277344                      0.068359                          0.078125                       0.085938      0.122516      0.378465          0.113322          0.358189       0.111757       0.439442   cifar100            0.764194                0.770679             0.780538
+13  InceptionNet  Cifar10  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/InceptionNet_Cifar10_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    3     0.98526           0.8445             0.99162                   0.8463           0.98314                 0.8365        0.99984              0.8660                 74.10                  189.53                     68.62                      177.15                  65.24                   166.78    1.659979e+10        9.583012e+09     1.286596e+10                 1.659979e+10            15.196442                14.102320              9.770976              33692.098018                  36306.083330               52400.088052            607.994141                607.994141             440.785156                444.300781                    444.300781                 410.894531            23.026735                23.026735             13.279955          0.734115       0.788008             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               12.7                  1350.0                   12.0                      1350.0                 9.3                   1350.0                None                     None                    2.558                        2.582                     2.556                      None                         3                             3                          3                       None           2.31         148.17                 3                          170.00                              159.31                           157.70                             None                      0.004009                          0.003792                       0.002657                           None             42625.178209                 42161.778120              59640.570211                      None                                   2                                       2                                    2                                 None                        0.761719                            0.771484                         0.808594                       0.757812                           0.757812                        0.808594                       0.662109                           0.695312                        0.720703                      0.634766                          0.669922                       0.701172                       0.519531                           0.550781                        0.591797                      0.410156                          0.435547                       0.507812               0.419922                   0.421875                0.464844              0.259766                  0.294922               0.304688                       0.294922                           0.283203                        0.277344                      0.068359                          0.078125                       0.085938      0.122516      0.378465          0.113322          0.358189       0.111757       0.439442   cifar100            0.764194                0.770679             0.780538
+14  InceptionNet  Cifar10  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/InceptionNet_Cifar10_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    4     0.98474           0.8445             0.99160                   0.8463           0.98324                 0.8365        0.99976              0.8660                 67.99                  175.76                     63.34                      164.71                  68.26                   171.69    1.659979e+10        9.583012e+09     1.286596e+10                 1.659979e+10            15.237203                14.117549              9.780952              33601.967023                  36266.918963               52346.642864            610.128906                610.128906             442.919922                444.300781                    444.300781                 410.894531            23.026735                23.026735             13.279955          0.734115       0.788008             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               12.3                  1350.0                   12.7                      1350.0                 9.0                   1350.0                None                     None                    2.585                        2.600                     2.515                      None                         3                             3                          3                       None           2.31         148.17                 3                          159.68                              159.90                           157.22                             None                      0.003743                          0.003807                       0.002635                           None             42856.500642                 42172.264729              59993.447718                      None                                   2                                       2                                    2                                 None                        0.761719                            0.771484                         0.808594                       0.757812                           0.757812                        0.808594                       0.662109                           0.695312                        0.720703                      0.634766                          0.669922                       0.701172                       0.519531                           0.550781                        0.591797                      0.410156                          0.435547                       0.507812               0.419922                   0.421875                0.464844              0.259766                  0.294922               0.304688                       0.294922                           0.283203                        0.277344                      0.068359                          0.078125                       0.085938      0.122516      0.378465          0.113322          0.358189       0.111757       0.439442   cifar100            0.764194                0.770679             0.780538
+15  InceptionNet  Cifar10  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/InceptionNet_Cifar10_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    5     0.98412           0.8445             0.99076                   0.8463           0.98320                 0.8365        0.99982              0.8660                 67.02                  172.67                     63.39                      164.30                  69.38                   175.45    1.659979e+10        9.583012e+09     1.286596e+10                 1.659979e+10            15.189251                14.504808              9.779530              33708.047367                  35298.640061               52354.256409            612.263672                603.724609             436.515625                444.300781                    444.300781                 410.894531            23.026735                23.026735             13.279955          0.734115       0.788008             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               12.7                  1350.0                   12.7                      1350.0                 8.7                   1350.0                None                     None                    2.576                        2.592                     2.529                      None                         3                             3                          3                       None           2.31         148.17                 3                          160.91                              159.71                           161.30                             None                      0.003796                          0.003795                       0.002708                           None             42550.261351                 42316.717989              59928.462292                      None                                   2                                       2                                    2                                 None                        0.761719                            0.771484                         0.808594                       0.757812                           0.757812                        0.808594                       0.662109                           0.695312                        0.720703                      0.634766                          0.669922                       0.701172                       0.519531                           0.550781                        0.591797                      0.410156                          0.435547                       0.507812               0.419922                   0.421875                0.464844              0.259766                  0.294922               0.304688                       0.294922                           0.283203                        0.277344                      0.068359                          0.078125                       0.085938      0.122516      0.378465          0.113322          0.358189       0.111757       0.439442   cifar100            0.764194                0.770679             0.780538
+16  InceptionNet  Cifar10  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/InceptionNet_Cifar10_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    6     0.98430           0.8445             0.99044                   0.8463           0.98284                 0.8365        0.99978              0.8660                 64.24                  166.65                     67.85                      175.39                  74.86                   188.68    1.659979e+10        9.583012e+09     1.286596e+10                 1.659979e+10            15.199443                14.113542              9.648629              33685.444483                  36277.214233               53064.534893            605.859375                605.859375             438.650391                444.300781                    444.300781                 410.894531            23.026735                23.026735             13.279955          0.734115       0.788008             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               12.7                  1350.0                   12.3                      1350.0                 9.0                   1350.0                None                     None                    2.594                        2.585                     2.520                      None                         3                             3                          3                       None           2.31         148.17                 3                          155.19                              160.40                           159.22                             None                      0.003638                          0.003808                       0.002657                           None             42818.466190                 42291.884514              60206.069675                      None                                   2                                       2                                    2                                 None                        0.761719                            0.771484                         0.808594                       0.757812                           0.757812                        0.808594                       0.662109                           0.695312                        0.720703                      0.634766                          0.669922                       0.701172                       0.519531                           0.550781                        0.591797                      0.410156                          0.435547                       0.507812               0.419922                   0.421875                0.464844              0.259766                  0.294922               0.304688                       0.294922                           0.283203                        0.277344                      0.068359                          0.078125                       0.085938      0.122516      0.378465          0.113322          0.358189       0.111757       0.439442   cifar100            0.764194                0.770679             0.780538
+17  InceptionNet  Cifar10  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/InceptionNet_Cifar10_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    7     0.98456           0.8445             0.99022                   0.8463           0.98306                 0.8365        0.99986              0.8660                 77.52                  252.27                     65.55                      173.17                  68.95                   173.55    1.659979e+10        9.583012e+09     1.286596e+10                 1.659979e+10            15.193253                14.090240              9.766979              33699.169512                  36337.209544               52421.530608            607.994141                607.994141             440.785156                444.300781                    444.300781                 410.894531            23.026735                23.026735             13.279955          0.734115       0.788008             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.2                  1350.0                   11.0                      1350.0                 9.0                   1350.0                None                     None                    3.254                        2.642                     2.517                      None                         4                             3                          3                       None           2.31         148.17                 3                          159.84                              164.50                           163.78                             None                      0.003853                          0.003931                       0.002766                           None             41810.802859                 42164.538446              59529.552583                      None                                   2                                       2                                    2                                 None                        0.761719                            0.771484                         0.808594                       0.757812                           0.757812                        0.808594                       0.662109                           0.695312                        0.720703                      0.634766                          0.669922                       0.701172                       0.519531                           0.550781                        0.591797                      0.410156                          0.435547                       0.507812               0.419922                   0.421875                0.464844              0.259766                  0.294922               0.304688                       0.294922                           0.283203                        0.277344                      0.068359                          0.078125                       0.085938      0.122516      0.378465          0.113322          0.358189       0.111757       0.439442   cifar100            0.764194                0.770679             0.780538
+18  InceptionNet  Cifar10  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/InceptionNet_Cifar10_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    8     0.98390           0.8445             0.99212                   0.8463           0.98364                 0.8365        0.99962              0.8660                 68.79                  178.03                     75.20                      194.40                  69.73                   177.61    1.659979e+10        9.583012e+09     1.286596e+10                 1.659979e+10            15.201010                13.932245              9.635067              33681.973424                  36749.282306               53139.225388            610.128906                610.128906             442.919922                444.300781                    444.300781                 410.894531            23.026735                23.026735             13.279955          0.734115       0.788008             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               12.0                  1350.0                   12.7                      1350.0                 9.0                   1350.0                None                     None                    2.588                        2.585                     2.547                      None                         3                             3                          3                       None           2.31         148.17                 3                          159.01                              189.65                           186.29                             None                      0.003745                          0.004459                       0.003110                           None             42742.395663                 42765.955648              60491.264654                      None                                   2                                       3                                    3                                 None                        0.761719                            0.771484                         0.808594                       0.757812                           0.757812                        0.808594                       0.662109                           0.695312                        0.720703                      0.634766                          0.669922                       0.701172                       0.519531                           0.550781                        0.591797                      0.410156                          0.435547                       0.507812               0.419922                   0.421875                0.464844              0.259766                  0.294922               0.304688                       0.294922                           0.283203                        0.277344                      0.068359                          0.078125                       0.085938      0.122516      0.378465          0.113322          0.358189       0.111757       0.439442   cifar100            0.764194                0.770679             0.780538
+19  InceptionNet  Cifar10  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/InceptionNet_Cifar10_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    9     0.98396           0.8445             0.99124                   0.8463           0.98248                 0.8365        0.99966              0.8660                 70.89                  182.68                     75.67                      196.77                  70.70                   181.91    1.659979e+10        9.583012e+09     1.286596e+10                 1.659979e+10            15.227317                14.350221              9.637240              33623.783049                  35678.893705               53127.244006            612.263672                603.724609             436.515625                444.300781                    444.300781                 410.894531            23.026735                23.026735             13.279955          0.734115       0.788008             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               12.7                  1350.0                   11.7                      1350.0                 8.7                   1350.0                None                     None                    2.577                        2.600                     2.573                      None                         3                             3                          3                       None           2.31         148.17                 3                          160.18                              171.41                           161.56                             None                      0.003783                          0.004043                       0.002709                           None             42663.709286                 42660.549511              59949.187225                      None                                   2                                       2                                    2                                 None                        0.761719                            0.771484                         0.808594                       0.757812                           0.757812                        0.808594                       0.662109                           0.695312                        0.720703                      0.634766                          0.669922                       0.701172                       0.519531                           0.550781                        0.591797                      0.410156                          0.435547                       0.507812               0.419922                   0.421875                0.464844              0.259766                  0.294922               0.304688                       0.294922                           0.283203                        0.277344                      0.068359                          0.078125                       0.085938      0.122516      0.378465          0.113322          0.358189       0.111757       0.439442   cifar100            0.764194                0.770679             0.780538
+--- CKA strip/drift audit (Sat Nov 14 19:35:57 CST 2026) ---
+[INFO] Searching for checkpoint matching: ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100
+[INFO] Found matching checkpoint: ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Searching for checkpoint matching: ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100
+[INFO] Found matching checkpoint: ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
+Loading CIFAR-10 data for InceptionNet...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[INFO] Initializing architecture: model=InceptionNet, dataset=Cifar10
+Loading CIFAR-10 data for InceptionNet...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize InceptionNet with kwargs: dict_keys(['num_classes', 'one_batch', 'aux_logits'])
+[DEBUG] InceptionNet successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 344
+[INFO] Weights loaded in 0.15s
+
+[INFO] BN running stats recalibrated over 100 batches (57 BN layers).
+[INFO] Initializing architecture: model=InceptionNet, dataset=Cifar10
+Loading CIFAR-10 data for InceptionNet...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize InceptionNet with kwargs: dict_keys(['num_classes', 'one_batch', 'aux_logits'])
+[DEBUG] InceptionNet successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 344
+[INFO] Weights loaded in 2.75s
+
+[INFO] BN running stats recalibrated over 100 batches (57 BN layers).
+[INFO] BN running stats recalibrated over 100 batches (21 BN layers).
+[AUDIT] before: replaced 'before.fc' (nn.Linear) with Identity
+[AUDIT] before: features shape=(5120, 1024) std=0.558 stable_rank=41.2
+[AUDIT] after: replaced 'after.fc' (nn.Linear) with Identity
+[AUDIT] after: features shape=(5120, 1024) std=0.478 stable_rank=42.4
+[AUDIT] collapsed: replaced 'collapsed.fc' (nn.Linear) with Identity
+[AUDIT] collapsed: features shape=(5120, 1024) std=0.427 stable_rank=40.3
+[AUDIT] after (pass 2): replaced 'after (pass 2).fc' (nn.Linear) with Identity
+[AUDIT] after (pass 2): features shape=(5120, 1024) std=0.478 stable_rank=42.4
+[INFO] Computing CKA: features_x=(5120, 1024), features_y=(5120, 1024)
+[INFO] CKA complete: score=1.000000, time=0.02s
+CKA(after, after pass 2) = 1.0000  (two-pass determinism, expect 1.0)
+[INFO] Computing CKA: features_x=(5120, 1024), features_y=(5120, 1024)
+[INFO] CKA complete: score=0.776835, time=0.00s
+CKA(before, after)     = 0.7768  (drift reference)
+[INFO] Computing CKA: features_x=(5120, 1024), features_y=(5120, 1024)
+[INFO] CKA complete: score=0.778232, time=0.00s
+CKA(before, collapsed) = 0.7782  (CSV reports after vs collapsed)
+[INFO] Computing CKA: features_x=(5120, 1024), features_y=(5120, 1024)
+[INFO] CKA complete: score=0.786703, time=0.00s
+CKA(after, collapsed)  = 0.7867  (the CSV number)
+--- recalibration delta (Sat Nov 14 19:38:03 CST 2026) ---
+
+[INFO] ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
+Traceback (most recent call last):
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/recalibration_delta.py", line 127, in <module>
+    main()
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/recalibration_delta.py", line 113, in main
+    rows.extend(process(before_path, checkpoints, args, device))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/recalibration_delta.py", line 46, in process
+    model_name, dataset_name, *_ = parse_directory_context(before_path, args.model, args.dataset)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^
+NameError: name 'parse_directory_context' is not defined
+[WARN] recalibration_delta.py exited nonzero (see above)
