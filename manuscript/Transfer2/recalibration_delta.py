@@ -23,8 +23,8 @@ import torch
 
 from utils import (evaluate_accuracy, find_experiment_checkpoints,
                    find_matching_checkpoint, inherit_from_default_universe,
-                   initialize_architecture, load_weights, parse_epoch_tokens,
-                   recalibrate_bn)
+                   initialize_architecture, load_weights, parse_directory_context,
+                   parse_epoch_tokens, recalibrate_bn)
 
 FIELDS = ["model", "dataset", "quant", "pre_epochs", "post_epochs", "artifact",
           "acc_train_pre", "acc_test_pre", "acc_train_post", "acc_test_post",
