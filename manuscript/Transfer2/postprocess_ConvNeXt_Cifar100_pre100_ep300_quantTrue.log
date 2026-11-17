@@ -7,7 +7,7 @@ Starting Comparison Post-Processing Pipeline
 Model: ConvNeXt | Dataset: Cifar100 | Device: cuda
 Epochs Config (override): pre=100, post=300
 Output File: cka_results_ConvNeXt_Cifar100_quant_pre100_post300.csv
-CUDA device: NVIDIA A100 80GB PCIe
+CUDA device: NVIDIA GeForce RTX 2080 Ti
 ======================================================================
 
 ======================================================================
@@ -24,7 +24,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 0.18s
+[INFO] Weights loaded in 1.76s
 
 [INFO] Loading original post-finetuning model...
 [INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100
@@ -37,12 +37,12 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 0.16s
+[INFO] Weights loaded in 3.13s
 
 [INFO] Loading whole collapsed model artifact...
 [INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100
 [INFO] Found matching checkpoint: ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
-[INFO] Whole-model load completed in 0.03s
+[INFO] Whole-model load completed in 0.15s
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 90.65%
 [INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
@@ -56,7 +56,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 0.19s
+[INFO] Weights loaded in 3.46s
 
 
 [INFO] Evaluating model accuracy, power draw, and energy consumption (10 rep(s))...
@@ -602,182 +602,182 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
   with torch.cuda.amp.autocast():
 /old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1335: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
   with torch.cuda.amp.autocast():
-[INFO] Evaluation complete: acc=0.9997, power=71.52W, energy=97.28J, time=1.36s
+[INFO] Evaluation complete: acc=0.9996, power=54.92W, energy=146.15J, time=2.66s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9998, power=70.98W, energy=92.40J, time=1.30s
+[INFO] Evaluation complete: acc=0.9997, power=64.48W, energy=180.57J, time=2.80s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9645, power=80.12W, energy=105.72J, time=1.32s
+[INFO] Evaluation complete: acc=0.9644, power=58.81W, energy=156.24J, time=2.66s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9997, power=70.81W, energy=90.94J, time=1.28s
-[INFO] Saturated energy: power=208.445, J/img=0.001819088866257323, samples=2
-[INFO] Saturated energy: power=142.03, J/img=0.0012675790146321935, samples=2
-[INFO] Saturated energy: power=153.46, J/img=0.0008245549393321246, samples=2
+[INFO] Evaluation complete: acc=0.9997, power=57.81W, energy=149.53J, time=2.59s
+[INFO] Saturated energy: power=155.575, J/img=0.0037387388057030005, samples=2
+[INFO] Saturated energy: power=150.29, J/img=0.0036806769523283706, samples=2
+[INFO] Saturated energy: power=152.53, J/img=0.0018088048823351212, samples=2
 
 [INFO] === Measurement rep 2/10 ===
        -> Evaluating Baseline
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9997, power=78.37W, energy=102.45J, time=1.31s
+[INFO] Evaluation complete: acc=0.9997, power=63.14W, energy=166.54J, time=2.64s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9998, power=72.53W, energy=94.84J, time=1.31s
+[INFO] Evaluation complete: acc=0.9997, power=61.96W, energy=164.35J, time=2.65s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9657, power=82.09W, energy=107.69J, time=1.31s
+[INFO] Evaluation complete: acc=0.9646, power=59.87W, energy=167.27J, time=2.79s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9997, power=72.68W, energy=93.75J, time=1.29s
-[INFO] Saturated energy: power=197.51999999999998, J/img=0.0017592844532689175, samples=2
-[INFO] Saturated energy: power=143.66, J/img=0.001290651807022665, samples=2
-[INFO] Saturated energy: power=157.8, J/img=0.0008470993882756893, samples=2
+[INFO] Evaluation complete: acc=0.9998, power=58.38W, energy=157.12J, time=2.69s
+[INFO] Saturated energy: power=154.70000000000002, J/img=0.0033000477765863013, samples=2
+[INFO] Saturated energy: power=158.49, J/img=0.003340513107048119, samples=2
+[INFO] Saturated energy: power=185.41333333333333, J/img=0.002026772544180092, samples=3
 
 [INFO] === Measurement rep 3/10 ===
        -> Evaluating Baseline
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9997, power=89.55W, energy=123.24J, time=1.38s
+[INFO] Evaluation complete: acc=0.9996, power=62.60W, energy=175.13J, time=2.80s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9997, power=108.00W, energy=141.62J, time=1.31s
+[INFO] Evaluation complete: acc=0.9998, power=62.48W, energy=167.05J, time=2.67s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9654, power=120.39W, energy=157.21J, time=1.31s
+[INFO] Evaluation complete: acc=0.9649, power=61.30W, energy=163.16J, time=2.66s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9998, power=96.44W, energy=124.90J, time=1.30s
-[INFO] Saturated energy: power=153.97500000000002, J/img=0.0013750191672327952, samples=2
-[INFO] Saturated energy: power=149.14, J/img=0.001347695961277805, samples=2
-[INFO] Saturated energy: power=188.925, J/img=0.0010197765566757563, samples=2
+[INFO] Evaluation complete: acc=0.9997, power=52.73W, energy=136.47J, time=2.59s
+[INFO] Saturated energy: power=164.215, J/img=0.0035163510084005437, samples=2
+[INFO] Saturated energy: power=162.78, J/img=0.0034280040958288675, samples=2
+[INFO] Saturated energy: power=153.565, J/img=0.0016887896185202324, samples=2
 
 [INFO] === Measurement rep 4/10 ===
        -> Evaluating Baseline
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9996, power=77.43W, energy=104.89J, time=1.35s
+[INFO] Evaluation complete: acc=0.9997, power=64.67W, energy=172.53J, time=2.67s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9998, power=75.80W, energy=98.95J, time=1.31s
+[INFO] Evaluation complete: acc=0.9998, power=66.08W, energy=173.26J, time=2.62s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9655, power=88.94W, energy=121.42J, time=1.37s
+[INFO] Evaluation complete: acc=0.9656, power=62.43W, energy=167.74J, time=2.69s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9998, power=91.92W, energy=119.24J, time=1.30s
-[INFO] Saturated energy: power=197.69, J/img=0.0017157050134655046, samples=2
-[INFO] Saturated energy: power=174.62, J/img=0.0015671956636731257, samples=2
-[INFO] Saturated energy: power=178.5333333333333, J/img=0.0009590155363344309, samples=3
+[INFO] Evaluation complete: acc=0.9998, power=55.98W, energy=149.46J, time=2.67s
+[INFO] Saturated energy: power=165.37, J/img=0.003492433491203013, samples=2
+[INFO] Saturated energy: power=159.41500000000002, J/img=0.0033428083138882206, samples=2
+[INFO] Saturated energy: power=186.76, J/img=0.0020484420844457214, samples=3
 
 [INFO] === Measurement rep 5/10 ===
        -> Evaluating Baseline
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9995, power=75.78W, energy=99.32J, time=1.31s
+[INFO] Evaluation complete: acc=0.9997, power=61.84W, energy=179.50J, time=2.90s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9998, power=74.57W, energy=97.57J, time=1.31s
+[INFO] Evaluation complete: acc=0.9998, power=66.56W, energy=178.78J, time=2.69s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9647, power=74.38W, energy=97.16J, time=1.31s
+[INFO] Evaluation complete: acc=0.9656, power=57.63W, energy=161.40J, time=2.80s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9997, power=77.47W, energy=153.61J, time=1.98s
-[INFO] Saturated energy: power=190.07999999999998, J/img=0.001717708024880433, samples=2
-[INFO] Saturated energy: power=169.225, J/img=0.0015223935298973818, samples=2
-[INFO] Saturated energy: power=151.82, J/img=0.000817245383189138, samples=2
+[INFO] Evaluation complete: acc=0.9997, power=54.86W, energy=182.25J, time=3.32s
+[INFO] Saturated energy: power=155.88, J/img=0.0032926187961692774, samples=2
+[INFO] Saturated energy: power=156.005, J/img=0.0033341800086908848, samples=2
+[INFO] Saturated energy: power=151.135, J/img=0.0016641122182081945, samples=2
 
 [INFO] === Measurement rep 6/10 ===
        -> Evaluating Baseline
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9997, power=114.42W, energy=149.96J, time=1.31s
+[INFO] Evaluation complete: acc=0.9996, power=54.66W, energy=147.28J, time=2.69s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9998, power=94.29W, energy=122.94J, time=1.30s
+[INFO] Evaluation complete: acc=0.9997, power=64.47W, energy=173.57J, time=2.69s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9663, power=74.23W, energy=97.26J, time=1.31s
+[INFO] Evaluation complete: acc=0.9657, power=63.66W, energy=169.39J, time=2.66s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9998, power=74.92W, energy=92.41J, time=1.23s
-[INFO] Saturated energy: power=154.475, J/img=0.001339240900440991, samples=2
-[INFO] Saturated energy: power=144.17000000000002, J/img=0.0012913870362273488, samples=2
-[INFO] Saturated energy: power=157.86, J/img=0.0008476551816630679, samples=2
+[INFO] Evaluation complete: acc=0.9997, power=55.04W, energy=139.85J, time=2.54s
+[INFO] Saturated energy: power=155.83499999999998, J/img=0.00335472528788922, samples=2
+[INFO] Saturated energy: power=151.82, J/img=0.0031879669717229143, samples=2
+[INFO] Saturated energy: power=155.925, J/img=0.0017270739876673025, samples=2
 
 [INFO] === Measurement rep 7/10 ===
        -> Evaluating Baseline
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9997, power=116.30W, energy=175.75J, time=1.51s
+[INFO] Evaluation complete: acc=0.9995, power=66.21W, energy=190.74J, time=2.88s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9997, power=88.22W, energy=114.58J, time=1.30s
+[INFO] Evaluation complete: acc=0.9998, power=68.81W, energy=195.58J, time=2.84s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9658, power=85.84W, energy=118.25J, time=1.38s
+[INFO] Evaluation complete: acc=0.9652, power=58.00W, energy=164.02J, time=2.83s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9997, power=73.64W, energy=95.28J, time=1.29s
-[INFO] Saturated energy: power=150.19, J/img=0.00132156726639751, samples=2
-[INFO] Saturated energy: power=141.505, J/img=0.001261558454298744, samples=2
-[INFO] Saturated energy: power=153.57999999999998, J/img=0.0008235538317153083, samples=2
+[INFO] Evaluation complete: acc=0.9998, power=60.20W, energy=152.49J, time=2.53s
+[INFO] Saturated energy: power=152.775, J/img=0.0032287713243520913, samples=2
+[INFO] Saturated energy: power=154.94, J/img=0.0032492742330291645, samples=2
+[INFO] Saturated energy: power=151.225, J/img=0.001703323848977951, samples=2
 
 [INFO] === Measurement rep 8/10 ===
        -> Evaluating Baseline
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9997, power=87.49W, energy=114.18J, time=1.31s
+[INFO] Evaluation complete: acc=0.9996, power=60.32W, energy=161.68J, time=2.68s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9996, power=117.25W, energy=152.60J, time=1.30s
+[INFO] Evaluation complete: acc=0.9998, power=57.82W, energy=155.58J, time=2.69s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9655, power=74.60W, energy=101.12J, time=1.36s
+[INFO] Evaluation complete: acc=0.9651, power=54.10W, energy=145.26J, time=2.69s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9997, power=73.34W, energy=95.17J, time=1.30s
-[INFO] Saturated energy: power=215.625, J/img=0.0018779946925174076, samples=2
-[INFO] Saturated energy: power=190.365, J/img=0.001702102225466644, samples=2
-[INFO] Saturated energy: power=198.955, J/img=0.0010688176929250642, samples=2
+[INFO] Evaluation complete: acc=0.9998, power=53.53W, energy=139.42J, time=2.60s
+[INFO] Saturated energy: power=152.20999999999998, J/img=0.003661388669691116, samples=2
+[INFO] Saturated energy: power=147.29500000000002, J/img=0.0036324063803185717, samples=2
+[INFO] Saturated energy: power=149.73, J/img=0.0017776782460812782, samples=2
 
 [INFO] === Measurement rep 9/10 ===
        -> Evaluating Baseline
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9995, power=75.59W, energy=98.47J, time=1.30s
+[INFO] Evaluation complete: acc=0.9996, power=67.79W, energy=201.84J, time=2.98s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9997, power=78.27W, energy=102.76J, time=1.31s
+[INFO] Evaluation complete: acc=0.9997, power=70.27W, energy=197.80J, time=2.81s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9658, power=106.69W, energy=138.89J, time=1.30s
+[INFO] Evaluation complete: acc=0.9660, power=59.65W, energy=157.99J, time=2.65s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9998, power=95.60W, energy=123.81J, time=1.30s
-[INFO] Saturated energy: power=198.95, J/img=0.0017384187411516902, samples=2
-[INFO] Saturated energy: power=147.495, J/img=0.001310311562269176, samples=2
-[INFO] Saturated energy: power=185.86, J/img=0.0009970238158822585, samples=2
+[INFO] Evaluation complete: acc=0.9998, power=58.21W, energy=150.24J, time=2.58s
+[INFO] Saturated energy: power=168.405, J/img=0.0036105827034739577, samples=2
+[INFO] Saturated energy: power=161.66, J/img=0.0033933080144644898, samples=2
+[INFO] Saturated energy: power=152.67, J/img=0.0016729362768431505, samples=2
 
 [INFO] === Measurement rep 10/10 ===
        -> Evaluating Baseline
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9996, power=76.03W, energy=100.31J, time=1.32s
+[INFO] Evaluation complete: acc=0.9995, power=58.79W, energy=158.93J, time=2.70s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9997, power=74.63W, energy=98.55J, time=1.32s
+[INFO] Evaluation complete: acc=0.9998, power=59.25W, energy=172.68J, time=2.91s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9651, power=77.00W, energy=104.88J, time=1.36s
+[INFO] Evaluation complete: acc=0.9662, power=62.77W, energy=170.17J, time=2.71s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Evaluation complete: acc=0.9998, power=78.50W, energy=101.80J, time=1.30s
-[INFO] Saturated energy: power=158.185, J/img=0.001383856063137686, samples=2
-[INFO] Saturated energy: power=146.635, J/img=0.0012668926326159437, samples=2
-[INFO] Saturated energy: power=204.025, J/img=0.0010987093196199813, samples=2
+[INFO] Evaluation complete: acc=0.9997, power=58.71W, energy=152.06J, time=2.59s
+[INFO] Saturated energy: power=171.07999999999998, J/img=0.0036320200451725234, samples=2
+[INFO] Saturated energy: power=162.64999999999998, J/img=0.0034192975458594405, samples=2
+[INFO] Saturated energy: power=153.035, J/img=0.0017034336454813804, samples=2
 [INFO] Measuring dataloader floor (no forward passes)...
-[INFO] Loader floor: time=1.19s, energy=89.14J
-[RESULT] Accuracy Original:     0.9998 (test 0.4208) | Power: 70.98W | Energy: 92.40J
-[RESULT] Accuracy Before (anchor): 0.9997 (test 0.4137)
-[RESULT] Accuracy Unstructured: 0.9645 (test 0.3909) | Power: 80.12W | Energy: 105.72J
-[RESULT] Accuracy Collapsed:    0.9997 (test 0.4343) | Power: 70.81W | Energy: 90.94J
+[INFO] Loader floor: time=2.41s, energy=131.82J
+[RESULT] Accuracy Original:     0.9997 (test 0.4208) | Power: 64.48W | Energy: 180.57J
+[RESULT] Accuracy Before (anchor): 0.9996 (test 0.4137)
+[RESULT] Accuracy Unstructured: 0.9644 (test 0.3907) | Power: 58.81W | Energy: 156.24J
+[RESULT] Accuracy Collapsed:    0.9997 (test 0.4343) | Power: 57.81W | Energy: 149.53J
 [INFO] 10 measurement reps completed; full per-rep values are rows in the CSV.
-[RESULT] Original     FLOPs=4.670e+10 | latency=4.71 ms/batch | throughput=108677.2 img/s | peak_mem=1386.3 MiB | feature_maps=269.3 MiB
-[RESULT] Unstructured FLOPs=4.670e+10 | latency=4.73 ms/batch | throughput=108318.7 img/s | peak_mem=1386.3 MiB | feature_maps=269.3 MiB
-[RESULT] Collapsed    FLOPs=1.275e+10 | latency=2.78 ms/batch | throughput=184076.6 img/s | peak_mem=798.9 MiB | feature_maps=168.8 MiB
+[RESULT] Original     FLOPs=4.670e+10 | latency=13.33 ms/batch | throughput=38404.5 img/s | peak_mem=1386.3 MiB | feature_maps=269.3 MiB
+[RESULT] Unstructured FLOPs=4.670e+10 | latency=13.15 ms/batch | throughput=38931.7 img/s | peak_mem=1386.3 MiB | feature_maps=269.3 MiB
+[RESULT] Collapsed    FLOPs=1.275e+10 | latency=6.47 ms/batch | throughput=79139.6 img/s | peak_mem=795.6 MiB | feature_maps=168.8 MiB
 [RESULT] FLOPs Unstructured (theoretical/effective, kept for back-compat): 4.36e+09
 [RESULT] Storage (state_dict MiB): original=53.3, unstructured=53.3, collapsed=5.0
 
@@ -793,9 +793,9 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 768), time=0.96s
+[INFO] Feature extraction complete: shape=(5120, 768), time=1.68s
 [INFO] Computing CKA: features_x=(5120, 768), features_y=(5120, 768)
-[INFO] CKA complete: score=1.000000, time=2.05s
+[INFO] CKA complete: score=1.000000, time=0.02s
 [INFO] CKA self-check (expect ~1.0): 1.000000
 [INFO] Extracting features from 10 batches (Classifier-free extraction)...
 [INFO] Feature extraction batch 1/10
@@ -808,7 +808,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 768), time=0.84s
+[INFO] Feature extraction complete: shape=(5120, 768), time=2.39s
 [INFO] Extracting features from 10 batches (Classifier-free extraction)...
 [INFO] Feature extraction batch 1/10
 [INFO] Feature extraction batch 2/10
@@ -820,11 +820,11 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 768), time=1.00s
+[INFO] Feature extraction complete: shape=(5120, 768), time=2.22s
 [INFO] Computing CKA: features_x=(5120, 768), features_y=(5120, 768)
-[INFO] CKA complete: score=0.558233, time=0.00s
+[INFO] CKA complete: score=0.558232, time=0.00s
 [INFO] Computing CKA: features_x=(5120, 768), features_y=(5120, 768)
-[INFO] CKA complete: score=0.418017, time=0.00s
+[INFO] CKA complete: score=0.418019, time=0.00s
 
 [INFO] Evaluating Adversarial Robustness...
 [INFO] Running FGSM attack (epsilon=0.005)...
@@ -838,7 +838,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Running FGSM attack (epsilon=0.01)...
        -> original Accuracy: 0.2793
        -> unstructured Accuracy: 0.2383
-       -> collapsed Accuracy: 0.3125
+       -> collapsed Accuracy: 0.3145
 [INFO] Running PGD attack (epsilon=0.01)...
        -> original Accuracy: 0.2695
        -> unstructured Accuracy: 0.2305
@@ -870,44 +870,11 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 
 [INFO] Full analysis: calibration (ECE/MCE), OOD AUROC, corruptions...
 [INFO] OOD source: cifar10 test split (SVHN not staged)
-Traceback (most recent call last):
-  File "/old_Users/jgafur/LTH/manuscript/Transfer2/main.py", line 695, in main
-    result_rows = process_checkpoint(model_before_path, checkpoints, args, device)
-                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/manuscript/Transfer2/main.py", line 451, in process_checkpoint
-    analysis_metrics[f"ood_auroc_{mname}"] = evaluate_ood(m, test_loader, ood_loader, device)
-                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py", line 1797, in evaluate_ood
-    confs_in, _ = collect_confidences(model, in_loader, device)
-                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/_contextlib.py", line 116, in decorate_context
-    return func(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py", line 1691, in collect_confidences
-    for i, (inputs, targets) in enumerate(dataloader):
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 708, in __next__
-    data = self._next_data()
-           ^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1458, in _next_data
-    idx, data = self._get_data()
-                ^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1410, in _get_data
-    success, data = self._try_get_data()
-                    ^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1251, in _try_get_data
-    data = self._data_queue.get(timeout=timeout)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/queue.py", line 180, in get
-    self.not_empty.wait(remaining)
-  File "/Users/jgafur/env/lth_env/lib/python3.11/threading.py", line 331, in wait
-    gotit = waiter.acquire(True, timeout)
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/_utils/signal_handling.py", line 73, in handler
-    _error_if_any_worker_fails()
-RuntimeError: DataLoader worker (pid 24012) is killed by signal: Killed. 
        -> OOD AUROC original: 0.6081
-[ERROR] Failed processing checkpoint: ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
-[ERROR] RuntimeError: DataLoader worker (pid 24012) is killed by signal: Killed. 
+       -> OOD AUROC unstructured: 0.5946
+       -> OOD AUROC collapsed: 0.6138
+[INFO] Appended 30 rows to robustness_curves_cka_results_ConvNeXt_Cifar100_quant_pre100_post300.csv
+[INFO] Appended 45 rows to calibration_cka_results_ConvNeXt_Cifar100_quant_pre100_post300.csv
 
 ======================================================================
 Processing checkpoint 2/2
@@ -923,7 +890,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar100_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 2.53s
+[INFO] Weights loaded in 3.08s
 
 [INFO] Loading original post-finetuning model...
 [INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_Cifar100_None_scorerall_epochs300_pretrain100
@@ -936,12 +903,12 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar100_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 2.46s
+[INFO] Weights loaded in 6.14s
 
 [INFO] Loading whole collapsed model artifact...
 [INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_Cifar100_None_scorerall_epochs300_pretrain100
 [INFO] Found matching checkpoint: ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
-[INFO] Whole-model load completed in 0.08s
+[INFO] Whole-model load completed in 0.02s
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 90.65%
 [INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
@@ -955,7 +922,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 0.64s
+[INFO] Weights loaded in 0.14s
 
 
 [INFO] Evaluating model accuracy, power draw, and energy consumption (10 rep(s))...
@@ -1347,3 +1314,522 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
   with torch.cuda.amp.autocast():
 /old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
   with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:312: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:327: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:312: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:327: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:312: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:327: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1227: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1262: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1262: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1323: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1335: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1227: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1262: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1262: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1323: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1335: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1227: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1262: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1262: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1323: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1335: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:312: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:327: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:312: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:327: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:312: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:327: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:312: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:327: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1227: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1262: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1262: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1323: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1335: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1227: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1262: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1262: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1323: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1335: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1227: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1262: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1262: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1323: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1335: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:312: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:327: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:312: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:327: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:312: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:327: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:299: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:312: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:327: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1227: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1262: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1262: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1323: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1335: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1227: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1262: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1262: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1323: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1335: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1227: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1262: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1262: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1323: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1335: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+[INFO] Evaluation complete: acc=0.9998, power=58.70W, energy=154.55J, time=2.63s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9996, power=54.29W, energy=148.92J, time=2.74s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9652, power=61.03W, energy=167.84J, time=2.75s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9998, power=61.50W, energy=164.82J, time=2.68s
+[INFO] Saturated energy: power=155.445, J/img=0.003263845163893034, samples=2
+[INFO] Saturated energy: power=152.38, J/img=0.0032018957432000876, samples=2
+[INFO] Saturated energy: power=153.285, J/img=0.0016965864002809264, samples=2
+
+[INFO] === Measurement rep 2/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9996, power=57.65W, energy=153.73J, time=2.67s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9997, power=68.79W, energy=190.87J, time=2.77s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9664, power=62.83W, energy=167.95J, time=2.67s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9997, power=57.52W, energy=146.46J, time=2.55s
+[INFO] Saturated energy: power=158.61, J/img=0.0033467692555859685, samples=2
+[INFO] Saturated energy: power=157.685, J/img=0.0032986232318216934, samples=2
+[INFO] Saturated energy: power=155.25, J/img=0.0017510321233213447, samples=2
+
+[INFO] === Measurement rep 3/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9997, power=57.15W, energy=150.21J, time=2.63s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9997, power=66.52W, energy=185.93J, time=2.79s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9662, power=53.92W, energy=145.05J, time=2.69s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9998, power=59.68W, energy=153.73J, time=2.58s
+[INFO] Saturated energy: power=171.35500000000002, J/img=0.0036641757779137195, samples=2
+[INFO] Saturated energy: power=157.49, J/img=0.0033587326976140183, samples=2
+[INFO] Saturated energy: power=151.33, J/img=0.0016722233710466188, samples=2
+
+[INFO] === Measurement rep 4/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9997, power=64.24W, energy=171.10J, time=2.66s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9997, power=62.91W, energy=168.50J, time=2.68s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9633, power=53.77W, energy=143.98J, time=2.68s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9998, power=60.12W, energy=155.48J, time=2.59s
+[INFO] Saturated energy: power=166.245, J/img=0.0035503714529045403, samples=2
+[INFO] Saturated energy: power=151.125, J/img=0.0031799915848040885, samples=2
+[INFO] Saturated energy: power=153.76, J/img=0.0016971396936588928, samples=2
+
+[INFO] === Measurement rep 5/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9996, power=56.14W, energy=150.03J, time=2.67s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9997, power=58.21W, energy=156.38J, time=2.69s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9644, power=63.07W, energy=167.19J, time=2.65s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9997, power=58.52W, energy=147.09J, time=2.51s
+[INFO] Saturated energy: power=161.86, J/img=0.003549744596252043, samples=2
+[INFO] Saturated energy: power=170.415, J/img=0.0036055482535307564, samples=2
+[INFO] Saturated energy: power=150.65, J/img=0.0016716608367729146, samples=2
+
+[INFO] === Measurement rep 6/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9996, power=61.50W, energy=170.79J, time=2.78s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9998, power=55.61W, energy=147.25J, time=2.65s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9648, power=53.41W, energy=143.67J, time=2.69s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9997, power=55.78W, energy=140.33J, time=2.52s
+[INFO] Saturated energy: power=153.185, J/img=0.003278151784438903, samples=2
+[INFO] Saturated energy: power=153.185, J/img=0.0032303293175960485, samples=2
+[INFO] Saturated energy: power=150.435, J/img=0.0016578704851885019, samples=2
+
+[INFO] === Measurement rep 7/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9996, power=61.86W, energy=171.36J, time=2.77s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9998, power=64.11W, energy=174.76J, time=2.73s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9657, power=62.77W, energy=170.15J, time=2.71s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9997, power=53.32W, energy=137.29J, time=2.57s
+[INFO] Saturated energy: power=156.95, J/img=0.003356651982555733, samples=2
+[INFO] Saturated energy: power=156.245, J/img=0.0033037028256778715, samples=2
+[INFO] Saturated energy: power=151.715, J/img=0.0016619771834812127, samples=2
+
+[INFO] === Measurement rep 8/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9996, power=56.00W, energy=151.37J, time=2.70s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9998, power=64.94W, energy=174.44J, time=2.69s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9655, power=64.77W, energy=175.83J, time=2.71s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9997, power=54.34W, energy=138.35J, time=2.55s
+[INFO] Saturated energy: power=157.075, J/img=0.0033212951272450666, samples=2
+[INFO] Saturated energy: power=155.385, J/img=0.0034225912619246864, samples=2
+[INFO] Saturated energy: power=160.665, J/img=0.0017760641588594668, samples=2
+
+[INFO] === Measurement rep 9/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9996, power=60.61W, energy=161.24J, time=2.66s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9998, power=59.25W, energy=163.24J, time=2.76s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9659, power=54.50W, energy=145.41J, time=2.67s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9997, power=56.37W, energy=143.78J, time=2.55s
+[INFO] Saturated energy: power=153.915, J/img=0.003223887125087129, samples=2
+[INFO] Saturated energy: power=165.785, J/img=0.003528384428760792, samples=2
+[INFO] Saturated energy: power=154.355, J/img=0.0017804065955200016, samples=2
+
+[INFO] === Measurement rep 10/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9996, power=64.85W, energy=172.36J, time=2.66s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9998, power=63.92W, energy=174.96J, time=2.74s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9666, power=62.07W, energy=171.76J, time=2.77s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9998, power=57.63W, energy=145.92J, time=2.53s
+[INFO] Saturated energy: power=151.995, J/img=0.003278670215991804, samples=2
+[INFO] Saturated energy: power=165.1, J/img=0.0034991600162660084, samples=2
+[INFO] Saturated energy: power=154.82999999999998, J/img=0.0017008268847039441, samples=2
+[INFO] Measuring dataloader floor (no forward passes)...
+[INFO] Loader floor: time=2.41s, energy=131.74J
+[RESULT] Accuracy Original:     0.9996 (test 0.4208) | Power: 54.29W | Energy: 148.92J
+[RESULT] Accuracy Before (anchor): 0.9998 (test 0.4137)
+[RESULT] Accuracy Unstructured: 0.9652 (test 0.3907) | Power: 61.03W | Energy: 167.84J
+[RESULT] Accuracy Collapsed:    0.9998 (test 0.4343) | Power: 61.50W | Energy: 164.82J
+[INFO] 10 measurement reps completed; full per-rep values are rows in the CSV.
+[RESULT] Original     FLOPs=4.670e+10 | latency=13.03 ms/batch | throughput=39289.6 img/s | peak_mem=1399.2 MiB | feature_maps=269.3 MiB
+[RESULT] Unstructured FLOPs=4.670e+10 | latency=11.99 ms/batch | throughput=42691.0 img/s | peak_mem=1399.2 MiB | feature_maps=269.3 MiB
+[RESULT] Collapsed    FLOPs=1.275e+10 | latency=6.09 ms/batch | throughput=84007.7 img/s | peak_mem=808.5 MiB | feature_maps=168.8 MiB
+[RESULT] FLOPs Unstructured (theoretical/effective, kept for back-compat): 4.36e+09
+[RESULT] Storage (state_dict MiB): original=53.3, unstructured=53.3, collapsed=5.0
+
+[INFO] Extracting features and computing CKA...
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 768), time=1.98s
+[INFO] Computing CKA: features_x=(5120, 768), features_y=(5120, 768)
+[INFO] CKA complete: score=1.000000, time=0.00s
+[INFO] CKA self-check (expect ~1.0): 1.000000
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 768), time=2.49s
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 768), time=2.11s
+[INFO] Computing CKA: features_x=(5120, 768), features_y=(5120, 768)
+[INFO] CKA complete: score=0.558232, time=0.08s
+[INFO] Computing CKA: features_x=(5120, 768), features_y=(5120, 768)
+[INFO] CKA complete: score=0.418019, time=0.00s
+
+[INFO] Evaluating Adversarial Robustness...
+[INFO] Running FGSM attack (epsilon=0.005)...
+       -> original Accuracy: 0.3535
+       -> unstructured Accuracy: 0.3184
+       -> collapsed Accuracy: 0.3828
+[INFO] Running PGD attack (epsilon=0.005)...
+       -> original Accuracy: 0.3496
+       -> unstructured Accuracy: 0.3105
+       -> collapsed Accuracy: 0.3809
+[INFO] Running FGSM attack (epsilon=0.01)...
+       -> original Accuracy: 0.2793
+       -> unstructured Accuracy: 0.2383
+       -> collapsed Accuracy: 0.3145
+[INFO] Running PGD attack (epsilon=0.01)...
+       -> original Accuracy: 0.2695
+       -> unstructured Accuracy: 0.2305
+       -> collapsed Accuracy: 0.3027
+[INFO] Running FGSM attack (epsilon=0.02)...
+       -> original Accuracy: 0.1934
+       -> unstructured Accuracy: 0.1406
+       -> collapsed Accuracy: 0.2051
+[INFO] Running PGD attack (epsilon=0.02)...
+       -> original Accuracy: 0.1699
+       -> unstructured Accuracy: 0.1230
+       -> collapsed Accuracy: 0.1973
+[INFO] Running FGSM attack (epsilon=0.03)...
+       -> original Accuracy: 0.1484
+       -> unstructured Accuracy: 0.0801
+       -> collapsed Accuracy: 0.1504
+[INFO] Running PGD attack (epsilon=0.03)...
+       -> original Accuracy: 0.0996
+       -> unstructured Accuracy: 0.0645
+       -> collapsed Accuracy: 0.1230
+[INFO] Running FGSM attack (epsilon=0.05)...
+       -> original Accuracy: 0.0938
+       -> unstructured Accuracy: 0.0449
+       -> collapsed Accuracy: 0.0996
+[INFO] Running PGD attack (epsilon=0.05)...
+       -> original Accuracy: 0.0488
+       -> unstructured Accuracy: 0.0254
+       -> collapsed Accuracy: 0.0488
+
+[INFO] Full analysis: calibration (ECE/MCE), OOD AUROC, corruptions...
+[INFO] OOD source: cifar10 test split (SVHN not staged)
+       -> OOD AUROC original: 0.6081
+       -> OOD AUROC unstructured: 0.5946
+       -> OOD AUROC collapsed: 0.6138
+[INFO] Appended 30 rows to robustness_curves_cka_results_ConvNeXt_Cifar100_quant_pre100_post300.csv
+[INFO] Appended 45 rows to calibration_cka_results_ConvNeXt_Cifar100_quant_pre100_post300.csv
+
+======================================================================
+[INFO] Saving final results...
+[INFO] Results successfully saved to 'cka_results_ConvNeXt_Cifar100_quant_pre100_post300.csv'
+[INFO] Total successful experiments: 20
+[INFO] Total runtime: 2739.47s
+
+======================================================================
+FINAL RESULTS
+======================================================================
+       model   dataset                    gpu_name  pre_epochs  post_epochs                                                                                       model_before  intermediate_epoch  rep  acc_before  acc_test_before  acc_original_after  acc_test_original_after  acc_unstructured  acc_test_unstructured  acc_collapsed  acc_test_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  flops_original  flops_unstructured  flops_collapsed  flops_unstructured_measured  latency_ms_original  latency_ms_unstructured  latency_ms_collapsed  throughput_imgs_original  throughput_imgs_unstructured  throughput_imgs_collapsed  peak_mem_mb_original  peak_mem_mb_unstructured  peak_mem_mb_collapsed  feature_maps_mb_original  feature_maps_mb_unstructured  feature_maps_mb_collapsed  storage_mb_original  storage_mb_unstructured  storage_mb_collapsed  cka_unstructured  cka_collapsed  acc_structural  acc_test_structural power_watts_structural energy_joules_structural flops_structural latency_ms_structural throughput_imgs_structural peak_mem_mb_structural feature_maps_mb_structural storage_mb_structural cka_structural params_structural sparsity_structural  gpu_util_original  gpu_clock_mhz_original  gpu_util_unstructured  gpu_clock_mhz_unstructured  gpu_util_collapsed  gpu_clock_mhz_collapsed gpu_util_structural gpu_clock_mhz_structural  eval_elapsed_s_original  eval_elapsed_s_unstructured  eval_elapsed_s_collapsed eval_elapsed_s_structural  n_power_samples_original  n_power_samples_unstructured  n_power_samples_collapsed n_power_samples_structural  loader_time_s  loader_joules  loader_n_samples  power_watts_saturated_original  power_watts_saturated_unstructured  power_watts_saturated_collapsed power_watts_saturated_structural  j_per_img_saturated_original  j_per_img_saturated_unstructured  j_per_img_saturated_collapsed j_per_img_saturated_structural  saturated_imgs_original  saturated_imgs_unstructured  saturated_imgs_collapsed saturated_imgs_structural  n_power_samples_saturated_original  n_power_samples_saturated_unstructured  n_power_samples_saturated_collapsed n_power_samples_saturated_structural  adv_acc_FGSM_eps0.005_original  adv_acc_FGSM_eps0.005_unstructured  adv_acc_FGSM_eps0.005_collapsed  adv_acc_PGD_eps0.005_original  adv_acc_PGD_eps0.005_unstructured  adv_acc_PGD_eps0.005_collapsed  adv_acc_FGSM_eps0.01_original  adv_acc_FGSM_eps0.01_unstructured  adv_acc_FGSM_eps0.01_collapsed  adv_acc_PGD_eps0.01_original  adv_acc_PGD_eps0.01_unstructured  adv_acc_PGD_eps0.01_collapsed  adv_acc_FGSM_eps0.02_original  adv_acc_FGSM_eps0.02_unstructured  adv_acc_FGSM_eps0.02_collapsed  adv_acc_PGD_eps0.02_original  adv_acc_PGD_eps0.02_unstructured  adv_acc_PGD_eps0.02_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed  adv_acc_FGSM_eps0.05_original  adv_acc_FGSM_eps0.05_unstructured  adv_acc_FGSM_eps0.05_collapsed  adv_acc_PGD_eps0.05_original  adv_acc_PGD_eps0.05_unstructured  adv_acc_PGD_eps0.05_collapsed  ece_original  mce_original  ece_unstructured  mce_unstructured  ece_collapsed  mce_collapsed ood_source  ood_auroc_original  ood_auroc_unstructured  ood_auroc_collapsed
+0   ConvNeXt  Cifar100  NVIDIA GeForce RTX 2080 Ti         100          300            ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    0     0.99964           0.4137             0.99974                   0.4208           0.96436                 0.3907        0.99972              0.4343                 64.48                  180.57                     58.81                      156.24                  57.81                   149.53    4.670148e+10        4.364579e+09     1.274531e+10                 4.670148e+10            13.331758                13.151237              6.469581              38404.536333                  38931.699646               79139.594120           1386.279297               1386.279297             795.618164                269.347656                    269.347656                 168.847656             53.26087                 53.26087              4.991467          0.558232       0.418019             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                8.3                  1350.0                   10.0                      1350.0                 4.7                   1350.0                None                     None                    2.800                        2.656                     2.587                      None                         3                             3                          3                       None          2.408         131.82                 3                          155.57                              150.29                           152.53                             None                      0.003739                          0.003681                       0.001809                           None             41871.659412                 41007.049713              85151.835586                      None                                   2                                       2                                    2                                 None                        0.353516                            0.318359                         0.382812                       0.349609                           0.310547                        0.380859                       0.279297                           0.238281                        0.314453                      0.269531                          0.230469                       0.302734                       0.193359                           0.140625                        0.205078                      0.169922                          0.123047                       0.197266               0.148438                   0.080078                0.150391              0.099609                  0.064453               0.123047                        0.09375                           0.044922                        0.099609                      0.048828                          0.025391                       0.048828      0.455207      0.643179           0.34709           0.49534       0.426849        0.62749    cifar10             0.60809                0.594611             0.613794
+1   ConvNeXt  Cifar100  NVIDIA GeForce RTX 2080 Ti         100          300            ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    1     0.99970           0.4137             0.99972                   0.4208           0.96464                 0.3907        0.99978              0.4343                 61.96                  164.35                     59.87                      167.27                  58.38                   157.12    4.670148e+10        4.364579e+09     1.274531e+10                 4.670148e+10            13.048141                12.423578              6.072736              39239.306906                  41211.961377               84311.255735           1388.357910               1386.279297             795.618164                269.347656                    269.347656                 168.847656             53.26087                 53.26087              4.991467          0.558232       0.418019             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                9.3                  1350.0                    8.7                      1350.0                 5.0                   1350.0                None                     None                    2.653                        2.794                     2.692                      None                         3                             3                          3                       None          2.408         131.82                 3                          154.70                              158.49                           185.41                             None                      0.003300                          0.003341                       0.002027                           None             47149.749101                 47646.346921              92171.962595                      None                                   2                                       2                                    3                                 None                        0.353516                            0.318359                         0.382812                       0.349609                           0.310547                        0.380859                       0.279297                           0.238281                        0.314453                      0.269531                          0.230469                       0.302734                       0.193359                           0.140625                        0.205078                      0.169922                          0.123047                       0.197266               0.148438                   0.080078                0.150391              0.099609                  0.064453               0.123047                        0.09375                           0.044922                        0.099609                      0.048828                          0.025391                       0.048828      0.455207      0.643179           0.34709           0.49534       0.426849        0.62749    cifar10             0.60809                0.594611             0.613794
+2   ConvNeXt  Cifar100  NVIDIA GeForce RTX 2080 Ti         100          300            ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    2     0.99956           0.4137             0.99978                   0.4208           0.96492                 0.3907        0.99968              0.4343                 62.48                  167.05                     61.30                      163.16                  52.73                   136.47    4.670148e+10        4.364579e+09     1.274531e+10                 4.670148e+10            13.055186                12.003402              6.118565              39218.132446                  42654.575639               83679.754164           1388.357910               1388.357910             797.696777                269.347656                    269.347656                 168.847656             53.26087                 53.26087              4.991467          0.558232       0.418019             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.7                  1350.0                   10.7                      1350.0                 5.7                   1350.0                None                     None                    2.674                        2.661                     2.588                      None                         3                             3                          3                       None          2.408         131.82                 3                          164.22                              162.78                           153.56                             None                      0.003516                          0.003428                       0.001689                           None             46992.173545                 47687.680554              91612.831108                      None                                   2                                       2                                    2                                 None                        0.353516                            0.318359                         0.382812                       0.349609                           0.310547                        0.380859                       0.279297                           0.238281                        0.314453                      0.269531                          0.230469                       0.302734                       0.193359                           0.140625                        0.205078                      0.169922                          0.123047                       0.197266               0.148438                   0.080078                0.150391              0.099609                  0.064453               0.123047                        0.09375                           0.044922                        0.099609                      0.048828                          0.025391                       0.048828      0.455207      0.643179           0.34709           0.49534       0.426849        0.62749    cifar10             0.60809                0.594611             0.613794
+3   ConvNeXt  Cifar100  NVIDIA GeForce RTX 2080 Ti         100          300            ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    3     0.99970           0.4137             0.99978                   0.4208           0.96560                 0.3907        0.99976              0.4343                 66.08                  173.26                     62.43                      167.74                  55.98                   149.46    4.670148e+10        4.364579e+09     1.274531e+10                 4.670148e+10            13.034354                12.114058              6.086408              39280.812400                  42264.947007               84121.865703           1390.436523               1390.436523             799.775391                269.347656                    269.347656                 168.847656             53.26087                 53.26087              4.991467          0.558232       0.418019             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.7                  1350.0                   10.7                      1350.0                 5.0                   1350.0                None                     None                    2.622                        2.687                     2.670                      None                         3                             3                          3                       None          2.408         131.82                 3                          165.37                              159.42                           186.76                             None                      0.003492                          0.003343                       0.002048                           None             47591.983222                 47900.809906              92075.449713                      None                                   2                                       2                                    3                                 None                        0.353516                            0.318359                         0.382812                       0.349609                           0.310547                        0.380859                       0.279297                           0.238281                        0.314453                      0.269531                          0.230469                       0.302734                       0.193359                           0.140625                        0.205078                      0.169922                          0.123047                       0.197266               0.148438                   0.080078                0.150391              0.099609                  0.064453               0.123047                        0.09375                           0.044922                        0.099609                      0.048828                          0.025391                       0.048828      0.455207      0.643179           0.34709           0.49534       0.426849        0.62749    cifar10             0.60809                0.594611             0.613794
+4   ConvNeXt  Cifar100  NVIDIA GeForce RTX 2080 Ti         100          300            ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    4     0.99968           0.4137             0.99978                   0.4208           0.96556                 0.3907        0.99972              0.4343                 66.56                  178.78                     57.63                      161.40                  54.86                   182.25    4.670148e+10        4.364579e+09     1.274531e+10                 4.670148e+10            13.057966                11.988267              6.141579              39209.780569                  42708.424006               83366.181464           1392.515137               1392.515137             801.854004                269.347656                    269.347656                 168.847656             53.26087                 53.26087              4.991467          0.558232       0.418019             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                9.3                  1350.0                   10.3                      1350.0                 4.0                   1350.0                None                     None                    2.686                        2.801                     3.322                      None                         3                             3                          4                       None          2.408         131.82                 3                          155.88                              156.00                           151.13                             None                      0.003293                          0.003334                       0.001664                           None             47580.517195                 47044.877825              91600.599274                      None                                   2                                       2                                    2                                 None                        0.353516                            0.318359                         0.382812                       0.349609                           0.310547                        0.380859                       0.279297                           0.238281                        0.314453                      0.269531                          0.230469                       0.302734                       0.193359                           0.140625                        0.205078                      0.169922                          0.123047                       0.197266               0.148438                   0.080078                0.150391              0.099609                  0.064453               0.123047                        0.09375                           0.044922                        0.099609                      0.048828                          0.025391                       0.048828      0.455207      0.643179           0.34709           0.49534       0.426849        0.62749    cifar10             0.60809                0.594611             0.613794
+5   ConvNeXt  Cifar100  NVIDIA GeForce RTX 2080 Ti         100          300            ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    5     0.99964           0.4137             0.99974                   0.4208           0.96568                 0.3907        0.99972              0.4343                 64.47                  173.57                     63.66                      169.39                  55.04                   139.85    4.670148e+10        4.364579e+09     1.274531e+10                 4.670148e+10            13.042915                11.956694              6.107600              39255.027604                  42821.199940               83829.982024           1394.593750               1394.593750             803.932617                269.347656                    269.347656                 168.847656             53.26087                 53.26087              4.991467          0.558232       0.418019             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.0                  1350.0                   11.0                      1350.0                 5.3                   1350.0                None                     None                    2.692                        2.661                     2.541                      None                         3                             3                          3                       None          2.408         131.82                 3                          155.83                              151.82                           155.93                             None                      0.003355                          0.003188                       0.001727                           None             47572.251854                 47829.197818              90950.557015                      None                                   2                                       2                                    2                                 None                        0.353516                            0.318359                         0.382812                       0.349609                           0.310547                        0.380859                       0.279297                           0.238281                        0.314453                      0.269531                          0.230469                       0.302734                       0.193359                           0.140625                        0.205078                      0.169922                          0.123047                       0.197266               0.148438                   0.080078                0.150391              0.099609                  0.064453               0.123047                        0.09375                           0.044922                        0.099609                      0.048828                          0.025391                       0.048828      0.455207      0.643179           0.34709           0.49534       0.426849        0.62749    cifar10             0.60809                0.594611             0.613794
+6   ConvNeXt  Cifar100  NVIDIA GeForce RTX 2080 Ti         100          300            ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    6     0.99954           0.4137             0.99976                   0.4208           0.96522                 0.3907        0.99980              0.4343                 68.81                  195.58                     58.00                      164.02                  60.20                   152.49    4.670148e+10        4.364579e+09     1.274531e+10                 4.670148e+10            13.053334                12.009530              6.039798              39223.694221                  42632.810395               84771.041325           1396.672363               1396.672363             806.011230                269.347656                    269.347656                 168.847656             53.26087                 53.26087              4.991467          0.558232       0.418019             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                9.3                  1350.0                    9.7                      1350.0                 5.7                   1350.0                None                     None                    2.842                        2.828                     2.533                      None                         3                             3                          3                       None          2.408         131.82                 3                          152.78                              154.94                           151.22                             None                      0.003229                          0.003249                       0.001703                           None             47565.192013                 47891.825029              89546.902322                      None                                   2                                       2                                    2                                 None                        0.353516                            0.318359                         0.382812                       0.349609                           0.310547                        0.380859                       0.279297                           0.238281                        0.314453                      0.269531                          0.230469                       0.302734                       0.193359                           0.140625                        0.205078                      0.169922                          0.123047                       0.197266               0.148438                   0.080078                0.150391              0.099609                  0.064453               0.123047                        0.09375                           0.044922                        0.099609                      0.048828                          0.025391                       0.048828      0.455207      0.643179           0.34709           0.49534       0.426849        0.62749    cifar10             0.60809                0.594611             0.613794
+7   ConvNeXt  Cifar100  NVIDIA GeForce RTX 2080 Ti         100          300            ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    7     0.99962           0.4137             0.99978                   0.4208           0.96508                 0.3907        0.99978              0.4343                 57.82                  155.58                     54.10                      145.26                  53.53                   139.42    4.670148e+10        4.364579e+09     1.274531e+10                 4.670148e+10            13.581946                13.143773              6.517973              37697.102676                  38953.807866               78552.030454           1398.750977               1398.750977             808.089844                269.347656                    269.347656                 168.847656             53.26087                 53.26087              4.991467          0.558232       0.418019             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.0                  1350.0                    9.0                      1350.0                 5.3                   1350.0                None                     None                    2.691                        2.685                     2.604                      None                         3                             3                          3                       None          2.408         131.82                 3                          152.21                              147.30                           149.73                             None                      0.003661                          0.003632                       0.001778                           None             41785.746959                 40720.549495              85104.906654                      None                                   2                                       2                                    2                                 None                        0.353516                            0.318359                         0.382812                       0.349609                           0.310547                        0.380859                       0.279297                           0.238281                        0.314453                      0.269531                          0.230469                       0.302734                       0.193359                           0.140625                        0.205078                      0.169922                          0.123047                       0.197266               0.148438                   0.080078                0.150391              0.099609                  0.064453               0.123047                        0.09375                           0.044922                        0.099609                      0.048828                          0.025391                       0.048828      0.455207      0.643179           0.34709           0.49534       0.426849        0.62749    cifar10             0.60809                0.594611             0.613794
+8   ConvNeXt  Cifar100  NVIDIA GeForce RTX 2080 Ti         100          300            ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    8     0.99962           0.4137             0.99966                   0.4208           0.96604                 0.3907        0.99980              0.4343                 70.27                  197.80                     59.65                      157.99                  58.21                   150.24    4.670148e+10        4.364579e+09     1.274531e+10                 4.670148e+10            13.089354                12.031544              6.098592              39115.758763                  42554.804377               83953.804485           1400.829590               1386.279297             795.618164                269.347656                    269.347656                 168.847656             53.26087                 53.26087              4.991467          0.558232       0.418019             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                9.0                  1350.0                   10.0                      1350.0                 5.3                   1350.0                None                     None                    2.815                        2.649                     2.581                      None                         3                             3                          3                       None          2.408         131.82                 3                          168.41                              161.66                           152.67                             None                      0.003611                          0.003393                       0.001673                           None             46936.258769                 47844.619963              92042.406748                      None                                   2                                       2                                    2                                 None                        0.353516                            0.318359                         0.382812                       0.349609                           0.310547                        0.380859                       0.279297                           0.238281                        0.314453                      0.269531                          0.230469                       0.302734                       0.193359                           0.140625                        0.205078                      0.169922                          0.123047                       0.197266               0.148438                   0.080078                0.150391              0.099609                  0.064453               0.123047                        0.09375                           0.044922                        0.099609                      0.048828                          0.025391                       0.048828      0.455207      0.643179           0.34709           0.49534       0.426849        0.62749    cifar10             0.60809                0.594611             0.613794
+9   ConvNeXt  Cifar100  NVIDIA GeForce RTX 2080 Ti         100          300            ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    9     0.99952           0.4137             0.99978                   0.4208           0.96620                 0.3907        0.99972              0.4343                 59.25                  172.68                     62.77                      170.17                  58.71                   152.06    4.670148e+10        4.364579e+09     1.274531e+10                 4.670148e+10            13.031138                12.090904              6.059038              39290.506590                  42345.882167               84501.857579           1388.357910               1388.357910             797.696777                269.347656                    269.347656                 168.847656             53.26087                 53.26087              4.991467          0.558232       0.418019             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                8.7                  1350.0                    9.3                      1350.0                 5.0                   1350.0                None                     None                    2.915                        2.711                     2.590                      None                         3                             3                          3                       None          2.408         131.82                 3                          171.08                              162.65                           153.03                             None                      0.003632                          0.003419                       0.001703                           None             47346.361827                 47809.284647              90521.916226                      None                                   2                                       2                                    2                                 None                        0.353516                            0.318359                         0.382812                       0.349609                           0.310547                        0.380859                       0.279297                           0.238281                        0.314453                      0.269531                          0.230469                       0.302734                       0.193359                           0.140625                        0.205078                      0.169922                          0.123047                       0.197266               0.148438                   0.080078                0.150391              0.099609                  0.064453               0.123047                        0.09375                           0.044922                        0.099609                      0.048828                          0.025391                       0.048828      0.455207      0.643179           0.34709           0.49534       0.426849        0.62749    cifar10             0.60809                0.594611             0.613794
+10  ConvNeXt  Cifar100  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/ConvNeXt_Cifar100_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    0     0.99976           0.4137             0.99956                   0.4208           0.96524                 0.3907        0.99976              0.4343                 54.29                  148.92                     61.03                      167.84                  61.50                   164.82    4.670148e+10        4.364579e+09     1.274531e+10                 4.670148e+10            13.031437                11.993157              6.094678              39289.604727                  42691.011706               84007.713653           1399.186523               1399.186523             808.525391                269.347656                    269.347656                 168.847656             53.26087                 53.26087              4.991467          0.558232       0.418019             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.7                  1350.0                    9.0                      1350.0                 5.3                   1350.0                None                     None                    2.743                        2.750                     2.680                      None                         3                             3                          3                       None          2.408         131.74                 3                          155.44                              152.38                           153.28                             None                      0.003264                          0.003202                       0.001697                           None             47839.234302                 47830.982443              91018.138166                      None                                   2                                       2                                    2                                 None                        0.353516                            0.318359                         0.382812                       0.349609                           0.310547                        0.380859                       0.279297                           0.238281                        0.314453                      0.269531                          0.230469                       0.302734                       0.193359                           0.140625                        0.205078                      0.169922                          0.123047                       0.197266               0.148438                   0.080078                0.150391              0.099609                  0.064453               0.123047                        0.09375                           0.044922                        0.099609                      0.048828                          0.025391                       0.048828      0.455207      0.643179           0.34709           0.49534       0.426849        0.62749    cifar10             0.60809                0.594611             0.613794
+11  ConvNeXt  Cifar100  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/ConvNeXt_Cifar100_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    1     0.99962           0.4137             0.99974                   0.4208           0.96638                 0.3907        0.99966              0.4343                 68.79                  190.87                     62.83                      167.95                  57.52                   146.46    4.670148e+10        4.364579e+09     1.274531e+10                 4.670148e+10            13.103304                12.121461              6.089850              39074.114708                  42239.133355               84074.325370           1401.265137               1401.265137             810.604004                269.347656                    269.347656                 168.847656             53.26087                 53.26087              4.991467          0.558232       0.418019             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                9.7                  1350.0                    9.7                      1350.0                 5.3                   1350.0                None                     None                    2.775                        2.673                     2.546                      None                         3                             3                          3                       None          2.408         131.74                 3                          158.61                              157.69                           155.25                             None                      0.003347                          0.003299                       0.001751                           None             47641.420900                 48087.254360              91607.143380                      None                                   2                                       2                                    2                                 None                        0.353516                            0.318359                         0.382812                       0.349609                           0.310547                        0.380859                       0.279297                           0.238281                        0.314453                      0.269531                          0.230469                       0.302734                       0.193359                           0.140625                        0.205078                      0.169922                          0.123047                       0.197266               0.148438                   0.080078                0.150391              0.099609                  0.064453               0.123047                        0.09375                           0.044922                        0.099609                      0.048828                          0.025391                       0.048828      0.455207      0.643179           0.34709           0.49534       0.426849        0.62749    cifar10             0.60809                0.594611             0.613794
+12  ConvNeXt  Cifar100  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/ConvNeXt_Cifar100_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    2     0.99970           0.4137             0.99970                   0.4208           0.96624                 0.3907        0.99976              0.4343                 66.52                  185.93                     53.92                      145.05                  59.68                   153.73    4.670148e+10        4.364579e+09     1.274531e+10                 4.670148e+10            13.481077                12.251218              6.080430              37979.161985                  41791.764261               84204.565349           1403.343750               1403.343750             812.682617                269.347656                    269.347656                 168.847656             53.26087                 53.26087              4.991467          0.558232       0.418019             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.7                  1350.0                   10.7                      1350.0                 5.7                   1350.0                None                     None                    2.795                        2.690                     2.576                      None                         3                             3                          3                       None          2.408         131.74                 3                          171.36                              157.49                           151.33                             None                      0.003664                          0.003359                       0.001672                           None             47031.775015                 47404.527275              91172.632872                      None                                   2                                       2                                    2                                 None                        0.353516                            0.318359                         0.382812                       0.349609                           0.310547                        0.380859                       0.279297                           0.238281                        0.314453                      0.269531                          0.230469                       0.302734                       0.193359                           0.140625                        0.205078                      0.169922                          0.123047                       0.197266               0.148438                   0.080078                0.150391              0.099609                  0.064453               0.123047                        0.09375                           0.044922                        0.099609                      0.048828                          0.025391                       0.048828      0.455207      0.643179           0.34709           0.49534       0.426849        0.62749    cifar10             0.60809                0.594611             0.613794
+13  ConvNeXt  Cifar100  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/ConvNeXt_Cifar100_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    3     0.99968           0.4137             0.99972                   0.4208           0.96334                 0.3907        0.99980              0.4343                 62.91                  168.50                     53.77                      143.98                  60.12                   155.48    4.670148e+10        4.364579e+09     1.274531e+10                 4.670148e+10            13.062133                12.025392              6.115882              39197.274017                  42576.574607               83716.467167           1405.422363               1405.422363             814.761230                269.347656                    269.347656                 168.847656             53.26087                 53.26087              4.991467          0.558232       0.418019             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.7                  1350.0                    9.7                      1350.0                 5.0                   1350.0                None                     None                    2.678                        2.677                     2.586                      None                         3                             3                          3                       None          2.408         131.74                 3                          166.25                              151.12                           153.76                             None                      0.003550                          0.003180                       0.001697                           None             47848.086634                 47739.420393              91281.715740                      None                                   2                                       2                                    2                                 None                        0.353516                            0.318359                         0.382812                       0.349609                           0.310547                        0.380859                       0.279297                           0.238281                        0.314453                      0.269531                          0.230469                       0.302734                       0.193359                           0.140625                        0.205078                      0.169922                          0.123047                       0.197266               0.148438                   0.080078                0.150391              0.099609                  0.064453               0.123047                        0.09375                           0.044922                        0.099609                      0.048828                          0.025391                       0.048828      0.455207      0.643179           0.34709           0.49534       0.426849        0.62749    cifar10             0.60809                0.594611             0.613794
+14  ConvNeXt  Cifar100  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/ConvNeXt_Cifar100_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    4     0.99960           0.4137             0.99972                   0.4208           0.96444                 0.3907        0.99974              0.4343                 58.21                  156.38                     63.07                      167.19                  58.52                   147.09    4.670148e+10        4.364579e+09     1.274531e+10                 4.670148e+10            13.060515                12.414122              6.083413              39202.129262                  41243.352961               84163.283940           1407.500977               1407.500977             804.368164                269.347656                    269.347656                 168.847656             53.26087                 53.26087              4.991467          0.558232       0.418019             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.0                  1350.0                    9.0                      1350.0                 5.0                   1350.0                None                     None                    2.686                        2.651                     2.513                      None                         3                             3                          3                       None          2.408         131.74                 3                          161.86                              170.41                           150.65                             None                      0.003550                          0.003606                       0.001672                           None             46290.150622                 47464.910427              90787.199588                      None                                   2                                       2                                    2                                 None                        0.353516                            0.318359                         0.382812                       0.349609                           0.310547                        0.380859                       0.279297                           0.238281                        0.314453                      0.269531                          0.230469                       0.302734                       0.193359                           0.140625                        0.205078                      0.169922                          0.123047                       0.197266               0.148438                   0.080078                0.150391              0.099609                  0.064453               0.123047                        0.09375                           0.044922                        0.099609                      0.048828                          0.025391                       0.048828      0.455207      0.643179           0.34709           0.49534       0.426849        0.62749    cifar10             0.60809                0.594611             0.613794
+15  ConvNeXt  Cifar100  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/ConvNeXt_Cifar100_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    5     0.99962           0.4137             0.99976                   0.4208           0.96478                 0.3907        0.99966              0.4343                 55.61                  147.25                     53.41                      143.67                  55.78                   140.33    4.670148e+10        4.364579e+09     1.274531e+10                 4.670148e+10            13.092184                12.194362              6.158773              39107.302437                  41986.617353               83133.445317           1397.107910               1397.107910             806.446777                269.347656                    269.347656                 168.847656             53.26087                 53.26087              4.991467          0.558232       0.418019             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                9.7                  1350.0                    9.3                      1350.0                 5.7                   1350.0                None                     None                    2.648                        2.690                     2.516                      None                         3                             3                          3                       None          2.408         131.74                 3                          153.19                              153.19                           150.44                             None                      0.003278                          0.003230                       0.001658                           None             46989.711313                 47779.185259              91482.694268                      None                                   2                                       2                                    2                                 None                        0.353516                            0.318359                         0.382812                       0.349609                           0.310547                        0.380859                       0.279297                           0.238281                        0.314453                      0.269531                          0.230469                       0.302734                       0.193359                           0.140625                        0.205078                      0.169922                          0.123047                       0.197266               0.148438                   0.080078                0.150391              0.099609                  0.064453               0.123047                        0.09375                           0.044922                        0.099609                      0.048828                          0.025391                       0.048828      0.455207      0.643179           0.34709           0.49534       0.426849        0.62749    cifar10             0.60809                0.594611             0.613794
+16  ConvNeXt  Cifar100  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/ConvNeXt_Cifar100_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    6     0.99960           0.4137             0.99976                   0.4208           0.96566                 0.3907        0.99970              0.4343                 64.11                  174.76                     62.77                      170.15                  53.32                   137.29    4.670148e+10        4.364579e+09     1.274531e+10                 4.670148e+10            13.069794                12.009179              6.087293              39174.298802                  42634.054589               84109.639479           1399.186523               1399.186523             808.525391                269.347656                    269.347656                 168.847656             53.26087                 53.26087              4.991467          0.558232       0.418019             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.0                  1350.0                   10.0                      1350.0                 4.0                   1350.0                None                     None                    2.726                        2.711                     2.575                      None                         3                             3                          3                       None          2.408         131.74                 3                          156.95                              156.25                           151.72                             None                      0.003357                          0.003304                       0.001662                           None             46996.501334                 47498.683674              91981.889302                      None                                   2                                       2                                    2                                 None                        0.353516                            0.318359                         0.382812                       0.349609                           0.310547                        0.380859                       0.279297                           0.238281                        0.314453                      0.269531                          0.230469                       0.302734                       0.193359                           0.140625                        0.205078                      0.169922                          0.123047                       0.197266               0.148438                   0.080078                0.150391              0.099609                  0.064453               0.123047                        0.09375                           0.044922                        0.099609                      0.048828                          0.025391                       0.048828      0.455207      0.643179           0.34709           0.49534       0.426849        0.62749    cifar10             0.60809                0.594611             0.613794
+17  ConvNeXt  Cifar100  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/ConvNeXt_Cifar100_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    7     0.99956           0.4137             0.99980                   0.4208           0.96554                 0.3907        0.99968              0.4343                 64.94                  174.44                     64.77                      175.83                  54.34                   138.35    4.670148e+10        4.364579e+09     1.274531e+10                 4.670148e+10            13.078122                12.015422              6.096558              39149.353169                  42611.902048               83981.808764           1401.265137               1401.265137             810.604004                269.347656                    269.347656                 168.847656             53.26087                 53.26087              4.991467          0.558232       0.418019             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.7                  1350.0                   10.0                      1350.0                 5.3                   1350.0                None                     None                    2.686                        2.715                     2.546                      None                         3                             3                          3                       None          2.408         131.74                 3                          157.07                              155.38                           160.66                             None                      0.003321                          0.003423                       0.001776                           None             47556.738326                 45755.119907              91160.958560                      None                                   2                                       2                                    2                                 None                        0.353516                            0.318359                         0.382812                       0.349609                           0.310547                        0.380859                       0.279297                           0.238281                        0.314453                      0.269531                          0.230469                       0.302734                       0.193359                           0.140625                        0.205078                      0.169922                          0.123047                       0.197266               0.148438                   0.080078                0.150391              0.099609                  0.064453               0.123047                        0.09375                           0.044922                        0.099609                      0.048828                          0.025391                       0.048828      0.455207      0.643179           0.34709           0.49534       0.426849        0.62749    cifar10             0.60809                0.594611             0.613794
+18  ConvNeXt  Cifar100  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/ConvNeXt_Cifar100_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    8     0.99958           0.4137             0.99976                   0.4208           0.96590                 0.3907        0.99966              0.4343                 59.25                  163.24                     54.50                      145.41                  56.37                   143.78    4.670148e+10        4.364579e+09     1.274531e+10                 4.670148e+10            13.062349                12.145886              6.039379              39196.625683                  42154.189512               84776.925872           1403.343750               1403.343750             812.682617                269.347656                    269.347656                 168.847656             53.26087                 53.26087              4.991467          0.558232       0.418019             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.7                  1350.0                    9.0                      1355.0                 5.0                   1350.0                None                     None                    2.755                        2.668                     2.551                      None                         3                             3                          3                       None          2.408         131.74                 3                          153.91                              165.78                           154.35                             None                      0.003224                          0.003528                       0.001780                           None             48000.473131                 47192.817261              87777.467668                      None                                   2                                       2                                    2                                 None                        0.353516                            0.318359                         0.382812                       0.349609                           0.310547                        0.380859                       0.279297                           0.238281                        0.314453                      0.269531                          0.230469                       0.302734                       0.193359                           0.140625                        0.205078                      0.169922                          0.123047                       0.197266               0.148438                   0.080078                0.150391              0.099609                  0.064453               0.123047                        0.09375                           0.044922                        0.099609                      0.048828                          0.025391                       0.048828      0.455207      0.643179           0.34709           0.49534       0.426849        0.62749    cifar10             0.60809                0.594611             0.613794
+19  ConvNeXt  Cifar100  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/ConvNeXt_Cifar100_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0    9     0.99958           0.4137             0.99976                   0.4208           0.96656                 0.3907        0.99976              0.4343                 63.92                  174.96                     62.07                      171.76                  57.63                   145.92    4.670148e+10        4.364579e+09     1.274531e+10                 4.670148e+10            13.082827                12.297298              6.102933              39135.272249                  41635.163417               83894.091230           1405.422363               1405.422363             814.761230                269.347656                    269.347656                 168.847656             53.26087                 53.26087              4.991467          0.558232       0.418019             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.7                  1350.0                   10.0                      1350.0                 5.7                   1350.0                None                     None                    2.737                        2.767                     2.532                      None                         3                             3                          3                       None          2.408         131.74                 3                          152.00                              165.10                           154.83                             None                      0.003279                          0.003499                       0.001701                           None             47201.317005                 47554.995784              91732.806380                      None                                   2                                       2                                    2                                 None                        0.353516                            0.318359                         0.382812                       0.349609                           0.310547                        0.380859                       0.279297                           0.238281                        0.314453                      0.269531                          0.230469                       0.302734                       0.193359                           0.140625                        0.205078                      0.169922                          0.123047                       0.197266               0.148438                   0.080078                0.150391              0.099609                  0.064453               0.123047                        0.09375                           0.044922                        0.099609                      0.048828                          0.025391                       0.048828      0.455207      0.643179           0.34709           0.49534       0.426849        0.62749    cifar10             0.60809                0.594611             0.613794
+--- CKA strip/drift audit (Sun Nov 15 13:23:46 CST 2026) ---
+[INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100
+[INFO] Found matching checkpoint: ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100
+[INFO] Found matching checkpoint: ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
+Loading CIFAR-100 data for ConvNeXt...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[INFO] Initializing architecture: model=ConvNeXt, dataset=Cifar100
+Loading CIFAR-100 data for ConvNeXt...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize ConvNeXt with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] ConvNeXt successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 182
+[INFO] Weights loaded in 0.32s
+
+[INFO] Initializing architecture: model=ConvNeXt, dataset=Cifar100
+Loading CIFAR-100 data for ConvNeXt...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize ConvNeXt with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] ConvNeXt successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 182
+[INFO] Weights loaded in 0.76s
+
+[AUDIT] before: replaced 'before.classifier' (nn.Linear) with Identity
+[AUDIT] before: features shape=(5120, 768) std=1.142 stable_rank=175.2
+[AUDIT] after: replaced 'after.classifier' (nn.Linear) with Identity
+[AUDIT] after: features shape=(5120, 768) std=1.014 stable_rank=182.4
+[AUDIT] collapsed: replaced 'collapsed.classifier' (nn.Linear) with Identity
+[AUDIT] collapsed: features shape=(5120, 768) std=1.632 stable_rank=584.6
+[AUDIT] after (pass 2): replaced 'after (pass 2).classifier' (nn.Linear) with Identity
+[AUDIT] after (pass 2): features shape=(5120, 768) std=1.014 stable_rank=182.4
+[INFO] Computing CKA: features_x=(5120, 768), features_y=(5120, 768)
+[INFO] CKA complete: score=1.000000, time=0.01s
+CKA(after, after pass 2) = 1.0000  (two-pass determinism, expect 1.0)
+[INFO] Computing CKA: features_x=(5120, 768), features_y=(5120, 768)
+[INFO] CKA complete: score=0.629097, time=0.00s
+CKA(before, after)     = 0.6291  (drift reference)
+[INFO] Computing CKA: features_x=(5120, 768), features_y=(5120, 768)
+[INFO] CKA complete: score=0.404761, time=0.00s
+CKA(before, collapsed) = 0.4048  (CSV reports after vs collapsed)
+[INFO] Computing CKA: features_x=(5120, 768), features_y=(5120, 768)
+[INFO] CKA complete: score=0.418019, time=0.00s
+CKA(after, collapsed)  = 0.4180  (the CSV number)
+--- recalibration delta (Sun Nov 15 13:25:11 CST 2026) ---
+
+[INFO] ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
+Traceback (most recent call last):
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/recalibration_delta.py", line 127, in <module>
+    main()
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/recalibration_delta.py", line 113, in main
+    rows.extend(process(before_path, checkpoints, args, device))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/recalibration_delta.py", line 46, in process
+    model_name, dataset_name, *_ = parse_directory_context(before_path, args.model, args.dataset)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^
+NameError: name 'parse_directory_context' is not defined
+[WARN] recalibration_delta.py exited nonzero (see above)
