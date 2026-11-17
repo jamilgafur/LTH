@@ -29,41 +29,47 @@ from pyPrune.power import PowerTracker
 # Adversarial Attack Robustness
 # =========================================================
 
-def evaluate_adversarial_robustness(models_dict, data_batch, device, epsilons=(0.03,), curve_rows=None):
+def evaluate_adversarial_robustness(models_dict, data_batch, device, epsilons=(0.03,), curve_rows=None, quant=False):
     """Modular evaluation function for adversarial attacks.
-
+    
     Sweeps `epsilons`. epsilon=0.03 keeps the historical flat column names
     (adv_acc_FGSM_original etc.); other epsilons get `_eps<value>` suffixes.
     When `curve_rows` (a list) is provided, every (attack, epsilon, model)
     point is also appended for long-format curve output.
+    When quant=True, use fp16 autocast for forward pass during attack generation.
     """
     inputs, labels = data_batch
     inputs, labels = inputs.to(device), labels.to(device)
-
+    
     results = {}
     for epsilon in epsilons:
         suffix = "" if abs(epsilon - 0.03) < 1e-12 else f"_eps{epsilon:g}"
         attacks = {
-            "FGSM": lambda m, x, y: fgsm_attack(m, x, y, device, epsilon=epsilon),
-            "PGD":  lambda m, x, y: pgd_attack(m, x, y, device, epsilon=epsilon, alpha=0.01, iters=20)
+            "FGSM": lambda m, x, y: fgsm_attack(m, x, y, device, epsilon=epsilon, quant=quant),
+            "PGD":  lambda m, x, y: pgd_attack(m, x, y, device, epsilon=epsilon, alpha=0.01, iters=20, quant=quant)
         }
         for attack_name, attack_fn in attacks.items():
-            print(f"[INFO] Running {attack_name} attack (epsilon={epsilon})...")
+            print(f"[INFO] Running {attack_name} attack (epsilon={epsilon}, quant={quant})...")
             for model_name, model in models_dict.items():
                 model.eval()
                 perturbed_inputs = attack_fn(model, inputs, labels)
-
+                
                 with torch.no_grad():
-                    outputs = model(perturbed_inputs)
+                    if quant and device.type == 'cuda':
+                        with torch.cuda.amp.autocast():
+                            outputs = model(perturbed_inputs)
+                    else:
+                        outputs = model(perturbed_inputs)
                     _, predicted = outputs.max(1)
                     acc = predicted.eq(labels).sum().item() / labels.size(0)
-
+                
                 print(f"       -> {model_name} Accuracy: {acc:.4f}")
+                # Column names stay consistent; precision is distinguished by the precision column
                 results[f"adv_acc_{attack_name}{suffix}_{model_name}"] = acc
                 if curve_rows is not None:
                     curve_rows.append({"attack": attack_name, "epsilon": epsilon,
-                                       "model": model_name, "adv_acc": acc})
-
+                                       "model": model_name, "adv_acc": acc, "quant": quant})
+    
     return results
 
 # =========================================================
@@ -113,13 +119,14 @@ def no_collapsed_artifact_planned(args, model_before_path):
     return "Dynamic_Region_All_Combined" not in keys and not any(k.startswith("Set_") for k in keys)
 
 
-def no_regions_row(args, model_before_path):
+def no_regions_row(args, model_before_path, quant=False):
     """Verdict row for a combo whose discovery found no collapsible regions."""
     post, pre = parse_epoch_tokens(model_before_path)
     return {
         "model": args.model,
         "dataset": args.dataset,
         "gpu_name": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU",
+        "precision": "fp16" if quant else "fp32",
         "pre_epochs": pre,
         "post_epochs": post,
         "model_before": model_before_path,
@@ -128,8 +135,10 @@ def no_regions_row(args, model_before_path):
     }
 
 
-def process_checkpoint(model_before_path, checkpoints, args, device):
+def process_checkpoint(model_before_path, checkpoints, args, device, quant=False):
     checkpoint_start_time = time.time()
+    
+    print(f"[INFO] Processing checkpoint with precision: {'fp16' if quant else 'fp32'}")
     
     # 1. Parse Context & Load Baseline
     print(f"[INFO] Parsing experiment directory... {model_before_path}")
@@ -251,7 +260,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     def _eval_one(model, label):
         print(f"       -> Evaluating {label}")
         model = model.to(device)
-        res = evaluate_accuracy(model, test_loader, device, power_interval=args.power_interval, quant=args.quant, acc_loader=train_loader)
+        res = evaluate_accuracy(model, test_loader, device, power_interval=args.power_interval, quant=quant, acc_loader=train_loader)
         model = model.to("cpu")
         torch.cuda.empty_cache()
         return res
@@ -291,7 +300,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
         b = {}
         for bench_name, bench_model in bench_variants:
             bench_model = bench_model.to(device)
-            b[bench_name] = benchmark_model(bench_model, test_loader, device, num_batches=20, quant=args.quant,
+            b[bench_name] = benchmark_model(bench_model, test_loader, device, num_batches=20, quant=quant,
                                             measure_energy=True, power_interval=args.power_interval)
             bench_model = bench_model.to("cpu")
             torch.cuda.empty_cache()
@@ -346,7 +355,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
 
     def _state_dict_mb(m):
         sd = m.state_dict()
-        if args.quant:
+        if quant:
             # PTQ storage: the fp16 artifact is what would be shipped/measured
             sd = {k: (v.half() if v.is_floating_point() else v) for k, v in sd.items()}
         buf = io.BytesIO()
@@ -371,7 +380,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
         print("\n[INFO] Extracting features and computing CKA...")
 
         original_after_model = original_after_model.to(device)
-        features_original = extract_features(original_after_model, test_loader, device)
+        features_original = extract_features(original_after_model, test_loader, device, quant=quant)
         original_after_model = original_after_model.to("cpu")
         torch.cuda.empty_cache()
 
@@ -381,12 +390,12 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
         assert 0.99 <= cka_self <= 1.01, f"CKA self-check failed: {cka_self}"
 
         unstructured_pruning_model = unstructured_pruning_model.to(device)
-        features_unstructured = extract_features(unstructured_pruning_model, test_loader, device)
+        features_unstructured = extract_features(unstructured_pruning_model, test_loader, device, quant=quant)
         unstructured_pruning_model = unstructured_pruning_model.to("cpu")
         torch.cuda.empty_cache()
 
         full_collapsed_model_ready = full_collapsed_model_ready.to(device)
-        features_collapsed = extract_features(full_collapsed_model_ready, test_loader, device)
+        features_collapsed = extract_features(full_collapsed_model_ready, test_loader, device, quant=quant)
         full_collapsed_model_ready = full_collapsed_model_ready.to("cpu")
         torch.cuda.empty_cache()
 
@@ -395,7 +404,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
 
         if structural_model is not None:
             structural_model = structural_model.to(device)
-            features_structural = extract_features(structural_model, test_loader, device)
+            features_structural = extract_features(structural_model, test_loader, device, quant=quant)
             structural_model = structural_model.to("cpu")
             torch.cuda.empty_cache()
             cka_structural = compare_CKA(features_original, features_structural)
@@ -424,11 +433,10 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     full_analysis = getattr(args, "analysis", "standard") == "full"
     adv_epsilons = (0.005, 0.01, 0.02, 0.03, 0.05) if full_analysis else (0.03,)
     curve_rows = [] if full_analysis else None
-    # shortcut: adversarial eval stays fp32 even under --quant — fp16 gradients
-    # underflow at eps~0.03 and poison the attack; upgrade if quant adv numbers
-    # are ever needed for the paper.
+    
+    # Run adversarial evaluation with current precision (fp32 or fp16)
     adv_metrics = evaluate_adversarial_robustness(
-        models_dict, data_batch, device, epsilons=adv_epsilons, curve_rows=curve_rows
+        models_dict, data_batch, device, epsilons=adv_epsilons, curve_rows=curve_rows, quant=quant
     )
 
     analysis_metrics = {}
@@ -437,18 +445,19 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     if full_analysis:
         print("\n[INFO] Full analysis: calibration (ECE/MCE), OOD AUROC, corruptions...")
         for mname, m in models_dict.items():
-            ece, mce, bin_rows = evaluate_calibration(m, test_loader, device)
+            ece, mce, bin_rows = evaluate_calibration(m, test_loader, device, quant=quant)
             analysis_metrics[f"ece_{mname}"] = ece
             analysis_metrics[f"mce_{mname}"] = mce
             for b in bin_rows:
                 b["model"] = mname
+                b["quant"] = quant
                 calibration_rows.append(b)
 
         ood_loader, ood_source = load_ood_test_loader(dataset_name)
         if ood_loader is not None:
             analysis_metrics["ood_source"] = ood_source
             for mname, m in models_dict.items():
-                analysis_metrics[f"ood_auroc_{mname}"] = evaluate_ood(m, test_loader, ood_loader, device)
+                analysis_metrics[f"ood_auroc_{mname}"] = evaluate_ood(m, test_loader, ood_loader, device, quant=quant)
                 print(f"       -> OOD AUROC {mname}: {analysis_metrics[f'ood_auroc_{mname}']:.4f}")
 
         corruptions_dir = getattr(args, "corruptions_dir", None)
@@ -460,7 +469,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
                     f"download_corruptions.sh (compute nodes have no internet)."
                 )
             mean_corrupt_acc, corruption_rows = evaluate_corruptions(
-                models_dict, corruptions_dir, dataset_name, device
+                models_dict, corruptions_dir, dataset_name, device, quant=quant
             )
             for mname, mca in mean_corrupt_acc.items():
                 analysis_metrics[f"corrupt_mca_{mname}"] = mca
@@ -470,13 +479,13 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
         stem = os.path.splitext(os.path.basename(args.output))[0]
         if curve_rows:
             _append_long_csv(f"robustness_curves_{stem}.csv", curve_rows,
-                             ["attack", "epsilon", "model", "adv_acc"])
+                             ["attack", "epsilon", "model", "adv_acc", "quant"])
         if calibration_rows:
             _append_long_csv(f"calibration_{stem}.csv", calibration_rows,
-                             ["model", "bin_lo", "bin_hi", "n", "acc", "conf"])
+                             ["model", "bin_lo", "bin_hi", "n", "acc", "conf", "quant"])
         if corruption_rows:
             _append_long_csv(f"corruption_{stem}.csv", corruption_rows,
-                             ["model", "corruption", "severity", "acc"])
+                             ["model", "corruption", "severity", "acc", "quant"])
 
     # Final cleanup to prevent cross-experiment bleed
     if original_after_model is not None:
@@ -511,6 +520,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
             "model": model_name,
             "dataset": dataset_name,
             "gpu_name": gpu_name,
+            "precision": "fp16" if quant else "fp32",
             "pre_epochs": parse_epoch_tokens(model_before_path)[1],
             "post_epochs": imp_epochs,
             "model_before": model_before_path,
@@ -635,11 +645,7 @@ def main():
                         help="Directory containing CIFAR-10-C / CIFAR-100-C (see download_corruptions.sh). "
                              "Enables corruption evaluation under --analysis full.")
     parser.add_argument("--quant", action="store_true",
-                        help="Analyze the fp16-quantized (PTQ) universe: loads the SAME fp32 "
-                             "artifacts as the default run and measures them converted to fp16 "
-                             "(autocast inference, fp16 storage estimate). Results are written "
-                             "to *_quant_*.csv. No retraining is involved — *_quant.pt files "
-                             "(legacy QAT) are not read.")
+                         help="Analyze both fp32 and fp16 precisions")
     parser.add_argument("--reps", type=int, default=1,
                         help="Measurement repetitions for the accuracy/power/energy eval and the "
                              "efficiency benchmark (sections 6-7). The CSV gets one row per rep "
@@ -654,21 +660,23 @@ def main():
     # 1. Discover Checkpoints (epoch config is derived from directory names;
     #    --pre/--post act only as explicit filters)
     print("[INFO] Searching for model checkpoints...")
-    checkpoints = find_experiment_checkpoints(args.model, args.dataset, args.pre, args.post, quant=args.quant)
+    # For both fp32 and fp16, we use the same fp32 checkpoints (PTQ approach)
+    # quant=False here means we're finding the base fp32 checkpoints
+    checkpoints = find_experiment_checkpoints(args.model, args.dataset, args.pre, args.post, quant=False)
     print(f"[INFO] Found {len(checkpoints['before'])} 'before' checkpoints.")
     print(f"[INFO] Found {len(checkpoints['collapsed'])} collapsed checkpoints.")
     print(f"[INFO] Found {len(checkpoints['after'])} 'after' checkpoints.")
 
     # Automatically format unique output path if 'auto' or default to prevent overwrite collisions
-    quant_tag = "_quant" if args.quant else ""
+    # When --quant is specified, we'll run both fp32 and fp16, so no separate _quant tag needed
     if args.output == "auto" or args.output == "cka_comparison_results.csv":
         if args.pre is not None or args.post is not None:
-            args.output = f"cka_results_{args.model}_{args.dataset}{quant_tag}_pre{args.pre}_post{args.post}.csv"
+            args.output = f"cka_results_{args.model}_{args.dataset}_pre{args.pre}_post{args.post}.csv"
         elif checkpoints["before"]:
             post, pre = parse_epoch_tokens(checkpoints["before"][0])
-            args.output = f"cka_results_{args.model}_{args.dataset}{quant_tag}_pre{pre}_post{post}.csv"
+            args.output = f"cka_results_{args.model}_{args.dataset}_pre{pre}_post{post}.csv"
         else:
-            args.output = f"cka_results_{args.model}_{args.dataset}{quant_tag}.csv"
+            args.output = f"cka_results_{args.model}_{args.dataset}.csv"
 
     print("=" * 70)
     print("Starting Comparison Post-Processing Pipeline")
@@ -684,31 +692,39 @@ def main():
 
     results = []
 
+    # Determine which precisions to run
+    precisions = [False]  # Always run fp32
+    if args.quant:
+        precisions.append(True)  # Also run fp16 if --quant is specified
+        print("[INFO] Will evaluate with both fp32 and fp16 precisions")
+    
     # 2. Process Checkpoints
     for idx, model_before_path in enumerate(checkpoints['before'], start=1):
-        print("\n" + "=" * 70)
-        print(f"Processing checkpoint {idx}/{len(checkpoints['before'])}")
-        print(f"Path: {model_before_path}")
-        print("=" * 70)
+        for quant in precisions:
+            precision_str = "fp16" if quant else "fp32"
+            print("\n" + "=" * 70)
+            print(f"Processing checkpoint {idx}/{len(checkpoints['before'])} - {precision_str}")
+            print(f"Path: {model_before_path}")
+            print("=" * 70)
 
-        try:
-            result_rows = process_checkpoint(model_before_path, checkpoints, args, device)
-            results.extend(result_rows)
-        except FileNotFoundError as e:
-            if no_collapsed_artifact_planned(args, model_before_path):
-                # Discovery found no collapsible regions for this combo: record an
-                # explicit verdict row so the grid reads "no regions" (and
-                # run_postprocess.sh stops resubmitting it) instead of an empty CSV.
-                print(f"[INFO] No collapsible regions for this combo — writing status row. ({e})")
-                results.append(no_regions_row(args, model_before_path))
-            else:
+            try:
+                result_rows = process_checkpoint(model_before_path, checkpoints, args, device, quant=quant)
+                results.extend(result_rows)
+            except FileNotFoundError as e:
+                if no_collapsed_artifact_planned(args, model_before_path):
+                    # Discovery found no collapsible regions for this combo: record an
+                    # explicit verdict row so the grid reads "no regions" (and
+                    # run_postprocess.sh stops resubmitting it) instead of an empty CSV.
+                    print(f"[INFO] No collapsible regions for this combo — writing status row. ({e})")
+                    results.append(no_regions_row(args, model_before_path, quant=quant))
+                else:
+                    print(f"[ERROR] Failed processing checkpoint: {model_before_path}")
+                    print(f"[ERROR] {type(e).__name__}: {e}")
+                    traceback.print_exc()
+            except Exception as e:
                 print(f"[ERROR] Failed processing checkpoint: {model_before_path}")
                 print(f"[ERROR] {type(e).__name__}: {e}")
                 traceback.print_exc()
-        except Exception as e:
-            print(f"[ERROR] Failed processing checkpoint: {model_before_path}")
-            print(f"[ERROR] {type(e).__name__}: {e}")
-            traceback.print_exc()
 
     # 3. Save Results — never overwrite an existing CSV with an empty frame; a
     #    fully-failed run leaves a previous good file intact (run_postprocess.sh

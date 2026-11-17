@@ -722,10 +722,10 @@ def find_experiment_checkpoints(model_name, dataset_name, pre_epochs=None, post_
 
 
 def extract_features(
-    model: nn.Module, dataloader, device: torch.device, max_batches: int = 10
+    model: nn.Module, dataloader, device: torch.device, max_batches: int = 10, quant=False
 ):
     """Extracts features robustly by stripping the final classifier layer, avoiding broken hook bindings."""
-    print(f"[INFO] Extracting features from {max_batches} batches (Classifier-free extraction)...")
+    print(f"[INFO] Extracting features from {max_batches} batches (Classifier-free extraction, quant={quant})...")
     start_time = time.time()
 
     model.eval()
@@ -733,7 +733,7 @@ def extract_features(
 
     # Clone and strip the final classifier/linear layer to get raw features directly
     feature_extractor = deepcopy(model)
-    
+
     # Identify and remove the final classifier layer safely
     if hasattr(feature_extractor, 'fc') and isinstance(feature_extractor.fc, nn.Linear):
         feature_extractor.fc = nn.Identity()
@@ -756,18 +756,23 @@ def extract_features(
                 break
 
     features = []
+    use_autocast = quant and device.type == 'cuda'
     with torch.no_grad():
         for i, (inputs, _) in enumerate(dataloader):
             if i >= max_batches:
                 break
 
             inputs = inputs.to(device)
-            out = feature_extractor(inputs)
+            if use_autocast:
+                with torch.cuda.amp.autocast():
+                    out = feature_extractor(inputs)
+            else:
+                out = feature_extractor(inputs)
             
             # Flatten spatial dimensions if output is 4D (e.g., [Batch, Channels, H, W])
             if out.ndim > 2:
                 out = out.flatten(start_dim=1)
-                
+                 
             features.append(out.detach().cpu())
             print(f"[INFO] Feature extraction batch {i + 1}/{max_batches}")
 
@@ -1683,17 +1688,28 @@ CIFAR_C_CORRUPTIONS = (
 
 
 @torch.no_grad()
-def collect_confidences(model, dataloader, device, max_batches=None):
-    """Run `model` over `dataloader`; return (max_softmax_conf, correct) CPU tensors."""
+def collect_confidences(model, dataloader, device, max_batches=None, quant=False):
+    """Run `model` over `dataloader`; return (max_softmax_conf, correct) CPU tensors.
+    
+    When quant=True and device is CUDA, use fp16 autocast for forward pass.
+    """
     model.to(device)
     model.eval()
     confs, corrects = [], []
+    use_autocast = quant and device.type == 'cuda'
+    
     for i, (inputs, targets) in enumerate(dataloader):
         if max_batches is not None and i >= max_batches:
             break
         inputs = inputs.to(device)
         targets = targets.to(device)
-        probs = F.softmax(model(inputs), dim=1)
+        
+        if use_autocast:
+            with torch.cuda.amp.autocast():
+                probs = F.softmax(model(inputs), dim=1)
+        else:
+            probs = F.softmax(model(inputs), dim=1)
+        
         conf, pred = probs.max(dim=1)
         confs.append(conf.detach().cpu())
         corrects.append(pred.eq(targets).detach().cpu())
@@ -1703,13 +1719,13 @@ def collect_confidences(model, dataloader, device, max_batches=None):
     return torch.cat(confs), torch.cat(corrects).float()
 
 
-def evaluate_calibration(model, dataloader, device, n_bins: int = 15):
+def evaluate_calibration(model, dataloader, device, n_bins: int = 15, quant=False):
     """Expected/Maximum Calibration Error over max-softmax confidences.
-
+    
     Returns (ece, mce, bin_rows) where bin_rows carry per-bin
     {bin_lo, bin_hi, n, acc, conf} for reliability diagrams.
     """
-    confs, corrects = collect_confidences(model, dataloader, device)
+    confs, corrects = collect_confidences(model, dataloader, device, quant=quant)
     edges = torch.linspace(0.0, 1.0, n_bins + 1)
     ece, mce, rows = 0.0, 0.0, []
     n_total = confs.numel()
@@ -1792,10 +1808,10 @@ def load_ood_test_loader(dataset_name, batch_size: int = 512, data_root: str = "
                       pin_memory=True, persistent_workers=(num_workers > 0)), ood_key
 
 
-def evaluate_ood(model, in_loader, ood_loader, device):
+def evaluate_ood(model, in_loader, ood_loader, device, quant=False):
     """Max-softmax-probability AUROC: in-distribution vs OOD."""
-    confs_in, _ = collect_confidences(model, in_loader, device)
-    confs_ood, _ = collect_confidences(model, ood_loader, device)
+    confs_in, _ = collect_confidences(model, in_loader, device, quant=quant)
+    confs_ood, _ = collect_confidences(model, ood_loader, device, quant=quant)
     return auroc(confs_in.numpy(), confs_ood.numpy())
 
 
@@ -1829,15 +1845,22 @@ def load_cifar_c(corruptions_dir, dataset_name, corruption, severity,
 
 
 @torch.no_grad()
-def _accuracy_only(model, dataloader, device):
+def _accuracy_only(model, dataloader, device, quant=False):
     """Top-1 accuracy without power/energy tracking."""
     model.to(device)
     model.eval()
     correct, total = 0, 0
+    use_autocast = quant and device.type == 'cuda'
+    
     for inputs, targets in dataloader:
         inputs = inputs.to(device)
         targets = targets.to(device)
-        correct += model(inputs).argmax(dim=1).eq(targets).sum().item()
+        if use_autocast:
+            with torch.cuda.amp.autocast():
+                outputs = model(inputs)
+        else:
+            outputs = model(inputs)
+        correct += outputs.argmax(dim=1).eq(targets).sum().item()
         total += targets.size(0)
     model.to("cpu")
     if device.type == "cuda":
@@ -1846,7 +1869,7 @@ def _accuracy_only(model, dataloader, device):
 
 
 def evaluate_corruptions(models_dict, corruptions_dir, dataset_name, device,
-                         severities=(1, 2, 3, 4, 5)):
+                         severities=(1, 2, 3, 4, 5), quant=False):
     """Evaluate every model over all corruptions x severities.
 
     Returns (mean_corruption_acc_by_model, rows) where rows are long-format
@@ -1859,9 +1882,9 @@ def evaluate_corruptions(models_dict, corruptions_dir, dataset_name, device,
         for sev in severities:
             loader = load_cifar_c(corruptions_dir, dataset_name, corruption, sev)
             for model_name, model in models_dict.items():
-                acc = _accuracy_only(model, loader, device)
+                acc = _accuracy_only(model, loader, device, quant=quant)
                 rows.append({"model": model_name, "corruption": corruption,
-                             "severity": sev, "acc": acc})
+                             "severity": sev, "acc": acc, "quant": quant})
             done += 1
             print(f"[INFO] Corruptions: {done}/{n_total} ({corruption} s{sev})")
     mean_by_model = {}

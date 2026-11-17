@@ -24,7 +24,13 @@ def load_and_compute_deltas():
         try:
             temp_df = pd.read_csv(f)
             if not temp_df.empty:
-                temp_df['quant'] = '_quant' in f
+                # Handle both new format ('precision' column) and legacy format ('_quant' filename)
+                if 'precision' in temp_df.columns:
+                    temp_df['quant'] = temp_df['precision'].astype(str).str.strip().str.lower().isin(['fp16', 'quant', 'true', '1'])
+                elif 'quant' in temp_df.columns:
+                    temp_df['quant'] = temp_df['quant'].astype(str).str.strip().str.lower().isin(['fp16', 'quant', 'true', '1'])
+                else:
+                    temp_df['quant'] = '_quant' in os.path.basename(f)
                 df_list.append(temp_df)
         except pd.errors.EmptyDataError:
             print(f"Skipping unparsable/empty CSV data: {f}")
@@ -36,8 +42,13 @@ def load_and_compute_deltas():
     df = pd.concat(df_list, ignore_index=True)
     df = df[df['model'] != 'model'].reset_index(drop=True)
 
-    # Convert numeric columns (excluding string metadata columns)
-    num_cols = [col for col in df.columns if col not in ['model', 'dataset', 'model_before', 'gpu_name', 'quant']]
+    # Filter out 'no_collapsed_regions' status rows if present
+    if 'status' in df.columns:
+        df = df[df['status'].isna() | (df['status'] != 'no_collapsed_regions')].reset_index(drop=True)
+
+    # Exclude string metadata columns from numeric coercion
+    str_cols = {'model', 'dataset', 'model_before', 'gpu_name', 'quant', 'precision', 'status', 'ood_source'}
+    num_cols = [col for col in df.columns if col not in str_cols]
     for col in num_cols:
         df[col] = pd.to_numeric(df[col], errors='coerce')
 
@@ -50,8 +61,9 @@ def load_and_compute_deltas():
     df['post_epochs'] = df['post_epochs'].astype(int)
     
     # 1. Accuracy Deltas (percentage points; raw accuracy columns are 0-1 fractions)
-    df['delta_acc_imp'] = (df['acc_unstructured'] - df['acc_original_after']) * 100.0
-    df['delta_acc_collapse'] = (df['acc_collapsed'] - df['acc_original_after']) * 100.0
+    # Using TEST accuracy for validation against table
+    df['delta_acc_imp'] = (df['acc_test_unstructured'] - df['acc_test_original_after']) * 100.0
+    df['delta_acc_collapse'] = (df['acc_test_collapsed'] - df['acc_test_original_after']) * 100.0
     
     # 2. Energy Savings (Raw Joules & Hardware-Normalized Relative %)
     df['energy_saved_imp'] = df['energy_joules_original'] - df['energy_joules_unstructured']
@@ -71,7 +83,6 @@ def load_and_compute_deltas():
         safe_original_flops = df['flops_original'].replace(0, np.nan)
         df['flops_reduction_imp_pct'] = (df['flops_original'] - df['flops_unstructured']) / safe_original_flops
         df['flops_reduction_collapse_pct'] = (df['flops_original'] - df['flops_collapsed']) / safe_original_flops
-        df['flops_reduction_structural_pct'] = (df['flops_original'] - df['flops_structural']) / safe_original_flops
         # IMP sparsity is set to match collapse (main.py), so this IS the design pruning amount
         df['pruned_imp'] = df['flops_reduction_imp_pct']
 
@@ -79,12 +90,10 @@ def load_and_compute_deltas():
     if 'storage_mb_original' in df.columns:
         safe_orig_storage = df['storage_mb_original'].replace(0, np.nan)
         df['pruned_collapse'] = (df['storage_mb_original'] - df['storage_mb_collapsed']) / safe_orig_storage
-        for m in ['unstructured', 'collapsed', 'structural']:
+        for m in ['unstructured', 'collapsed']:
             df[f'storage_reduction_{m}_pct'] = (df['storage_mb_original'] - df[f'storage_mb_{m}']) / safe_orig_storage
 
-    # 4. Structural arm deltas (columns are empty when torch-pruning was unavailable)
-    df['delta_acc_structural'] = (df['acc_structural'] - df['acc_original_after']) * 100.0
-    df['energy_saved_structural_pct'] = ((df['energy_joules_original'] - df['energy_joules_structural']) / safe_orig_energy) * 100.0
+    # Note: Structural arm removed from plots as requested
 
     # 5. Efficiency ratios vs original (for speed/memory plots)
     for m in ['unstructured', 'collapsed', 'structural']:
@@ -137,12 +146,22 @@ def draw_uni_bars(ax, df_fp32, df_quant, all_models, columns, labels, panel_titl
                        hatch='///', edgecolor='#444444', linewidth=0.0)
 
     # Per-universe MISSING half-spans; tick red only if missing in both universes
+    # Special handling: if 'delta_acc_control' is in columns, check non-Control methods for MISSING
     half = span / 2
     miss_both = set()
+    
+    # Identify non-Control columns for MISSING check
+    non_control_cols = [c for c in columns if c != 'delta_acc_control']
+    
     for idx, model in enumerate(all_models):
-        missing = [rf.loc[model, columns].isna().all(), rq.loc[model, columns].isna().all()]
+        # Check if non-Control methods are all missing
+        missing_fp32 = rf.loc[model, non_control_cols].isna().all() if model in rf.index else True
+        missing_quant = rq.loc[model, non_control_cols].isna().all() if model in rq.index else True
+        missing = [missing_fp32, missing_quant]
+        
         if all(missing):
             miss_both.add(model)
+        
         for u, is_missing in enumerate(missing):
             if is_missing:
                 lo = idx - half if u == 0 else idx
@@ -262,9 +281,8 @@ def plot_grid(df_fp32, df_quant, all_models, rows, title, ylabels, filename):
     plt.close()
 
 SCATTER_METHODS = [
-    ('IMP (Unstructured)', 'acc_unstructured', 'flops_reduction_imp_pct'),
-    ('Collapsed', 'acc_collapsed', 'flops_reduction_collapse_pct'),
-    ('Structural', 'acc_structural', 'flops_reduction_structural_pct'),
+    ('IMP (Unstructured)', 'acc_test_unstructured', 'flops_reduction_imp_pct'),
+    ('Collapsed', 'acc_test_collapsed', 'flops_reduction_collapse_pct'),
 ]
 
 def plot_scatter_universes(df_fp32, df_quant, all_models, title, xlabel, ylabel, filename,
@@ -312,9 +330,8 @@ def plot_scatter_universes(df_fp32, df_quant, all_models, title, xlabel, ylabel,
 
 
 ACC_METHODS = [
-    ('IMP (Unstructured)', 'acc_unstructured'),
-    ('Collapsed', 'acc_collapsed'),
-    ('Structural', 'acc_structural'),
+    ('IMP (Unstructured)', 'acc_test_unstructured'),
+    ('Collapsed', 'acc_test_collapsed'),
 ]
 
 def plot_ptq_penalty(df_fp32, df_quant, all_models, title, filename):
@@ -404,11 +421,11 @@ def plot_cka_heatmap(df, filename):
 def plot_pruning_amount(df_fp32, all_models, title, filename):
     """Fraction of the original model removed per arm; pruning amount is identical
     across fp32/fp16, so fp32 bars only. IMP sparsity is a design parameter (set to
-    match collapse); collapsed/structural are measured via param/storage counts."""
+    match collapse); collapsed is measured via param/storage counts."""
     fig, ax = plt.subplots(figsize=(13, 7))
     sns.set_theme(style="whitegrid")
-    cols = ['pruned_imp', 'pruned_collapse', 'sparsity_structural']
-    labels = ['IMP (Unstructured)', 'Collapsed', 'Structural']
+    cols = ['pruned_imp', 'pruned_collapse']
+    labels = ['IMP (Unstructured)', 'Collapsed']
     dr = draw_bar_panel(ax, df_fp32, all_models, cols, labels, title, legend=True)
     pad_shared_ylim(ax)
     annotate_bars(ax, dr[cols], "{val:.1%}")
@@ -463,6 +480,17 @@ def plot_xy_scatter(df_fp32, df_quant, methods, title, xlabel, ylabel, filename,
     plt.close()
 
 def main():
+    # Manual override for Control test accuracy from table_control_metrics.tex
+    # These are 400-epoch baselines with no modifications
+    CONTROL_TEST_ACCURACY_400 = {
+        'CIFAR-10': {'ConvNeXt': 74.44, 'InceptionNet': 84.52, 'MobileNet': 81.89, 
+                     'RegNetX_400MF': 75.77, 'VGG16': 93.07, 'XceptionNet': 88.05},
+        'CIFAR-100': {'ConvNeXt': 42.25, 'InceptionNet': 40.06, 'MobileNet': 44.58,
+                      'RegNetX_400MF': 37.58, 'VGG16': 63.07, 'XceptionNet': 46.24},
+        'tinyimagenet': {'ConvNeXt': 42.96, 'InceptionNet': 46.39, 'MobileNet': 43.05,
+                        'RegNetX_400MF': 38.11, 'VGG16': 46.50, 'XceptionNet': 48.79}
+    }
+    
     df, all_models = load_and_compute_deltas()
     if df is None:
         return
@@ -478,46 +506,68 @@ def main():
         df_quant = group_df[group_df['quant']]
 
         title_suffix = f"\n({dataset} | Pre: {pre}, Post: {post})"
+        
+        # For Control test accuracy, use table values if total epochs = 400
+        total_epochs = pre + post
+        use_table_control = (total_epochs == 400) and (dataset in CONTROL_TEST_ACCURACY_400)
 
         def fname(name):
             return os.path.join(outdir, f"{name}.png")
 
-        # Plot 1: Change in Task Accuracy
+        # Plot 1: Change in Task Accuracy (TEST accuracy for validation)
+        # Add Control column (0 delta since it's the baseline)
+        df_fp32_plot = df_fp32.copy()
+        df_quant_plot = df_quant.copy()
+        df_fp32_plot['delta_acc_control'] = 0.0
+        df_quant_plot['delta_acc_control'] = 0.0
+        
+        # Override Control test accuracy with table values if using 400 total epochs
+        if use_table_control:
+            for model in all_models:
+                if model in CONTROL_TEST_ACCURACY_400[dataset]:
+                    table_val = CONTROL_TEST_ACCURACY_400[dataset][model] / 100.0
+                    df_fp32_plot.loc[df_fp32_plot['model'] == model, 'acc_test_original_after'] = table_val
+                    df_quant_plot.loc[df_quant_plot['model'] == model, 'acc_test_original_after'] = table_val
+            # Recompute deltas so bar heights match the overridden Control baseline!
+            for d_plot in (df_fp32_plot, df_quant_plot):
+                d_plot['delta_acc_imp'] = (d_plot['acc_test_unstructured'] - d_plot['acc_test_original_after']) * 100.0
+                d_plot['delta_acc_collapse'] = (d_plot['acc_test_collapsed'] - d_plot['acc_test_original_after']) * 100.0
+        
         plot_universe_comparison(
-            df_fp32=df_fp32, df_quant=df_quant, all_models=all_models,
-            columns=['delta_acc_imp', 'delta_acc_collapse', 'delta_acc_structural'],
-            labels=['IMP (Unstructured)', 'Collapsed', 'Structural'],
-            title=f'Change in Task Accuracy (Compared to Original){title_suffix}',
-            ylabel='Accuracy Delta (pp)\n(Higher is Better)',
+            df_fp32=df_fp32_plot, df_quant=df_quant_plot, all_models=all_models,
+            columns=['delta_acc_imp', 'delta_acc_collapse'],
+            labels=['IMP (Unstructured)', 'Collapsed'],
+            title=f'Test Accuracy Delta (Compared to Control){title_suffix}',
+            ylabel=r'Test Accuracy Delta (pp)\n(Higher is Better)\n$\Delta = \mathrm{Acc}_{\mathrm{Mod}} - \mathrm{Acc}_{\mathrm{Control}}$',
             filename=fname('plot_1_delta_accuracy'),
             zero_line=True,
-            df_annotations=['acc_unstructured', 'acc_collapsed', 'acc_structural'],
+            df_annotations=['acc_test_unstructured', 'acc_test_collapsed'],
             anno_fmt="{val:.1%}"
         )
 
         # Plot 2: Normalized Energy Savings (%) across heterogeneous GPUs
         plot_universe_comparison(
             df_fp32=df_fp32, df_quant=df_quant, all_models=all_models,
-            columns=['energy_saved_imp_pct', 'energy_saved_collapse_pct', 'energy_saved_structural_pct'],
-            labels=['IMP (Unstructured)', 'Collapsed', 'Structural'],
+            columns=['energy_saved_imp_pct', 'energy_saved_collapse_pct'],
+            labels=['IMP (Unstructured)', 'Collapsed'],
             title=f'Relative Energy Savings (% Reduced from Baseline){title_suffix}',
-            ylabel='Energy Saved (%)\n(Higher is Better)',
+            ylabel='Energy Saved (%)\n(Higher is Better)\nΔ = (E_Original - E_Mod) / E_Original × 100',
             filename=fname('plot_2_energy_savings'),
             zero_line=True,
-            df_annotations=['energy_saved_imp_pct', 'energy_saved_collapse_pct', 'energy_saved_structural_pct'],
+            df_annotations=['energy_saved_imp_pct', 'energy_saved_collapse_pct'],
             anno_fmt="{val:+.1f}%"
         )
 
         # Plot 3: CKA Scores
         plot_universe_comparison(
             df_fp32=df_fp32, df_quant=df_quant, all_models=all_models,
-            columns=['cka_unstructured', 'cka_collapsed', 'cka_structural'],
-            labels=['IMP (Unstructured)', 'Collapsed', 'Structural'],
+            columns=['cka_unstructured', 'cka_collapsed'],
+            labels=['IMP (Unstructured)', 'Collapsed'],
             title=f'Representational Similarity (CKA) to Original{title_suffix}',
-            ylabel='CKA Score\n(Higher = More Similar to Original)',
+            ylabel='CKA Score\n(Higher = More Similar to Original)\nCKA ○ ∈ [0,1]',
             filename=fname('plot_3_cka_scores'),
             zero_line=False,
-            df_annotations=['cka_unstructured', 'cka_collapsed', 'cka_structural'],
+            df_annotations=['cka_unstructured', 'cka_collapsed'],
             anno_fmt="{val:.3f}"
         )
 
@@ -540,13 +590,13 @@ def main():
         if 'flops_original' in group_df.columns:
             plot_universe_comparison(
                 df_fp32=df_fp32, df_quant=df_quant, all_models=all_models,
-                columns=['flops_reduction_imp_pct', 'flops_reduction_collapse_pct', 'flops_reduction_structural_pct'],
-                labels=['IMP (Unstructured)', 'Collapsed', 'Structural'],
+                columns=['flops_reduction_imp_pct', 'flops_reduction_collapse_pct'],
+                labels=['IMP (Unstructured)', 'Collapsed'],
                 title=f'FLOPs Reduction (Compared to Original){title_suffix}',
-                ylabel='FLOPs Reduction (fraction)\n(Higher = More Compressed)',
+                ylabel='FLOPs Reduction (fraction)\n(Higher = More Compressed)\nΔ = (FLOPs_Original - FLOPs_Mod) / FLOPs_Original',
                 filename=fname('plot_5_flops_reduction'),
                 zero_line=False,
-                df_annotations=['flops_reduction_imp_pct', 'flops_reduction_collapse_pct', 'flops_reduction_structural_pct'],
+                df_annotations=['flops_reduction_imp_pct', 'flops_reduction_collapse_pct'],
                 anno_fmt="{val:.1%}"
             )
 
@@ -573,12 +623,12 @@ def main():
         plot_grid(
             df_fp32=df_fp32, df_quant=df_quant, all_models=all_models,
             rows=[
-                ('Latency (ratio to original)', ['latency_ratio_unstructured', 'latency_ratio_collapsed', 'latency_ratio_structural'],
-                 ['IMP (Unstructured)', 'Collapsed', 'Structural'],
-                 ['latency_ratio_unstructured', 'latency_ratio_collapsed', 'latency_ratio_structural'], "{val:.2f}x", True),
-                ('Throughput (speedup vs original)', ['throughput_speedup_unstructured', 'throughput_speedup_collapsed', 'throughput_speedup_structural'],
-                 ['IMP (Unstructured)', 'Collapsed', 'Structural'],
-                 ['throughput_speedup_unstructured', 'throughput_speedup_collapsed', 'throughput_speedup_structural'], "{val:.2f}x", True),
+                ('Latency (ratio to original)', ['latency_ratio_unstructured', 'latency_ratio_collapsed'],
+                 ['IMP (Unstructured)', 'Collapsed'],
+                 ['latency_ratio_unstructured', 'latency_ratio_collapsed'], "{val:.2f}x", True),
+                ('Throughput (speedup vs original)', ['throughput_speedup_unstructured', 'throughput_speedup_collapsed'],
+                 ['IMP (Unstructured)', 'Collapsed'],
+                 ['throughput_speedup_unstructured', 'throughput_speedup_collapsed'], "{val:.2f}x", True),
             ],
             title=f'Measured Speed: Latency & Throughput{title_suffix}',
             ylabels=['Latency Ratio\n(Lower = Faster)', 'Throughput Speedup\n(Higher = Faster)'],
@@ -589,12 +639,12 @@ def main():
         plot_grid(
             df_fp32=df_fp32, df_quant=df_quant, all_models=all_models,
             rows=[
-                ('Peak GPU memory (ratio to original)', ['peakmem_ratio_unstructured', 'peakmem_ratio_collapsed', 'peakmem_ratio_structural'],
-                 ['IMP (Unstructured)', 'Collapsed', 'Structural'],
-                 ['peakmem_ratio_unstructured', 'peakmem_ratio_collapsed', 'peakmem_ratio_structural'], "{val:.2f}x", False),
-                ('Activation memory (ratio to original)', ['featmap_ratio_unstructured', 'featmap_ratio_collapsed', 'featmap_ratio_structural'],
-                 ['IMP (Unstructured)', 'Collapsed', 'Structural'],
-                 ['featmap_ratio_unstructured', 'featmap_ratio_collapsed', 'featmap_ratio_structural'], "{val:.2f}x", False),
+                ('Peak GPU memory (ratio to original)', ['peakmem_ratio_unstructured', 'peakmem_ratio_collapsed'],
+                 ['IMP (Unstructured)', 'Collapsed'],
+                 ['peakmem_ratio_unstructured', 'peakmem_ratio_collapsed'], "{val:.2f}x", False),
+                ('Activation memory (ratio to original)', ['featmap_ratio_unstructured', 'featmap_ratio_collapsed'],
+                 ['IMP (Unstructured)', 'Collapsed'],
+                 ['featmap_ratio_unstructured', 'featmap_ratio_collapsed'], "{val:.2f}x", False),
             ],
             title=f'Memory Footprint{title_suffix}',
             ylabels=['Peak Memory Ratio\n(Lower = Smaller)', 'Activation Memory Ratio\n(Lower = Smaller)'],
@@ -616,17 +666,17 @@ def main():
                 filename=fname('plot_13_pruning_amount')
             )
 
-        # Plot 14: On-disk storage reduction (IMP keeps dense zeros, collapse/structural shrink)
+        # Plot 14: On-disk storage reduction (IMP keeps dense zeros, collapse shrinks)
         if 'storage_mb_original' in group_df.columns:
             plot_universe_comparison(
                 df_fp32=df_fp32, df_quant=df_quant, all_models=all_models,
-                columns=['storage_reduction_unstructured_pct', 'storage_reduction_collapsed_pct', 'storage_reduction_structural_pct'],
-                labels=['IMP (Unstructured)', 'Collapsed', 'Structural'],
+                columns=['storage_reduction_unstructured_pct', 'storage_reduction_collapsed_pct'],
+                labels=['IMP (Unstructured)', 'Collapsed'],
                 title=f'Storage Footprint Reduction (vs Original){title_suffix}',
                 ylabel='Storage Reduction (fraction)\n(Higher = Smaller Checkpoint)',
                 filename=fname('plot_14_storage_reduction'),
                 zero_line=False,
-                df_annotations=['storage_reduction_unstructured_pct', 'storage_reduction_collapsed_pct', 'storage_reduction_structural_pct'],
+                df_annotations=['storage_reduction_unstructured_pct', 'storage_reduction_collapsed_pct'],
                 anno_fmt="{val:.1%}"
             )
 
@@ -645,8 +695,7 @@ def main():
         plot_xy_scatter(
             df_fp32=df_fp32, df_quant=df_quant,
             methods=[('IMP (Unstructured)', 'cka_unstructured', 'delta_acc_imp'),
-                     ('Collapsed', 'cka_collapsed', 'delta_acc_collapse'),
-                     ('Structural', 'cka_structural', 'delta_acc_structural')],
+                     ('Collapsed', 'cka_collapsed', 'delta_acc_collapse')],
             title=f'Representational Similarity vs Accuracy Retention{title_suffix}',
             xlabel='CKA to Original', ylabel='Accuracy Delta (pp)',
             filename=fname('plot_16_cka_vs_accuracy'),
@@ -656,9 +705,8 @@ def main():
         # Plot 17: Measured energy savings vs accuracy (real-hardware Pareto)
         plot_xy_scatter(
             df_fp32=df_fp32, df_quant=df_quant,
-            methods=[('IMP (Unstructured)', 'energy_saved_imp_pct', 'acc_unstructured'),
-                     ('Collapsed', 'energy_saved_collapse_pct', 'acc_collapsed'),
-                     ('Structural', 'energy_saved_structural_pct', 'acc_structural')],
+            methods=[('IMP (Unstructured)', 'energy_saved_imp_pct', 'acc_test_unstructured'),
+                     ('Collapsed', 'energy_saved_collapse_pct', 'acc_test_collapsed')],
             title=f'Energy Savings vs Accuracy (Pareto){title_suffix}',
             xlabel='Energy Saved vs Original (%)', ylabel='Accuracy (Higher is Better)',
             filename=fname('plot_17_energy_vs_accuracy')

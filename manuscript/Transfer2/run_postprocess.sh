@@ -18,6 +18,11 @@ FORCE="${FORCE:-0}"
 # e.g. CORRUPTIONS_DIR=$PWD/corruption_data ./run_postprocess.sh
 CORRUPTIONS_DIR="${CORRUPTIONS_DIR:-}"
 
+# QUANT_master: set to "True" to run both fp32 and fp16 (new behavior),
+# "False" to run only fp32 (legacy behavior). Default: True to use new behavior.
+# e.g. QUANT_master=False ./run_postprocess.sh
+QUANT_master="${QUANT_master:-True}"
+
 echo "=== Submitting CKA Post-Processing Jobs ==="
 
 # Epoch configs as "EPOCHS PRETRAIN" pairs (matches temp1/temp2 arg order)
@@ -25,22 +30,20 @@ configs=("100 300" "200 200" "300 100")
 
 for model in "${models[@]}"; do
     for dataset in "${datasets[@]}"; do
-        for quant in "False" "True"; do
-            for cfg in "${configs[@]}"; do
-                read -r EPOCHS PRETRAIN <<< "$cfg"
+        for cfg in "${configs[@]}"; do
+            read -r EPOCHS PRETRAIN <<< "$cfg"
 
-                # Target CSV as main.py auto-names it
-                QTAG=""; [ "$quant" == "True" ] && QTAG="_quant"
-                CSV="cka_results_${model}_${dataset}${QTAG}_pre${PRETRAIN}_post${EPOCHS}.csv"
+            # Target CSV as main.py auto-names it (no _quant suffix since both precisions in one file)
+            CSV="cka_results_${model}_${dataset}_pre${PRETRAIN}_post${EPOCHS}.csv"
 
-                # Skip only when the CSV already holds >= REPS real (non-CPU)
-                # measurement rows in the current schema (the saturated-energy /
-                # loader-floor column set), or when a 'no_collapsed_regions'
-                # verdict row exists AND the collapsed artifact is still untrained
-                # (nothing to measure; rerun once the artifact lands). CPU-only
-                # rows (bad node), old-schema rows, 1-byte placeholders and
-                # missing files get (re)submitted.
-                if [ "$FORCE" != "1" ] && python3 - "$CSV" "$model" "$dataset" "$EPOCHS" "$PRETRAIN" "$REPS" <<'PY'
+            # Skip only when the CSV already holds >= REPS real (non-CPU)
+            # measurement rows in the current schema (the saturated-energy /
+            # loader-floor column set), or when a 'no_collapsed_regions'
+            # verdict row exists AND the collapsed artifact is still untrained
+            # (nothing to measure; rerun once the artifact lands). CPU-only
+            # rows (bad node), old-schema rows, 1-byte placeholders and
+            # missing files get (re)submitted.
+            if [ "$FORCE" != "1" ] && python3 - "$CSV" "$model" "$dataset" "$EPOCHS" "$PRETRAIN" "$REPS" <<'PY'
 import csv, glob, sys
 # NB: --quant measures the same fp32 collapsed artifact converted to fp16, so the
 # existence check is quant-independent (final_..._All_Combined_whole.pt).
@@ -70,18 +73,18 @@ try:
 except Exception:
     sys.exit(1)   # unreadable / no column / empty placeholder => run
 PY
-                then
-                    echo "SKIP (>= $REPS GPU rows exist): $CSV"
-                    continue
-                fi
+            then
+                echo "SKIP (>= $REPS GPU rows exist): $CSV"
+                continue
+            fi
 
-                # Submit the post-processing job using SGE GPU flags
-                command="qsub -q all.q -l ngpus=1,gpu=TRUE -v MODEL=\"$model\",DATASET=\"$dataset\",QUANT=\"$quant\",EPOCHS=\"$EPOCHS\",PRETRAIN=\"$PRETRAIN\",REPS=\"$REPS\",CORRUPTIONS_DIR=\"$CORRUPTIONS_DIR\" submit_postprocess.pbs"
+            # Submit the post-processing job using SGE GPU flags
+            # With new code, --quant runs both fp32 and fp16 in one job
+            command="qsub -q all.q -l ngpus=1,gpu=TRUE -v MODEL=\"$model\",DATASET=\"$dataset\",EPOCHS=\"$EPOCHS\",PRETRAIN=\"$PRETRAIN\",REPS=\"$REPS\",CORRUPTIONS_DIR=\"$CORRUPTIONS_DIR\",QUANT=True submit_postprocess.pbs"
 
-                echo "Executing: $command"
-                eval "$command"
+            echo "Executing: $command"
+            eval "$command"
 
-            done
         done
     done
 done
