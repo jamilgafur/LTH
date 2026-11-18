@@ -35,6 +35,8 @@ for model in "${models[@]}"; do
 
             # Target CSV as main.py auto-names it (no _quant suffix since both precisions in one file)
             CSV="cka_results_${model}_${dataset}_pre${PRETRAIN}_post${EPOCHS}.csv"
+            # Also check for legacy _quant_ naming
+            CSV_LEGACY="cka_results_${model}_${dataset}_quant_pre${PRETRAIN}_post${EPOCHS}.csv"
 
             # Skip only when the CSV already holds >= REPS real (non-CPU)
             # measurement rows in the current schema (the saturated-energy /
@@ -43,7 +45,19 @@ for model in "${models[@]}"; do
             # (nothing to measure; rerun once the artifact lands). CPU-only
             # rows (bad node), old-schema rows, 1-byte placeholders and
             # missing files get (re)submitted.
-            if [ "$FORCE" != "1" ] && python3 - "$CSV" "$model" "$dataset" "$EPOCHS" "$PRETRAIN" "$REPS" <<'PY'
+            # Check both new and legacy CSV names
+            CSV_TO_CHECK="$CSV"
+            if [ -f "$CSV_LEGACY" ] && [ ! -f "$CSV" ]; then
+                CSV_TO_CHECK="$CSV_LEGACY"
+            fi
+            # Determine expected rows: if using new format (both precisions), expect REPS*2
+            # If using legacy format (single precision), expect REPS
+            EXPECTED_ROWS="$REPS"
+            if [ "$CSV_TO_CHECK" == "$CSV" ]; then
+                # New format: both fp32 and fp16 in one file
+                EXPECTED_ROWS=$((REPS * 2))
+            fi
+            if [ "$FORCE" != "1" ] && python3 - "$CSV_TO_CHECK" "$model" "$dataset" "$EPOCHS" "$PRETRAIN" "$EXPECTED_ROWS" <<'PY'
 import csv, glob, sys
 # NB: --quant measures the same fp32 collapsed artifact converted to fp16, so the
 # existence check is quant-independent (final_..._All_Combined_whole.pt).
