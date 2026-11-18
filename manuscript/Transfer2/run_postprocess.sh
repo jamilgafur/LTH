@@ -35,32 +35,16 @@ for model in "${models[@]}"; do
 
             # Target CSV as main.py auto-names it (no _quant suffix since both precisions in one file)
             CSV="cka_results_${model}_${dataset}_pre${PRETRAIN}_post${EPOCHS}.csv"
-            # Also check for legacy _quant_ naming
-            CSV_LEGACY="cka_results_${model}_${dataset}_quant_pre${PRETRAIN}_post${EPOCHS}.csv"
 
-            # Skip only when the CSV already holds >= REPS real (non-CPU)
-            # measurement rows in the current schema (the saturated-energy /
-            # loader-floor column set), or when a 'no_collapsed_regions'
-            # verdict row exists AND the collapsed artifact is still untrained
-            # (nothing to measure; rerun once the artifact lands). CPU-only
-            # rows (bad node), old-schema rows, 1-byte placeholders and
+            # Skip only when the CSV already holds >= REPS*2 real (non-CPU)
+            # measurement rows (since --quant runs both fp32 and fp16 per rep)
+            # in the current schema (the saturated-energy / loader-floor column set),
+            # or when a 'no_collapsed_regions' verdict row exists AND the collapsed
+            # artifact is still untrained (nothing to measure; rerun once the artifact lands).
+            # CPU-only rows (bad node), old-schema rows, 1-byte placeholders and
             # missing files get (re)submitted.
-            # Check both new and legacy CSV names
-            CSV_TO_CHECK="$CSV"
-            if [ -f "$CSV_LEGACY" ] && [ ! -f "$CSV" ]; then
-                CSV_TO_CHECK="$CSV_LEGACY"
-            fi
-            # Determine expected rows: if using new format (both precisions), expect REPS*2
-            # If using legacy format (single precision), expect REPS
-            EXPECTED_ROWS="$REPS"
-            if [ "$CSV_TO_CHECK" == "$CSV" ]; then
-                # New format: both fp32 and fp16 in one file
-                EXPECTED_ROWS=$((REPS * 2))
-            fi
-            if [ "$FORCE" != "1" ] && python3 - "$CSV_TO_CHECK" "$model" "$dataset" "$EPOCHS" "$PRETRAIN" "$EXPECTED_ROWS" <<'PY'
+            if [ "$FORCE" != "1" ] && python3 - "$CSV" "$model" "$dataset" "$EPOCHS" "$PRETRAIN" $((REPS * 2)) <<'PY'
 import csv, glob, sys
-# NB: --quant measures the same fp32 collapsed artifact converted to fp16, so the
-# existence check is quant-independent (final_..._All_Combined_whole.pt).
 csv_path, model, dataset, epochs, pretrain, reps_needed = sys.argv[1:7]
 try:
     with open(csv_path) as f:
@@ -88,13 +72,18 @@ except Exception:
     sys.exit(1)   # unreadable / no column / empty placeholder => run
 PY
             then
-                echo "SKIP (>= $REPS GPU rows exist): $CSV"
+                echo "SKIP (>= $((REPS * 2)) GPU rows exist): $CSV"
                 continue
             fi
 
             # Submit the post-processing job using SGE GPU flags
-            # With new code, --quant runs both fp32 and fp16 in one job
-            command="qsub -q all.q -l ngpus=1,gpu=TRUE -v MODEL=\"$model\",DATASET=\"$dataset\",EPOCHS=\"$EPOCHS\",PRETRAIN=\"$PRETRAIN\",REPS=\"$REPS\",CORRUPTIONS_DIR=\"$CORRUPTIONS_DIR\",QUANT=True submit_postprocess.pbs"
+            # With new code, QUANT=True runs both fp32 and fp16 in one job
+            if [ "$QUANT_master" == "True" ]; then
+                QUANT_FLAG="True"
+            else
+                QUANT_FLAG="False"
+            fi
+            command="qsub -q all.q -l ngpus=1,gpu=TRUE -v MODEL=\"$model\",DATASET=\"$dataset\",EPOCHS=\"$EPOCHS\",PRETRAIN=\"$PRETRAIN\",REPS=\"$REPS\",CORRUPTIONS_DIR=\"$CORRUPTIONS_DIR\",QUANT=\"$QUANT_FLAG\" submit_postprocess.pbs"
 
             echo "Executing: $command"
             eval "$command"
