@@ -173,11 +173,11 @@ def draw_uni_bars(ax, df_fp32, df_quant, all_models, columns, labels, panel_titl
     # If a model has fp32 data but lacks fp16 (e.g., VGG16 before --quant rerun), do not put a red bar through it.
     half = span / 2
     miss_both = set()
-    non_control_cols = [c for c in columns if c != 'delta_acc_control']
     
     for idx, model in enumerate(all_models):
-        missing_fp32 = rf.loc[model, non_control_cols].isna().all() if model in rf.index else True
-        missing_quant = rq.loc[model, non_control_cols].isna().all() if model in rq.index else True
+        # Check if all columns are NaN for this model in each universe
+        missing_fp32 = rf.loc[model, columns].isna().all() if model in rf.index else True
+        missing_quant = rq.loc[model, columns].isna().all() if model in rq.index else True
         
         if missing_fp32 and missing_quant:
             miss_both.add(model)
