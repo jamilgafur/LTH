@@ -79,6 +79,16 @@ def features(model, loader, device, tag, batches=10):
     return f
 
 
+def optional_checkpoint(before_path, candidates, label):
+    """find_matching_checkpoint, but None instead of FileNotFoundError: the audit
+    covers whichever artifacts exist (e.g. no_collapsed_regions verdicts)."""
+    try:
+        return find_matching_checkpoint(before_path, candidates)
+    except FileNotFoundError:
+        print(f"[WARN] No '{label}' artifact for this config — skipping its audit lines.")
+        return None
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--model", required=True)
@@ -91,8 +101,8 @@ def main():
     ck = find_experiment_checkpoints(a.model, a.dataset, a.pre, a.post, quant=False)
     assert ck["before"], "no before-checkpoint found"
     before_path = ck["before"][0]
-    after_path = find_matching_checkpoint(before_path, ck["after"])
-    collapsed_path = find_matching_checkpoint(before_path, ck["collapsed"])
+    after_path = optional_checkpoint(before_path, ck["after"], "Control_Continuted")
+    collapsed_path = optional_checkpoint(before_path, ck["collapsed"], "collapsed")
 
     train_loader, test_loader, _, _, _ = load_dataset(a.dataset, a.model)
 
@@ -103,21 +113,23 @@ def main():
     after = load_weights(base, after_path, device) if after_path else None
     if after is not None:
         recalibrate_bn(after, train_loader, device)
-    collapsed = torch.load(collapsed_path, map_location=device, weights_only=False)
-    recalibrate_bn(collapsed, train_loader, device)
+    collapsed = torch.load(collapsed_path, map_location=device, weights_only=False) if collapsed_path else None
+    if collapsed is not None:
+        recalibrate_bn(collapsed, train_loader, device)
 
     f_before = features(before, test_loader, device, "before")
     torch.cuda.empty_cache() if device.type == "cuda" else None
     f_after = features(after, test_loader, device, "after") if after else None
-    f_coll = features(collapsed, test_loader, device, "collapsed")
+    f_coll = features(collapsed, test_loader, device, "collapsed") if collapsed else None
 
     if f_after is not None:
         f_after2 = features(after, test_loader, device, "after (pass 2)")
         torch.cuda.empty_cache() if device.type == "cuda" else None
         print(f"CKA(after, after pass 2) = {compare_CKA(f_after, f_after2):.4f}  (two-pass determinism, expect 1.0)")
         print(f"CKA(before, after)     = {compare_CKA(f_before, f_after):.4f}  (drift reference)")
-    print(f"CKA(before, collapsed) = {compare_CKA(f_before, f_coll):.4f}  (CSV reports after vs collapsed)")
-    if f_after is not None:
+    if f_coll is not None:
+        print(f"CKA(before, collapsed) = {compare_CKA(f_before, f_coll):.4f}  (CSV reports after vs collapsed)")
+    if f_after is not None and f_coll is not None:
         print(f"CKA(after, collapsed)  = {compare_CKA(f_after, f_coll):.4f}  (the CSV number)")
 
 
