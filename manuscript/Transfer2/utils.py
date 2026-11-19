@@ -218,6 +218,7 @@ def recalibrate_bn(model: nn.Module, train_loader, device, num_batches: int = 10
                  if isinstance(m, (nn.BatchNorm1d, nn.BatchNorm2d, nn.BatchNorm3d))]
     if not bn_layers:
         return model
+    model.to(device)  # callers may hand us a CPU-offloaded model (measure() frees VRAM)
     was_training = model.training
     for m in bn_layers:
         m.reset_running_stats()

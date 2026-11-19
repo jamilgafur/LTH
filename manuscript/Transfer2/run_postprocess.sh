@@ -78,12 +78,13 @@ PY
 
             # Submit the post-processing job using SGE GPU flags
             # With new code, QUANT=True runs both fp32 and fp16 in one job
+            # Use UI-GPU queue for GPU access (1 running job per user limit)
             if [ "$QUANT_master" == "True" ]; then
                 QUANT_FLAG="True"
             else
                 QUANT_FLAG="False"
             fi
-            command="qsub -q all.q -l ngpus=1,gpu=TRUE -v MODEL=\"$model\",DATASET=\"$dataset\",EPOCHS=\"$EPOCHS\",PRETRAIN=\"$PRETRAIN\",REPS=\"$REPS\",CORRUPTIONS_DIR=\"$CORRUPTIONS_DIR\",QUANT=\"$QUANT_FLAG\" submit_postprocess.pbs"
+            command="qsub -q UI-GPU -l ngpus=1 -v MODEL=\"$model\",DATASET=\"$dataset\",EPOCHS=\"$EPOCHS\",PRETRAIN=\"$PRETRAIN\",REPS=\"$REPS\",CORRUPTIONS_DIR=\"$CORRUPTIONS_DIR\",QUANT=\"$QUANT_FLAG\" submit_postprocess.pbs"
 
             echo "Executing: $command"
             eval "$command"
