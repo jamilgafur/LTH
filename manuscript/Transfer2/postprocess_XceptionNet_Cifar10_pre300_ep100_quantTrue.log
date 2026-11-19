@@ -1,0 +1,253 @@
+[INFO] Searching for model checkpoints...
+[INFO] Found 2 'before' checkpoints.
+[INFO] Found 1 collapsed checkpoints.
+[INFO] Found 1 'after' checkpoints.
+======================================================================
+Starting Comparison Post-Processing Pipeline
+Model: XceptionNet | Dataset: Cifar10 | Device: cuda
+Epochs Config (override): pre=300, post=100
+Output File: cka_results_XceptionNet_Cifar10_pre300_post100.csv
+CUDA device: NVIDIA A10
+======================================================================
+[INFO] Will evaluate with both fp32 and fp16 precisions
+
+======================================================================
+Processing checkpoint 1/2 - fp32
+Path: ../Tranfer/XceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+======================================================================
+[INFO] Processing checkpoint with precision: fp32
+[INFO] Parsing experiment directory... ../Tranfer/XceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+[INFO] Initializing baseline model...
+[INFO] Initializing architecture: model=XceptionNet, dataset=Cifar10
+Loading CIFAR-10 data for XceptionNet...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize XceptionNet with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] XceptionNet successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/XceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 276
+[INFO] Weights loaded in 29.34s
+
+[INFO] BN running stats recalibrated over 100 batches (40 BN layers).
+[INFO] Loading original post-finetuning model...
+[INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_Cifar10_None_epochs100_pretrain300
+[INFO] Found matching checkpoint: ../Tranfer/XceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Initializing architecture: model=XceptionNet, dataset=Cifar10
+Loading CIFAR-10 data for XceptionNet...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize XceptionNet with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] XceptionNet successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/XceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 276
+[INFO] Weights loaded in 24.81s
+
+[INFO] BN running stats recalibrated over 100 batches (40 BN layers).
+[INFO] Loading whole collapsed model artifact...
+[INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_Cifar10_None_epochs100_pretrain300
+[INFO] Found matching checkpoint: ../Tranfer/XceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
+[INFO] Whole-model load completed in 28.74s
+[INFO] BN running stats recalibrated over 100 batches (40 BN layers).
+[INFO] Calculating dynamic sparsity to match collapse...
+[INFO] Target unstructured sparsity calculated at: 36.16%
+[INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/XceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
+[INFO] Initializing architecture: model=XceptionNet, dataset=Cifar10
+Loading CIFAR-10 data for XceptionNet...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize XceptionNet with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] XceptionNet successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/XceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 276
+[INFO] Weights loaded in 23.77s
+
+
+[INFO] Evaluating model accuracy, power draw, and energy consumption (10 rep(s))...
+
+[INFO] === Measurement rep 1/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+Traceback (most recent call last):
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1251, in _try_get_data
+    data = self._data_queue.get(timeout=timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/queue.py", line 180, in get
+    self.not_empty.wait(remaining)
+  File "/Users/jgafur/env/lth_env/lib/python3.11/threading.py", line 331, in wait
+    gotit = waiter.acquire(True, timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/_utils/signal_handling.py", line 73, in handler
+    _error_if_any_worker_fails()
+RuntimeError: DataLoader worker (pid 24339) is killed by signal: Killed. 
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/main.py", line 711, in main
+    result_rows = process_checkpoint(model_before_path, checkpoints, args, device, quant=quant)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/main.py", line 293, in process_checkpoint
+    m["collapsed"] = _eval_one(full_collapsed_model_ready, "Collapsed Model")
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/main.py", line 263, in _eval_one
+    res = evaluate_accuracy(model, test_loader, device, power_interval=args.power_interval, quant=quant, acc_loader=train_loader)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py", line 310, in evaluate_accuracy
+    for inputs, _ in dataloader:
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 708, in __next__
+    data = self._next_data()
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1458, in _next_data
+    idx, data = self._get_data()
+                ^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1410, in _get_data
+    success, data = self._try_get_data()
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1264, in _try_get_data
+    raise RuntimeError(
+RuntimeError: DataLoader worker (pid(s) 24339) exited unexpectedly
+[INFO] Evaluation complete: acc=0.9989, power=107.35W, energy=244.88J, time=2.28s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9857, power=82.04W, energy=186.97J, time=2.28s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9999, power=61.68W, energy=137.09J, time=2.22s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9971, power=65.32W, energy=148.26J, time=2.27s
+[INFO] Saturated energy: power=115.345, J/img=0.005340119068045169, samples=2
+[INFO] Saturated energy: power=118.24000000000001, J/img=0.005449359669934872, samples=2
+[INFO] Saturated energy: power=123.585, J/img=0.007564360589094576, samples=2
+
+[INFO] === Measurement rep 2/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9988, power=64.93W, energy=144.60J, time=2.23s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9864, power=69.78W, energy=153.52J, time=2.20s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.9998, power=73.05W, energy=160.74J, time=2.20s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[ERROR] Failed processing checkpoint: ../Tranfer/XceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+[ERROR] RuntimeError: DataLoader worker (pid(s) 24339) exited unexpectedly
+
+======================================================================
+Processing checkpoint 1/2 - fp16
+Path: ../Tranfer/XceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+======================================================================
+[INFO] Processing checkpoint with precision: fp16
+[INFO] Parsing experiment directory... ../Tranfer/XceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+[INFO] Initializing baseline model...
+[INFO] Initializing architecture: model=XceptionNet, dataset=Cifar10
+Loading CIFAR-10 data for XceptionNet...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize XceptionNet with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] XceptionNet successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/XceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 276
+[INFO] Weights loaded in 2.16s
+
+[INFO] BN running stats recalibrated over 100 batches (40 BN layers).
+[INFO] Loading original post-finetuning model...
+[INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_Cifar10_None_epochs100_pretrain300
+[INFO] Found matching checkpoint: ../Tranfer/XceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Initializing architecture: model=XceptionNet, dataset=Cifar10
+Loading CIFAR-10 data for XceptionNet...
+Traceback (most recent call last):
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/main.py", line 711, in main
+    result_rows = process_checkpoint(model_before_path, checkpoints, args, device, quant=quant)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/main.py", line 159, in process_checkpoint
+    original_after_base, _, _, _ = initialize_architecture(model_name, dataset_name)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py", line 568, in initialize_architecture
+    model = model_class(**model_kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/pyPrune/models/XceptionNet.py", line 107, in __init__
+    middle_blocks.append(XceptionBlock(728, 728, reps=3, strides=1, start_with_relu=True, grow_first=True))
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/pyPrune/models/XceptionNet.py", line 45, in __init__
+    rep.append(SeparableConv2d(filters, filters, 3, stride=1, padding=1, bias=False))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/pyPrune/models/XceptionNet.py", line 12, in __init__
+    self.pointwise = nn.Conv2d(in_channels, out_channels, kernel_size=1, bias=bias)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/conv.py", line 521, in __init__
+    super().__init__(
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/conv.py", line 176, in __init__
+    self.reset_parameters()
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/conv.py", line 182, in reset_parameters
+    init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/init.py", line 518, in kaiming_uniform_
+    return tensor.uniform_(-bound, bound, generator=generator)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/_utils/signal_handling.py", line 73, in handler
+    _error_if_any_worker_fails()
+RuntimeError: DataLoader worker (pid 52823) is killed by signal: Killed. 
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize XceptionNet with kwargs: dict_keys(['num_classes', 'one_batch'])
+[ERROR] Failed processing checkpoint: ../Tranfer/XceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+[ERROR] RuntimeError: DataLoader worker (pid 52823) is killed by signal: Killed. 
+
+======================================================================
+Processing checkpoint 2/2 - fp32
+Path: ../Tranfer/XceptionNet_Cifar10_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+======================================================================
+[INFO] Processing checkpoint with precision: fp32
+[INFO] Parsing experiment directory... ../Tranfer/XceptionNet_Cifar10_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+[INFO] Initializing baseline model...
+[INFO] Initializing architecture: model=XceptionNet, dataset=Cifar10
+Loading CIFAR-10 data for XceptionNet...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize XceptionNet with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] XceptionNet successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/XceptionNet_Cifar10_None_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 276
+[INFO] Weights loaded in 0.97s
+
+[INFO] BN running stats recalibrated over 100 batches (40 BN layers).
+[INFO] Loading original post-finetuning model...
+[INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_Cifar10_None_scorerall_epochs100_pretrain300
+[INFO] Found matching checkpoint: ../Tranfer/XceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Initializing architecture: model=XceptionNet, dataset=Cifar10
+Loading CIFAR-10 data for XceptionNet...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize XceptionNet with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] XceptionNet successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/XceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 276
+[INFO] Weights loaded in 1.29s
+
+[INFO] BN running stats recalibrated over 100 batches (40 BN layers).
+[INFO] Loading whole collapsed model artifact...
+[INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_Cifar10_None_scorerall_epochs100_pretrain300
+[INFO] Found matching checkpoint: ../Tranfer/XceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
+[INFO] Whole-model load completed in 1.90s
+[INFO] BN running stats recalibrated over 100 batches (40 BN layers).
+[INFO] Calculating dynamic sparsity to match collapse...
+[INFO] Target unstructured sparsity calculated at: 36.16%
+[INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/XceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
+[INFO] Initializing architecture: model=XceptionNet, dataset=Cifar10
+Loading CIFAR-10 data for XceptionNet...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize XceptionNet with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] XceptionNet successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/XceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 276
+[INFO] Weights loaded in 4.70s
+
+
+[INFO] Evaluating model accuracy, power draw, and energy consumption (10 rep(s))...
+
+[INFO] === Measurement rep 1/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...

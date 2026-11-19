@@ -26,7 +26,7 @@ QUANT_master="${QUANT_master:-True}"
 echo "=== Submitting CKA Post-Processing Jobs ==="
 
 # Epoch configs as "EPOCHS PRETRAIN" pairs (matches temp1/temp2 arg order)
-configs=("100 300" "200 200" "300 100")
+configs=("100 300" "300 100")
 
 for model in "${models[@]}"; do
     for dataset in "${datasets[@]}"; do
@@ -84,7 +84,7 @@ PY
             else
                 QUANT_FLAG="False"
             fi
-            command="qsub -q UI-GPU -l ngpus=1 -v MODEL=\"$model\",DATASET=\"$dataset\",EPOCHS=\"$EPOCHS\",PRETRAIN=\"$PRETRAIN\",REPS=\"$REPS\",CORRUPTIONS_DIR=\"$CORRUPTIONS_DIR\",QUANT=\"$QUANT_FLAG\" submit_postprocess.pbs"
+            command="qsub -q all.q -l ngpus=1 -v MODEL=\"$model\",DATASET=\"$dataset\",EPOCHS=\"$EPOCHS\",PRETRAIN=\"$PRETRAIN\",REPS=\"$REPS\",CORRUPTIONS_DIR=\"$CORRUPTIONS_DIR\",QUANT=\"$QUANT_FLAG\" submit_postprocess.pbs"
 
             echo "Executing: $command"
             eval "$command"
