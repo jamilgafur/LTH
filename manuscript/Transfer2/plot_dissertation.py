@@ -24,13 +24,14 @@ control dirs carry pairing_flag=none_token_dir: flagged and counted in the run
 summary, never silently dropped (their measured rows are valid; the flag names a
 suspect control pairing, and the near-zero CKA tail is in the named-scorer family).
 
-Usage: python plot_dissertation.py [csv_dir] [out_dir]
-       (defaults: . and <csv_dir>/dissertation_figs)
+Usage: python plot_dissertation.py [csv_dir] [out_dir] [--ieee]
+       (defaults: . and <csv_dir>/dissertation_figs; --ieee = IEEE production
+        style: Times 8pt, 600dpi PNG + vector PDF — see figure_style.py)
 """
+import argparse
 import glob
 import os
 import re
-import sys
 
 import numpy as np
 import pandas as pd
@@ -38,6 +39,8 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+
+import figure_style
 
 VARIANTS = [("original", "Control"), ("unstructured", "IMP"),
             ("collapsed", "Collapsed")]
@@ -51,12 +54,7 @@ STEM_RE = re.compile(
     r"^(?P<arch>.+?)_(?P<dataset>Cifar100|Cifar10|tinyimagenet)"
     r"(?P<quant>_quant)?_pre(?P<pre>\d+)_post(?P<post>\d+)$")
 
-plt.rcParams.update({
-    "font.size": 8, "axes.titlesize": 8, "axes.labelsize": 8,
-    "legend.fontsize": 7, "figure.figsize": (3.5, 2.4),
-    "axes.spines.top": False, "axes.spines.right": False,
-    "pdf.fonttype": 42,
-})
+figure_style.configure_plot_style()
 
 
 def warn(fig, reason):
@@ -84,7 +82,17 @@ def load_rows(d):
             continue
         if df.empty:
             continue
+        # new schema reports quantization in the data ('precision' or 'quant' column);
+        # old schema encoded it in the `_quant` filename suffix
+        if "precision" in df.columns:
+            df["quant"] = (df["precision"].astype(str).str.strip().str.lower()
+                           .isin(["fp16", "quant", "true", "1"]))
+        elif "quant" in df.columns:
+            df["quant"] = (df["quant"].astype(str).str.strip().str.lower()
+                           .isin(["fp16", "quant", "true", "1"]))
         for k, v in meta.items():
+            if k == "quant" and "quant" in df.columns:
+                continue
             df[k] = (v == "_quant") if k == "quant" else (int(v) if k in ("pre", "post") else v)
         frames.append(df)
     if not frames:
@@ -140,7 +148,8 @@ def grouped_bars(ax, groups, series, df, title, ylabel):
             ys.append(y), lo.append(l), hi.append(h)
         ax.bar(xs + i * width - 0.4 + width / 2, ys, width,
                yerr=[lo, hi], label=label, color=COLORS[label],
-               capsize=1.5, linewidth=0)
+               capsize=2.5, edgecolor="black", linewidth=0.6,
+                   error_kw={"linewidth": 1.0, "ecolor": "#222222"})
     ax.set_xticks(xs)
     ax.set_xticklabels(groups, rotation=15, ha="right")
     ax.set_title(title)
@@ -149,10 +158,9 @@ def grouped_bars(ax, groups, series, df, title, ylabel):
 
 
 def save(fig, out, name):
-    path = os.path.join(out, name)
-    fig.savefig(path, bbox_inches="tight")
-    plt.close(fig)
-    print(f"[OK] {path}")
+    stem = os.path.join(out, os.path.splitext(name)[0])
+    figure_style.save_figure(fig, stem)
+    print(f"[OK] {stem}")
 
 
 def long_frames(d, prefix):
@@ -169,7 +177,17 @@ def long_frames(d, prefix):
             continue
         if df.empty:
             continue
+        # new schema reports quantization in the data ('precision' or 'quant' column);
+        # old schema encoded it in the `_quant` filename suffix
+        if "precision" in df.columns:
+            df["quant"] = (df["precision"].astype(str).str.strip().str.lower()
+                           .isin(["fp16", "quant", "true", "1"]))
+        elif "quant" in df.columns:
+            df["quant"] = (df["quant"].astype(str).str.strip().str.lower()
+                           .isin(["fp16", "quant", "true", "1"]))
         for k, v in meta.items():
+            if k == "quant" and "quant" in df.columns:
+                continue
             df[k] = (v == "_quant") if k == "quant" else (int(v) if k in ("pre", "post") else v)
         frames.append(df)
     return pd.concat(frames, ignore_index=True, sort=False) if frames else None
@@ -189,10 +207,10 @@ def fig_cka(df, ds, out):
         return
     models = [m for m in MODEL_ORDER if (sub["arch"] == m).any()]
     sub = sub.assign(group=sub["arch"].map({m: m for m in models}))
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(3.5, 2.4))
     grouped_bars(ax, models, series, sub, f"{DS_LABELS[ds]}: CKA vs control", "linear CKA")
     ax.set_ylim(0, 1.05)
-    ax.legend(frameon=False)
+    ax.legend()
     save(fig, out, name)
 
 
@@ -227,7 +245,7 @@ def fig_robustness_curves(d, ds, out):
         ax.set_xlabel("epsilon")
         ax.set_ylabel("adversarial accuracy")
         ax.margins(y=0.1)
-    axes[0][0].legend(frameon=False)
+    axes[0][0].legend()
     save(fig, out, name)
 
 
@@ -252,12 +270,13 @@ def fig_reliability(df, ds, out):
         for i, (col, label) in enumerate(series):
             y, lo, hi = pooled(sub2, col)
             ax.bar([i * width - 0.4 + width / 2], [y], width, yerr=[[lo], [hi]],
-                   color=COLORS[label], label=label, capsize=1.5, linewidth=0)
+                   color=COLORS[label], label=label, capsize=2.5, edgecolor="black", linewidth=0.6,
+                   error_kw={"linewidth": 1.0, "ecolor": "#222222"})
         ax.set_xticks([])
         ax.set_title(f"{DS_LABELS[ds]}: {title}")
         ax.set_ylabel("error")
         ax.margins(y=0.15)
-    axes[0][0].legend(frameon=False)
+    axes[0][0].legend()
     save(fig, out, name)
 
 
@@ -269,21 +288,22 @@ def fig_ood(df, ds, out):
     if sub.empty or not series:
         warn(name, "no ood_auroc_ columns (needs --analysis full; CIFAR only)")
         return
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(3.5, 2.4))
     sub = sub.assign(group=ds)
     xs = np.arange(1)
     width = 0.8 / len(series)
     for i, (col, label) in enumerate(series):
         y, lo, hi = pooled(sub, col)
         ax.bar([i * width - 0.4 + width / 2], [y], width, yerr=[[lo], [hi]],
-               color=COLORS[label], label=label, capsize=1.5, linewidth=0)
+               color=COLORS[label], label=label, capsize=2.5, edgecolor="black", linewidth=0.6,
+                   error_kw={"linewidth": 1.0, "ecolor": "#222222"})
     src = sub.get("ood_source", pd.Series(dtype=str)).dropna().unique()
     note = f" (vs {', '.join(map(str, src))})" if len(src) else ""
     ax.set_xticks([])
     ax.set_title(f"{DS_LABELS[ds]}: OOD AUROC{note}")
     ax.set_ylabel("AUROC")
     ax.set_ylim(0.4, 1.02)
-    ax.legend(frameon=False)
+    ax.legend()
     save(fig, out, name)
 
 
@@ -299,7 +319,7 @@ def fig_corruption(d, ds, out):
         return
     # mean over corruptions per (config, variant, severity), then median + IQR
     per = df.groupby(CFG + ["model", "severity"], observed=True)["acc"].mean().reset_index()
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(3.5, 2.4))
     for key, label in VARIANTS:
         s = per[per["model"] == key]
         if s.empty:
@@ -314,7 +334,7 @@ def fig_corruption(d, ds, out):
     ax.set_ylabel("accuracy")
     ax.set_xticks(sorted(per["severity"].unique()))
     ax.margins(y=0.1)
-    ax.legend(frameon=False)
+    ax.legend()
     save(fig, out, name)
 
 
@@ -346,12 +366,13 @@ def fig_ptq(df, ds, out):
                 ys.append(y), lo.append(lq), hi.append(hq)
             ax.bar(xs + j * width - width / 2, ys, width, yerr=[lo, hi],
                    label=tag, color="#9ecae1" if j else "#08306b", hatch=hatch,
-                   capsize=1.5, linewidth=0)
+                   capsize=2.5, edgecolor="black", linewidth=0.6,
+                   error_kw={"linewidth": 1.0, "ecolor": "#222222"})
         ax.set_xticks(xs)
         ax.set_xticklabels([l for _, l, _ in series], rotation=15, ha="right")
         ax.set_title(f"{DS_LABELS[ds]}: {title}")
         ax.margins(y=0.15)
-    axes[0][0].legend(frameon=False)
+    axes[0][0].legend()
     save(fig, out, name)
 
 
@@ -361,7 +382,7 @@ def fig_ptq(df, ds, out):
 
 def fig_energy_transfer(df, out):
     name = "fig_energy_transfer.pdf"
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(3.5, 2.4))
     drew = False
     for key, label in [("collapsed", "Collapsed"), ("unstructured", "IMP")]:
         f, e = f"flops_{key}", f"energy_joules_{key}"
@@ -384,7 +405,7 @@ def fig_energy_transfer(df, out):
     ax.set_xlabel("FLOPs removed (fraction of control)")
     ax.set_ylabel("joules removed (fraction of control)")
     ax.set_title("Energy transferability")
-    ax.legend(frameon=False)
+    ax.legend()
     save(fig, out, name)
 
 
@@ -406,7 +427,7 @@ def fig_regime(df, out):
         return
     # overhead-dominated: FLOPs clearly reduced but the measured ratio did not follow
     over = ok & (fr >= 0.3) & ((jr >= 1.0) | (lr >= 1.0))
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(3.5, 2.4))
     for series, label, marker in [(jr, "saturated J/img", "o"), (lr, "latency", "s")]:
         good = ok & series.notna() & ~over
         bad = ok & series.notna() & over
@@ -422,7 +443,7 @@ def fig_regime(df, out):
                plt.Line2D([], [], marker="s", linestyle="", color="#1f77b4", label="latency"),
                plt.Line2D([], [], marker="o", linestyle="", markerfacecolor="none",
                           markeredgecolor="#d62728", label="overhead-dominated")]
-    ax.legend(handles=handles, frameon=False)
+    ax.legend(handles=handles)
     ax.set_xlabel("FLOPs removed (fraction of control)")
     ax.set_ylabel("measured ratio vs control")
     ax.set_title("Regime map: counted vs measured savings")
@@ -460,7 +481,7 @@ def fig_efficiency(df, ds, out):
     if sub.empty or not present:
         warn(name, "no hardware metric columns with data")
         return
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(3.5, 2.4))
     xs = np.arange(len(present))
     width = 0.8 / 3
     for gi, (flabel, cols) in enumerate(present):
@@ -469,32 +490,40 @@ def fig_efficiency(df, ds, out):
             ax.bar(gi + bi * width - 0.4 + width / 2, y, width,
                    yerr=[[lo], [hi]], color=COLORS[key2label[key]],
                    label=key2label[key] if gi == 0 else None,
-                   capsize=1.5, linewidth=0)
+                   capsize=2.5, edgecolor="black", linewidth=0.6,
+                   error_kw={"linewidth": 1.0, "ecolor": "#222222"})
     ax.axhline(1.0, color="#999999", linewidth=0.8, linestyle="--")
     ax.set_xticks(xs)
     ax.set_xticklabels([f for f, _ in present], rotation=20, ha="right")
     ax.set_ylabel("ratio vs control")
     ax.set_title(f"{DS_LABELS[ds]}: hardware efficiency")
-    ax.legend(frameon=False)
+    ax.legend()
     ax.margins(y=0.12)
     save(fig, out, name)
 
 
 def main():
-    d = sys.argv[1] if len(sys.argv) > 1 else "."
-    out = sys.argv[2] if len(sys.argv) > 2 else os.path.join(d, "dissertation_figs")
+    ap = argparse.ArgumentParser()
+    ap.add_argument("csv_dir", nargs="?", default=".")
+    ap.add_argument("out_dir", nargs="?", default=None)
+    ap.add_argument("--ieee", action="store_true",
+                    help="IEEE production mode: Times 8pt, 600dpi PNG + vector PDF")
+    args = ap.parse_args()
+    out = args.out_dir or os.path.join(args.csv_dir, "dissertation_figs")
+    figure_style.IEEE_MODE = args.ieee
+    figure_style.configure_plot_style()  # re-apply with the IEEE flag set
     os.makedirs(out, exist_ok=True)
-    df = load_rows(d)
+    df = load_rows(args.csv_dir)
     if df is None:
-        print(f"[WARN] no cka_results_*.csv rows in {d} — nothing to plot")
+        print(f"[WARN] no cka_results_*.csv rows in {args.csv_dir} — nothing to plot")
         return
     datasets = [ds for ds in DS_LABELS if (df["dataset"] == ds).any()]
     for ds in datasets:
         fig_cka(df, ds, out)
-        fig_robustness_curves(d, ds, out)
+        fig_robustness_curves(args.csv_dir, ds, out)
         fig_reliability(df, ds, out)
         fig_ood(df, ds, out)
-        fig_corruption(d, ds, out)
+        fig_corruption(args.csv_dir, ds, out)
         fig_ptq(df, ds, out)
         fig_efficiency(df, ds, out)
     fig_energy_transfer(df, out)

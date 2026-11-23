@@ -800,6 +800,11 @@ def compare_CKA(features_x: torch.Tensor, features_y: torch.Tensor) -> float:
 
     start_time = time.time()
 
+    # fp16 features (autocast extraction) overflow the Gram products to inf/NaN
+    # in fp16; the metric is defined in fp32 regardless of activation dtype
+    features_x = features_x.float()
+    features_y = features_y.float()
+
     features_x = features_x - features_x.mean(dim=0, keepdim=True)
     features_y = features_y - features_y.mean(dim=0, keepdim=True)
 

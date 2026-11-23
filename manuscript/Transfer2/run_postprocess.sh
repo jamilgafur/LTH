@@ -36,27 +36,40 @@ for model in "${models[@]}"; do
             # Target CSV as main.py auto-names it (no _quant suffix since both precisions in one file)
             CSV="cka_results_${model}_${dataset}_pre${PRETRAIN}_post${EPOCHS}.csv"
 
-            # Skip only when the CSV already holds >= REPS*2 real (non-CPU)
-            # measurement rows (since --quant runs both fp32 and fp16 per rep)
-            # in the current schema (the saturated-energy / loader-floor column set),
-            # or when a 'no_collapsed_regions' verdict row exists AND the collapsed
-            # artifact is still untrained (nothing to measure; rerun once the artifact lands).
-            # CPU-only rows (bad node), old-schema rows, 1-byte placeholders and
-            # missing files get (re)submitted.
-            if [ "$FORCE" != "1" ] && python3 - "$CSV" "$model" "$dataset" "$EPOCHS" "$PRETRAIN" $((REPS * 2)) <<'PY'
+            # Skip only when the CSV already holds >= REPS real (non-CPU)
+            # measurement rows in EVERY required precision (fp32 always, fp16
+            # too when --quant runs both), in the current schema (the
+            # saturated-energy / loader-floor column set), or when a
+            # 'no_collapsed_regions' verdict row exists AND the collapsed
+            # artifact is still untrained (nothing to measure; rerun once the
+            # artifact lands). Per-precision counting matters: two checkpoints
+            # x reps of fp32-only rows must not look 'done'. CPU-only rows (bad
+            # node), old-schema rows, 1-byte placeholders and missing files get
+            # (re)submitted.
+            if [ "$FORCE" != "1" ] && python3 - "$CSV" "$model" "$dataset" "$EPOCHS" "$PRETRAIN" "$REPS" "$QUANT_master" <<'PY'
 import csv, glob, sys
-csv_path, model, dataset, epochs, pretrain, reps_needed = sys.argv[1:7]
+csv_path, model, dataset, epochs, pretrain, reps_needed, quant_master = sys.argv[1:8]
 try:
     with open(csv_path) as f:
         rows = [r for r in csv.reader(f) if r]
     hdr = rows[0]
     gi = hdr.index("gpu_name")
     si = hdr.index("status") if "status" in hdr else -1
+    pi = hdr.index("precision") if "precision" in hdr else -1
     real_rows = [r for r in rows[1:]
                  if len(r) > gi and r[gi].strip() and r[gi].strip().upper() != "CPU"
                  and (si < 0 or len(r) <= si or r[si] != "no_collapsed_regions")]
     verdict = any(si >= 0 and len(r) > si and r[si] == "no_collapsed_regions"
                   for r in rows[1:])
+    # Done = >= reps_needed rows in EVERY required precision (fp32 always, fp16
+    # too when --quant runs both). A single run writes checkpoints*reps rows per
+    # precision, so this holds for 1- and 2-checkpoint configs alike.
+    per_prec = {}
+    for r in real_rows:
+        p = r[pi].strip().lower() if (pi >= 0 and len(r) > pi) else "fp32"
+        per_prec[p] = per_prec.get(p, 0) + 1
+    required = {"fp32"} | ({"fp16"} if quant_master == "True" else set())
+    done = all(per_prec.get(p, 0) >= int(reps_needed) for p in required)
     # Schema gate: rows measured before the saturated-energy / loader-floor
     # columns existed do not count as done, however many reps they have.
     need = ("j_per_img_saturated_collapsed", "loader_joules", "n_power_samples_collapsed",
@@ -67,12 +80,12 @@ try:
         f"/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt") or glob.glob(
         f"../Tranfer/{model}_{dataset}_*epochs{epochs}_pretrain{pretrain}"
         f"/checkpoints/final_JF_Set_*_whole.pt")
-    sys.exit(0 if (len(real_rows) >= int(reps_needed) and schema_ok) or (verdict and not artifact) else 1)
+    sys.exit(0 if (done and schema_ok) or (verdict and not artifact) else 1)
 except Exception:
     sys.exit(1)   # unreadable / no column / empty placeholder => run
 PY
             then
-                echo "SKIP (>= $((REPS * 2)) GPU rows exist): $CSV"
+                echo "SKIP (>= $REPS rows per required precision): $CSV"
                 continue
             fi
 
