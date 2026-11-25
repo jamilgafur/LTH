@@ -7,7 +7,7 @@ Starting Comparison Post-Processing Pipeline
 Model: XceptionNet | Dataset: tinyimagenet | Device: cuda
 Epochs Config (override): pre=100, post=300
 Output File: cka_results_XceptionNet_tinyimagenet_pre100_post300.csv
-CUDA device: NVIDIA A40
+CUDA device: NVIDIA GeForce RTX 2080 Ti
 ======================================================================
 [INFO] Will evaluate with both fp32 and fp16 precisions
 
@@ -25,7 +25,7 @@ Loading Tiny ImageNet data for XceptionNet...
 [DEBUG] XceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/XceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 8.12s
+[INFO] Weights loaded in 5.82s
 
 [INFO] BN running stats recalibrated over 100 batches (40 BN layers).
 [INFO] Loading original post-finetuning model...
@@ -38,13 +38,13 @@ Loading Tiny ImageNet data for XceptionNet...
 [DEBUG] XceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/XceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 5.95s
+[INFO] Weights loaded in 7.94s
 
 [INFO] BN running stats recalibrated over 100 batches (40 BN layers).
 [INFO] Loading whole collapsed model artifact...
 [INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_tinyimagenet_None_epochs300_pretrain100
 [INFO] Found matching checkpoint: ../Tranfer/XceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
-[INFO] Whole-model load completed in 3.02s
+[INFO] Whole-model load completed in 2.86s
 [INFO] BN running stats recalibrated over 100 batches (38 BN layers).
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 22.02%
@@ -56,7 +56,7 @@ Loading Tiny ImageNet data for XceptionNet...
 [DEBUG] XceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/XceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 0.69s
+[INFO] Weights loaded in 5.71s
 
 
 [INFO] Evaluating model accuracy, power draw, and energy consumption (10 rep(s))...
@@ -67,28 +67,29 @@ Loading Tiny ImageNet data for XceptionNet...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.8397, power=108.46W, energy=957.62J, time=8.83s
+[INFO] Evaluation complete: acc=0.8377, power=63.27W, energy=781.52J, time=12.35s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9172, power=132.78W, energy=866.51J, time=6.53s
+[INFO] Evaluation complete: acc=0.9188, power=63.84W, energy=756.15J, time=11.84s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5716, power=128.05W, energy=892.44J, time=6.97s
+[INFO] Evaluation complete: acc=0.5702, power=61.77W, energy=826.90J, time=13.39s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9287, power=120.55W, energy=767.72J, time=6.37s
-[INFO] Saturated energy: power=219.45499999999998, J/img=0.027954574515779127, samples=2
-[INFO] Saturated energy: power=195.67, J/img=0.024806508174039926, samples=2
-[INFO] Saturated energy: power=205.575, J/img=0.025722579262493286, samples=2
+[INFO] Evaluation complete: acc=0.9280, power=63.25W, energy=623.50J, time=9.86s
+[INFO] Saturated energy: power=157.345, J/img=0.02332980826672799, samples=2
+[CHECK] saturated rate 6887 img/s deviates >2x from benchmark throughput 1703 img/s — inspect the window.
+[INFO] Saturated energy: power=182.64, J/img=0.026927308551967143, samples=3
+[INFO] Saturated energy: power=155.305, J/img=0.022901696074910674, samples=2
 
 [INFO] === Measurement rep 2/10 ===
        -> Evaluating Baseline
@@ -96,28 +97,29 @@ Loading Tiny ImageNet data for XceptionNet...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.8394, power=125.35W, energy=824.85J, time=6.58s
+[INFO] Evaluation complete: acc=0.8384, power=66.69W, energy=620.88J, time=9.31s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9180, power=119.85W, energy=735.51J, time=6.14s
+[INFO] Evaluation complete: acc=0.9179, power=64.96W, energy=632.64J, time=9.74s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5724, power=128.43W, energy=860.07J, time=6.70s
+[INFO] Evaluation complete: acc=0.5701, power=65.45W, energy=658.07J, time=10.05s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9283, power=132.31W, energy=854.21J, time=6.46s
-[INFO] Saturated energy: power=214.235, J/img=0.02711556459911168, samples=2
-[INFO] Saturated energy: power=201.73000000000002, J/img=0.025901505849229907, samples=2
-[INFO] Saturated energy: power=201.14, J/img=0.02508798539521647, samples=2
+[INFO] Evaluation complete: acc=0.9266, power=64.22W, energy=657.79J, time=10.24s
+[CHECK] saturated rate 6944 img/s deviates >2x from benchmark throughput 3209 img/s — inspect the window.
+[INFO] Saturated energy: power=156.535, J/img=0.022746457601512927, samples=2
+[INFO] Saturated energy: power=168.42000000000002, J/img=0.02479449770300188, samples=2
+[INFO] Saturated energy: power=169.275, J/img=0.025038550540839682, samples=2
 
 [INFO] === Measurement rep 3/10 ===
        -> Evaluating Baseline
@@ -125,28 +127,28 @@ Loading Tiny ImageNet data for XceptionNet...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.8377, power=121.01W, energy=779.45J, time=6.44s
+[INFO] Evaluation complete: acc=0.8391, power=67.40W, energy=601.15J, time=8.92s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9195, power=121.10W, energy=781.55J, time=6.45s
+[INFO] Evaluation complete: acc=0.9179, power=67.18W, energy=598.19J, time=8.90s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5714, power=123.38W, energy=825.97J, time=6.69s
+[INFO] Evaluation complete: acc=0.5718, power=68.09W, energy=612.52J, time=9.00s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9276, power=122.48W, energy=781.46J, time=6.38s
-[INFO] Saturated energy: power=207.58, J/img=0.02632656843876504, samples=2
-[INFO] Saturated energy: power=190.315, J/img=0.02411809197807264, samples=2
-[INFO] Saturated energy: power=211.805, J/img=0.026217965862768536, samples=2
+[INFO] Evaluation complete: acc=0.9288, power=67.42W, energy=559.50J, time=8.30s
+[INFO] Saturated energy: power=194.91, J/img=0.028595661120274646, samples=3
+[INFO] Saturated energy: power=171.465, J/img=0.024988388801510966, samples=2
+[INFO] Saturated energy: power=177.94, J/img=0.02632533145272676, samples=2
 
 [INFO] === Measurement rep 4/10 ===
        -> Evaluating Baseline
@@ -154,28 +156,28 @@ Loading Tiny ImageNet data for XceptionNet...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.8400, power=116.08W, energy=758.35J, time=6.53s
+[INFO] Evaluation complete: acc=0.8388, power=65.41W, energy=680.88J, time=10.41s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9219, power=124.86W, energy=818.00J, time=6.55s
+[INFO] Evaluation complete: acc=0.9198, power=65.47W, energy=701.03J, time=10.71s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5689, power=122.31W, energy=791.21J, time=6.47s
+[INFO] Evaluation complete: acc=0.5708, power=65.82W, energy=644.71J, time=9.79s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9285, power=119.37W, energy=774.98J, time=6.49s
-[INFO] Saturated energy: power=213.14499999999998, J/img=0.02703285013606031, samples=2
-[INFO] Saturated energy: power=212.585, J/img=0.02686154232184631, samples=2
-[INFO] Saturated energy: power=191.72, J/img=0.023818919256621714, samples=2
+[INFO] Evaluation complete: acc=0.9288, power=65.59W, energy=554.99J, time=8.46s
+[INFO] Saturated energy: power=165.68, J/img=0.024408764869810265, samples=2
+[INFO] Saturated energy: power=156.57999999999998, J/img=0.02302618434540061, samples=2
+[INFO] Saturated energy: power=176.305, J/img=0.025978042729285566, samples=2
 
 [INFO] === Measurement rep 5/10 ===
        -> Evaluating Baseline
@@ -183,28 +185,28 @@ Loading Tiny ImageNet data for XceptionNet...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.8396, power=119.64W, energy=787.13J, time=6.58s
+[INFO] Evaluation complete: acc=0.8376, power=67.45W, energy=629.90J, time=9.34s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9184, power=122.16W, energy=798.10J, time=6.53s
+[INFO] Evaluation complete: acc=0.9182, power=67.30W, energy=556.05J, time=8.26s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5694, power=120.42W, energy=787.60J, time=6.54s
+[INFO] Evaluation complete: acc=0.5719, power=66.45W, energy=704.86J, time=10.61s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9278, power=119.30W, energy=757.53J, time=6.35s
-[INFO] Saturated energy: power=198.875, J/img=0.02513764180564677, samples=2
-[INFO] Saturated energy: power=208.85500000000002, J/img=0.026435961476471054, samples=2
-[INFO] Saturated energy: power=183.365, J/img=0.022892204034659597, samples=2
+[INFO] Evaluation complete: acc=0.9289, power=64.12W, energy=700.62J, time=10.93s
+[INFO] Saturated energy: power=163.75, J/img=0.02411420319977904, samples=2
+[INFO] Saturated energy: power=179.94, J/img=0.026296372763639272, samples=2
+[INFO] Saturated energy: power=185.655, J/img=0.026809275501638377, samples=2
 
 [INFO] === Measurement rep 6/10 ===
        -> Evaluating Baseline
@@ -212,28 +214,28 @@ Loading Tiny ImageNet data for XceptionNet...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.8385, power=115.03W, energy=776.76J, time=6.75s
+[INFO] Evaluation complete: acc=0.8359, power=64.18W, energy=778.88J, time=12.14s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9185, power=117.03W, energy=819.10J, time=7.00s
+[INFO] Evaluation complete: acc=0.9168, power=69.92W, energy=622.01J, time=8.90s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5708, power=111.45W, energy=1052.54J, time=9.44s
+[INFO] Evaluation complete: acc=0.5689, power=68.29W, energy=709.13J, time=10.38s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9294, power=119.00W, energy=759.44J, time=6.38s
-[INFO] Saturated energy: power=188.285, J/img=0.023892897812417713, samples=2
-[INFO] Saturated energy: power=218.04500000000002, J/img=0.027457722979059736, samples=2
-[INFO] Saturated energy: power=196.54500000000002, J/img=0.024330689588077662, samples=2
+[INFO] Evaluation complete: acc=0.9265, power=65.93W, energy=602.94J, time=9.14s
+[INFO] Saturated energy: power=166.02, J/img=0.024389899357113727, samples=2
+[INFO] Saturated energy: power=157.415, J/img=0.02302479845424031, samples=2
+[INFO] Saturated energy: power=194.69333333333336, J/img=0.02890624120924332, samples=3
 
 [INFO] === Measurement rep 7/10 ===
        -> Evaluating Baseline
@@ -241,28 +243,28 @@ Loading Tiny ImageNet data for XceptionNet...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.8387, power=118.65W, energy=790.75J, time=6.66s
+[INFO] Evaluation complete: acc=0.8366, power=63.81W, energy=718.29J, time=11.26s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9178, power=117.70W, energy=779.86J, time=6.63s
+[INFO] Evaluation complete: acc=0.9170, power=64.49W, energy=707.85J, time=10.98s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5718, power=118.58W, energy=773.97J, time=6.53s
+[INFO] Evaluation complete: acc=0.5695, power=69.40W, energy=648.70J, time=9.35s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9289, power=116.88W, energy=781.23J, time=6.68s
-[INFO] Saturated energy: power=210.32, J/img=0.02650962217450142, samples=2
-[INFO] Saturated energy: power=202.01999999999998, J/img=0.02533967241941695, samples=2
-[INFO] Saturated energy: power=202.29, J/img=0.025072416439214172, samples=2
+[INFO] Evaluation complete: acc=0.9272, power=63.82W, energy=701.59J, time=10.99s
+[INFO] Saturated energy: power=167.78, J/img=0.024575119272914045, samples=2
+[INFO] Saturated energy: power=179.235, J/img=0.02617995297891456, samples=2
+[INFO] Saturated energy: power=172.855, J/img=0.02517397328267037, samples=2
 
 [INFO] === Measurement rep 8/10 ===
        -> Evaluating Baseline
@@ -270,28 +272,28 @@ Loading Tiny ImageNet data for XceptionNet...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.8400, power=125.80W, energy=851.83J, time=6.77s
+[INFO] Evaluation complete: acc=0.8370, power=69.22W, energy=596.55J, time=8.62s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9189, power=126.46W, energy=798.85J, time=6.32s
+[INFO] Evaluation complete: acc=0.9179, power=66.14W, energy=700.42J, time=10.59s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5709, power=121.01W, energy=828.77J, time=6.85s
+[INFO] Evaluation complete: acc=0.5679, power=65.57W, energy=733.28J, time=11.18s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9288, power=115.29W, energy=806.53J, time=7.00s
-[INFO] Saturated energy: power=188.07999999999998, J/img=0.02386441117212657, samples=2
-[INFO] Saturated energy: power=220.16500000000002, J/img=0.027584885780196935, samples=2
-[INFO] Saturated energy: power=188.14499999999998, J/img=0.023342609565382397, samples=2
+[INFO] Evaluation complete: acc=0.9279, power=69.83W, energy=580.18J, time=8.31s
+[INFO] Saturated energy: power=154.74, J/img=0.022815626684541457, samples=2
+[INFO] Saturated energy: power=158.24, J/img=0.023294705801478056, samples=2
+[INFO] Saturated energy: power=159.68, J/img=0.023528913627161044, samples=2
 
 [INFO] === Measurement rep 9/10 ===
        -> Evaluating Baseline
@@ -299,28 +301,28 @@ Loading Tiny ImageNet data for XceptionNet...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.8380, power=117.52W, energy=758.54J, time=6.45s
+[INFO] Evaluation complete: acc=0.8376, power=66.94W, energy=682.19J, time=10.19s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9200, power=127.99W, energy=848.23J, time=6.63s
+[INFO] Evaluation complete: acc=0.9186, power=65.44W, energy=688.51J, time=10.52s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5722, power=121.49W, energy=812.90J, time=6.69s
+[INFO] Evaluation complete: acc=0.5688, power=71.01W, energy=586.08J, time=8.25s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9302, power=117.23W, energy=769.41J, time=6.56s
-[INFO] Saturated energy: power=211.51999999999998, J/img=0.02683219693271989, samples=2
-[INFO] Saturated energy: power=211.935, J/img=0.02674353588759899, samples=2
-[INFO] Saturated energy: power=188.93, J/img=0.02342405352261267, samples=2
+[INFO] Evaluation complete: acc=0.9280, power=70.53W, energy=576.29J, time=8.17s
+[INFO] Saturated energy: power=157.275, J/img=0.0230474863911784, samples=2
+[INFO] Saturated energy: power=156.02, J/img=0.02302138467559792, samples=2
+[INFO] Saturated energy: power=158.25, J/img=0.023295023652646588, samples=2
 
 [INFO] === Measurement rep 10/10 ===
        -> Evaluating Baseline
@@ -328,38 +330,38 @@ Loading Tiny ImageNet data for XceptionNet...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.8364, power=121.33W, energy=827.05J, time=6.82s
+[INFO] Evaluation complete: acc=0.8408, power=67.59W, energy=717.22J, time=10.61s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9200, power=113.90W, energy=714.72J, time=6.27s
+[INFO] Evaluation complete: acc=0.9180, power=68.86W, energy=623.91J, time=9.06s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5696, power=122.64W, energy=785.51J, time=6.40s
+[INFO] Evaluation complete: acc=0.5713, power=69.23W, energy=588.92J, time=8.51s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9276, power=120.22W, energy=793.74J, time=6.60s
-[INFO] Saturated energy: power=197.495, J/img=0.025155211793814573, samples=2
-[INFO] Saturated energy: power=214.2, J/img=0.027103775766599607, samples=2
-[INFO] Saturated energy: power=211.935, J/img=0.02644132425343352, samples=2
+[INFO] Evaluation complete: acc=0.9286, power=68.31W, energy=560.12J, time=8.20s
+[INFO] Saturated energy: power=188.26666666666665, J/img=0.027751775499462155, samples=3
+[INFO] Saturated energy: power=169.75, J/img=0.024701334488647128, samples=2
+[INFO] Saturated energy: power=167.515, J/img=0.024451052025650385, samples=2
 [INFO] Measuring dataloader floor (no forward passes)...
-[INFO] Loader floor: time=6.45s, energy=539.12J
-[RESULT] Accuracy Original:     0.9172 (test 0.4837) | Power: 132.78W | Energy: 866.51J
-[RESULT] Accuracy Before (anchor): 0.8397 (test 0.4819)
-[RESULT] Accuracy Unstructured: 0.5716 (test 0.4931) | Power: 128.05W | Energy: 892.44J
-[RESULT] Accuracy Collapsed:    0.9287 (test 0.5023) | Power: 120.55W | Energy: 767.72J
+[INFO] Loader floor: time=7.18s, energy=377.41J
+[RESULT] Accuracy Original:     0.9188 (test 0.4837) | Power: 63.84W | Energy: 756.15J
+[RESULT] Accuracy Before (anchor): 0.8377 (test 0.4834)
+[RESULT] Accuracy Unstructured: 0.5702 (test 0.4930) | Power: 61.77W | Energy: 826.90J
+[RESULT] Accuracy Collapsed:    0.9280 (test 0.5023) | Power: 63.25W | Energy: 623.50J
 [INFO] 10 measurement reps completed; full per-rep values are rows in the CSV.
-[RESULT] Original     FLOPs=2.415e+10 | latency=7.99 ms/batch | throughput=8013.8 img/s | peak_mem=867.0 MiB | feature_maps=827.4 MiB
-[RESULT] Unstructured FLOPs=2.415e+10 | latency=7.96 ms/batch | throughput=8043.7 img/s | peak_mem=867.0 MiB | feature_maps=827.4 MiB
-[RESULT] Collapsed    FLOPs=2.116e+10 | latency=7.88 ms/batch | throughput=8118.0 img/s | peak_mem=792.3 MiB | feature_maps=793.6 MiB
+[RESULT] Original     FLOPs=2.415e+10 | latency=11.82 ms/batch | throughput=5414.6 img/s | peak_mem=867.0 MiB | feature_maps=827.4 MiB
+[RESULT] Unstructured FLOPs=2.415e+10 | latency=37.58 ms/batch | throughput=1703.2 img/s | peak_mem=867.0 MiB | feature_maps=827.4 MiB
+[RESULT] Collapsed    FLOPs=2.116e+10 | latency=11.04 ms/batch | throughput=5799.7 img/s | peak_mem=793.6 MiB | feature_maps=793.6 MiB
 [RESULT] FLOPs Unstructured (theoretical/effective, kept for back-compat): 1.88e+10
 [RESULT] Storage (state_dict MiB): original=81.2, unstructured=81.2, collapsed=63.4
 
@@ -375,9 +377,9 @@ Loading Tiny ImageNet data for XceptionNet...
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 2048), time=0.48s
+[INFO] Feature extraction complete: shape=(640, 2048), time=0.75s
 [INFO] Computing CKA: features_x=(640, 2048), features_y=(640, 2048)
-[INFO] CKA complete: score=1.000000, time=1.58s
+[INFO] CKA complete: score=1.000000, time=0.49s
 [INFO] CKA self-check (expect ~1.0): 1.000000
 [INFO] Extracting features from 10 batches (Classifier-free extraction, quant=False)...
 [INFO] Feature extraction batch 1/10
@@ -390,7 +392,7 @@ Loading Tiny ImageNet data for XceptionNet...
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 2048), time=0.47s
+[INFO] Feature extraction complete: shape=(640, 2048), time=0.85s
 [INFO] Extracting features from 10 batches (Classifier-free extraction, quant=False)...
 [INFO] Feature extraction batch 1/10
 [INFO] Feature extraction batch 2/10
@@ -402,41 +404,41 @@ Loading Tiny ImageNet data for XceptionNet...
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 2048), time=0.51s
+[INFO] Feature extraction complete: shape=(640, 2048), time=0.66s
 [INFO] Computing CKA: features_x=(640, 2048), features_y=(640, 2048)
-[INFO] CKA complete: score=0.638140, time=0.00s
+[INFO] CKA complete: score=0.637899, time=0.45s
 [INFO] Computing CKA: features_x=(640, 2048), features_y=(640, 2048)
-[INFO] CKA complete: score=0.844121, time=0.00s
+[INFO] CKA complete: score=0.845127, time=0.01s
 
 [INFO] Evaluating Adversarial Robustness...
 [INFO] Running FGSM attack (epsilon=0.005, quant=False)...
-       -> original Accuracy: 0.6094
+       -> original Accuracy: 0.6250
        -> unstructured Accuracy: 0.5781
-       -> collapsed Accuracy: 0.6250
+       -> collapsed Accuracy: 0.6562
 [INFO] Running PGD attack (epsilon=0.005, quant=False)...
-       -> original Accuracy: 0.6094
+       -> original Accuracy: 0.5938
        -> unstructured Accuracy: 0.5625
        -> collapsed Accuracy: 0.6250
 [INFO] Running FGSM attack (epsilon=0.01, quant=False)...
-       -> original Accuracy: 0.4688
+       -> original Accuracy: 0.5000
        -> unstructured Accuracy: 0.3594
-       -> collapsed Accuracy: 0.5312
+       -> collapsed Accuracy: 0.5469
 [INFO] Running PGD attack (epsilon=0.01, quant=False)...
        -> original Accuracy: 0.3750
        -> unstructured Accuracy: 0.3125
-       -> collapsed Accuracy: 0.4375
+       -> collapsed Accuracy: 0.5000
 [INFO] Running FGSM attack (epsilon=0.02, quant=False)...
-       -> original Accuracy: 0.2500
+       -> original Accuracy: 0.2656
        -> unstructured Accuracy: 0.1250
-       -> collapsed Accuracy: 0.2656
+       -> collapsed Accuracy: 0.2969
 [INFO] Running PGD attack (epsilon=0.02, quant=False)...
-       -> original Accuracy: 0.1094
+       -> original Accuracy: 0.1406
        -> unstructured Accuracy: 0.0312
        -> collapsed Accuracy: 0.0938
 [INFO] Running FGSM attack (epsilon=0.03, quant=False)...
-       -> original Accuracy: 0.1406
+       -> original Accuracy: 0.1562
        -> unstructured Accuracy: 0.0469
-       -> collapsed Accuracy: 0.2188
+       -> collapsed Accuracy: 0.2500
 [INFO] Running PGD attack (epsilon=0.03, quant=False)...
        -> original Accuracy: 0.0312
        -> unstructured Accuracy: 0.0000
@@ -444,7 +446,7 @@ Loading Tiny ImageNet data for XceptionNet...
 [INFO] Running FGSM attack (epsilon=0.05, quant=False)...
        -> original Accuracy: 0.1250
        -> unstructured Accuracy: 0.0312
-       -> collapsed Accuracy: 0.2031
+       -> collapsed Accuracy: 0.1875
 [INFO] Running PGD attack (epsilon=0.05, quant=False)...
        -> original Accuracy: 0.0000
        -> unstructured Accuracy: 0.0000
@@ -469,7 +471,7 @@ Loading Tiny ImageNet data for XceptionNet...
 [DEBUG] XceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/XceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 0.65s
+[INFO] Weights loaded in 0.79s
 
 [INFO] BN running stats recalibrated over 100 batches (40 BN layers).
 [INFO] Loading original post-finetuning model...
@@ -482,1583 +484,18 @@ Loading Tiny ImageNet data for XceptionNet...
 [DEBUG] XceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/XceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 0.33s
+[INFO] Weights loaded in 3.53s
 
 [INFO] BN running stats recalibrated over 100 batches (40 BN layers).
 [INFO] Loading whole collapsed model artifact...
 [INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_tinyimagenet_None_epochs300_pretrain100
 [INFO] Found matching checkpoint: ../Tranfer/XceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
-[INFO] Whole-model load completed in 0.17s
+[INFO] Whole-model load completed in 2.60s
 [INFO] BN running stats recalibrated over 100 batches (38 BN layers).
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 22.02%
 [INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/XceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
 [INFO] Initializing architecture: model=XceptionNet, dataset=tinyimagenet
 Loading Tiny ImageNet data for XceptionNet...
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
-[DEBUG] Attempting to initialize XceptionNet with kwargs: dict_keys(['num_classes', 'one_batch'])
-[DEBUG] XceptionNet successfully initialized WITH one_batch.
-[INFO] Loading weights: ../Tranfer/XceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
-[INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 5.61s
-
-
-[INFO] Evaluating model accuracy, power draw, and energy consumption (10 rep(s))...
-
-[INFO] === Measurement rep 1/10 ===
-       -> Evaluating Baseline
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:768: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/attacks.py:26: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/main.py:59: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/attacks.py:57: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1714: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.8369, power=82.95W, energy=1271.55J, time=15.33s
-       -> Evaluating Original After Finetuning
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9186, power=90.09W, energy=904.52J, time=10.04s
-       -> Evaluating Unstructured Pruned Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5717, power=89.45W, energy=886.94J, time=9.92s
-       -> Evaluating Collapsed Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9288, power=90.82W, energy=925.46J, time=10.19s
-[INFO] Saturated energy: power=139.535, J/img=0.01442213791197324, samples=2
-[INFO] Saturated energy: power=140.7, J/img=0.01449909086759184, samples=2
-[INFO] Saturated energy: power=146.13, J/img=0.01428160435968527, samples=2
-
-[INFO] === Measurement rep 2/10 ===
-       -> Evaluating Baseline
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.8406, power=91.14W, energy=912.33J, time=10.01s
-       -> Evaluating Original After Finetuning
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9188, power=91.50W, energy=918.80J, time=10.04s
-       -> Evaluating Unstructured Pruned Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5725, power=91.32W, energy=920.49J, time=10.08s
-       -> Evaluating Collapsed Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9281, power=92.75W, energy=916.69J, time=9.88s
-[INFO] Saturated energy: power=139.7, J/img=0.014530665564243908, samples=2
-[INFO] Saturated energy: power=136.975, J/img=0.014201745964390666, samples=2
-[INFO] Saturated energy: power=140.98, J/img=0.014702478699824387, samples=2
-
-[INFO] === Measurement rep 3/10 ===
-       -> Evaluating Baseline
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.8407, power=91.94W, energy=887.28J, time=9.65s
-       -> Evaluating Original After Finetuning
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9180, power=90.85W, energy=900.01J, time=9.91s
-       -> Evaluating Unstructured Pruned Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5729, power=90.88W, energy=999.44J, time=11.00s
-       -> Evaluating Collapsed Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9285, power=92.48W, energy=897.50J, time=9.70s
-[INFO] Saturated energy: power=141.745, J/img=0.014719046253626595, samples=2
-[INFO] Saturated energy: power=142.95, J/img=0.014692093236584228, samples=2
-[INFO] Saturated energy: power=149.34, J/img=0.01470942765892109, samples=2
-
-[INFO] === Measurement rep 4/10 ===
-       -> Evaluating Baseline
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.8391, power=93.53W, energy=823.77J, time=8.81s
-       -> Evaluating Original After Finetuning
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9186, power=93.25W, energy=857.42J, time=9.19s
-       -> Evaluating Unstructured Pruned Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5716, power=91.87W, energy=741.15J, time=8.07s
-       -> Evaluating Collapsed Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9292, power=97.41W, energy=672.40J, time=6.90s
-[INFO] Saturated energy: power=137.005, J/img=0.013707875705644164, samples=2
-[INFO] Saturated energy: power=143.88, J/img=0.014001835856987879, samples=2
-[INFO] Saturated energy: power=154.345, J/img=0.014449788231612668, samples=2
-
-[INFO] === Measurement rep 5/10 ===
-       -> Evaluating Baseline
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.8398, power=94.61W, energy=614.66J, time=6.50s
-       -> Evaluating Original After Finetuning
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9184, power=87.98W, energy=1170.59J, time=13.31s
-       -> Evaluating Unstructured Pruned Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5685, power=89.06W, energy=768.72J, time=8.63s
-       -> Evaluating Collapsed Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9280, power=89.61W, energy=939.88J, time=10.49s
-[INFO] Saturated energy: power=135.35, J/img=0.014775989822291008, samples=2
-[INFO] Saturated energy: power=135.65, J/img=0.013970760649076172, samples=2
-[INFO] Saturated energy: power=145.685, J/img=0.014652672061800128, samples=2
-
-[INFO] === Measurement rep 6/10 ===
-       -> Evaluating Baseline
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.8388, power=89.75W, energy=1007.13J, time=11.22s
-       -> Evaluating Original After Finetuning
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9177, power=90.77W, energy=1021.83J, time=11.26s
-       -> Evaluating Unstructured Pruned Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5718, power=87.40W, energy=677.30J, time=7.75s
-       -> Evaluating Collapsed Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9289, power=89.27W, energy=806.64J, time=9.04s
-[INFO] Saturated energy: power=128.055, J/img=0.014834538300378916, samples=2
-[INFO] Saturated energy: power=112.97, J/img=0.017336036576889455, samples=2
-[INFO] Saturated energy: power=124.11500000000001, J/img=0.0171966264531114, samples=2
-
-[INFO] === Measurement rep 7/10 ===
-       -> Evaluating Baseline
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.8393, power=85.70W, energy=1096.80J, time=12.80s
-       -> Evaluating Original After Finetuning
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9199, power=86.14W, energy=956.79J, time=11.11s
-       -> Evaluating Unstructured Pruned Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5729, power=84.23W, energy=1019.14J, time=12.10s
-       -> Evaluating Collapsed Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9294, power=84.60W, energy=1006.87J, time=11.90s
-[INFO] Saturated energy: power=121.05, J/img=0.01520581566063421, samples=2
-[INFO] Saturated energy: power=117.475, J/img=0.013264886205715518, samples=2
-[INFO] Saturated energy: power=129.655, J/img=0.016955855134412768, samples=2
-
-[INFO] === Measurement rep 8/10 ===
-       -> Evaluating Baseline
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.8383, power=82.21W, energy=1293.82J, time=15.74s
-       -> Evaluating Original After Finetuning
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9200, power=86.05W, energy=995.96J, time=11.57s
-       -> Evaluating Unstructured Pruned Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5697, power=84.76W, energy=1039.68J, time=12.27s
-       -> Evaluating Collapsed Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9278, power=87.98W, energy=918.66J, time=10.44s
-[INFO] Saturated energy: power=114.82000000000001, J/img=0.017134721568030007, samples=2
-[INFO] Saturated energy: power=113.6, J/img=0.015978066550360784, samples=2
-[INFO] Saturated energy: power=129.70499999999998, J/img=0.013106537288465437, samples=2
-
-[INFO] === Measurement rep 9/10 ===
-       -> Evaluating Baseline
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.8356, power=84.00W, energy=1060.51J, time=12.62s
-       -> Evaluating Original After Finetuning
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9183, power=84.13W, energy=1093.08J, time=12.99s
-       -> Evaluating Unstructured Pruned Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5714, power=86.98W, energy=851.07J, time=9.78s
-       -> Evaluating Collapsed Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9290, power=86.95W, energy=995.89J, time=11.45s
-[INFO] Saturated energy: power=126.99000000000001, J/img=0.014892387134590053, samples=2
-[INFO] Saturated energy: power=126.23500000000001, J/img=0.01405572919220778, samples=2
-[INFO] Saturated energy: power=139.325, J/img=0.014328281049304172, samples=2
-
-[INFO] === Measurement rep 10/10 ===
-       -> Evaluating Baseline
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.8371, power=84.85W, energy=932.71J, time=10.99s
-       -> Evaluating Original After Finetuning
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9183, power=85.50W, energy=936.70J, time=10.96s
-       -> Evaluating Unstructured Pruned Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5719, power=85.56W, energy=903.04J, time=10.55s
-       -> Evaluating Collapsed Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9278, power=87.42W, energy=950.29J, time=10.87s
-[INFO] Saturated energy: power=130.56, J/img=0.013153461262031837, samples=2
-[INFO] Saturated energy: power=130.49, J/img=0.01274929209793961, samples=2
-[INFO] Saturated energy: power=137.23, J/img=0.012796184887018428, samples=2
-[INFO] Measuring dataloader floor (no forward passes)...
-[INFO] Loader floor: time=8.80s, energy=681.63J
-[RESULT] Accuracy Original:     0.9186 (test 0.4842) | Power: 90.09W | Energy: 904.52J
-[RESULT] Accuracy Before (anchor): 0.8369 (test 0.4827)
-[RESULT] Accuracy Unstructured: 0.5717 (test 0.4928) | Power: 89.45W | Energy: 886.94J
-[RESULT] Accuracy Collapsed:    0.9288 (test 0.5034) | Power: 90.82W | Energy: 925.46J
-[INFO] 10 measurement reps completed; full per-rep values are rows in the CSV.
-[RESULT] Original     FLOPs=2.415e+10 | latency=7.33 ms/batch | throughput=8726.0 img/s | peak_mem=919.0 MiB | feature_maps=413.7 MiB
-[RESULT] Unstructured FLOPs=2.415e+10 | latency=7.09 ms/batch | throughput=9026.8 img/s | peak_mem=919.0 MiB | feature_maps=413.7 MiB
-[RESULT] Collapsed    FLOPs=2.116e+10 | latency=6.64 ms/batch | throughput=9631.7 img/s | peak_mem=846.3 MiB | feature_maps=396.8 MiB
-[RESULT] FLOPs Unstructured (theoretical/effective, kept for back-compat): 1.88e+10
-[RESULT] Storage (state_dict MiB): original=40.6, unstructured=40.6, collapsed=31.7
-
-[INFO] Extracting features and computing CKA...
-[INFO] Extracting features from 10 batches (Classifier-free extraction, quant=True)...
-[INFO] Feature extraction batch 1/10
-[INFO] Feature extraction batch 2/10
-[INFO] Feature extraction batch 3/10
-[INFO] Feature extraction batch 4/10
-[INFO] Feature extraction batch 5/10
-[INFO] Feature extraction batch 6/10
-[INFO] Feature extraction batch 7/10
-[INFO] Feature extraction batch 8/10
-[INFO] Feature extraction batch 9/10
-[INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 2048), time=0.88s
-[INFO] Computing CKA: features_x=(640, 2048), features_y=(640, 2048)
-[INFO] CKA complete: score=1.000000, time=0.00s
-[INFO] CKA self-check (expect ~1.0): 1.000000
-[INFO] Extracting features from 10 batches (Classifier-free extraction, quant=True)...
-[INFO] Feature extraction batch 1/10
-[INFO] Feature extraction batch 2/10
-[INFO] Feature extraction batch 3/10
-[INFO] Feature extraction batch 4/10
-[INFO] Feature extraction batch 5/10
-[INFO] Feature extraction batch 6/10
-[INFO] Feature extraction batch 7/10
-[INFO] Feature extraction batch 8/10
-[INFO] Feature extraction batch 9/10
-[INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 2048), time=0.72s
-[INFO] Extracting features from 10 batches (Classifier-free extraction, quant=True)...
-[INFO] Feature extraction batch 1/10
-[INFO] Feature extraction batch 2/10
-[INFO] Feature extraction batch 3/10
-[INFO] Feature extraction batch 4/10
-[INFO] Feature extraction batch 5/10
-[INFO] Feature extraction batch 6/10
-[INFO] Feature extraction batch 7/10
-[INFO] Feature extraction batch 8/10
-[INFO] Feature extraction batch 9/10
-[INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 2048), time=0.59s
-[INFO] Computing CKA: features_x=(640, 2048), features_y=(640, 2048)
-[INFO] CKA complete: score=0.637282, time=0.00s
-[INFO] Computing CKA: features_x=(640, 2048), features_y=(640, 2048)
-[INFO] CKA complete: score=0.844484, time=0.00s
-
-[INFO] Evaluating Adversarial Robustness...
-[INFO] Running FGSM attack (epsilon=0.005, quant=True)...
-       -> original Accuracy: 0.6250
-       -> unstructured Accuracy: 0.5781
-       -> collapsed Accuracy: 0.6406
-[INFO] Running PGD attack (epsilon=0.005, quant=True)...
-       -> original Accuracy: 0.6250
-       -> unstructured Accuracy: 0.5625
-       -> collapsed Accuracy: 0.6250
-[INFO] Running FGSM attack (epsilon=0.01, quant=True)...
-       -> original Accuracy: 0.5156
-       -> unstructured Accuracy: 0.3594
-       -> collapsed Accuracy: 0.5938
-[INFO] Running PGD attack (epsilon=0.01, quant=True)...
-       -> original Accuracy: 0.4062
-       -> unstructured Accuracy: 0.3125
-       -> collapsed Accuracy: 0.5312
-[INFO] Running FGSM attack (epsilon=0.02, quant=True)...
-       -> original Accuracy: 0.4688
-       -> unstructured Accuracy: 0.1250
-       -> collapsed Accuracy: 0.5625
-[INFO] Running PGD attack (epsilon=0.02, quant=True)...
-       -> original Accuracy: 0.3750
-       -> unstructured Accuracy: 0.0469
-       -> collapsed Accuracy: 0.5156
-[INFO] Running FGSM attack (epsilon=0.03, quant=True)...
-       -> original Accuracy: 0.4531
-       -> unstructured Accuracy: 0.0625
-       -> collapsed Accuracy: 0.5469
-[INFO] Running PGD attack (epsilon=0.03, quant=True)...
-       -> original Accuracy: 0.3750
-       -> unstructured Accuracy: 0.0156
-       -> collapsed Accuracy: 0.5156
-[INFO] Running FGSM attack (epsilon=0.05, quant=True)...
-       -> original Accuracy: 0.4375
-       -> unstructured Accuracy: 0.0625
-       -> collapsed Accuracy: 0.5156
-[INFO] Running PGD attack (epsilon=0.05, quant=True)...
-       -> original Accuracy: 0.3750
-       -> unstructured Accuracy: 0.0156
-       -> collapsed Accuracy: 0.5156
-
-[INFO] Full analysis: calibration (ECE/MCE), OOD AUROC, corruptions...
-[WARN] No OOD dataset configured for 'tinyimagenet'. Skipping OOD evaluation.
-[INFO] Appended 30 rows to robustness_curves_cka_results_XceptionNet_tinyimagenet_pre100_post300.csv
-[INFO] Appended 45 rows to calibration_cka_results_XceptionNet_tinyimagenet_pre100_post300.csv
-
-======================================================================
-Processing checkpoint 2/2 - fp32
-Path: ../Tranfer/XceptionNet_tinyimagenet_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt
-======================================================================
-[INFO] Processing checkpoint with precision: fp32
-[INFO] Parsing experiment directory... ../Tranfer/XceptionNet_tinyimagenet_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt
-[INFO] Initializing baseline model...
-[INFO] Initializing architecture: model=XceptionNet, dataset=tinyimagenet
-Loading Tiny ImageNet data for XceptionNet...
-[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
-[DEBUG] Attempting to initialize XceptionNet with kwargs: dict_keys(['num_classes', 'one_batch'])
-[DEBUG] XceptionNet successfully initialized WITH one_batch.
-[INFO] Loading weights: ../Tranfer/XceptionNet_tinyimagenet_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt
-[INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 1.82s
-
-[INFO] BN running stats recalibrated over 100 batches (40 BN layers).
-[INFO] Loading original post-finetuning model...
-[INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_tinyimagenet_None_scorerall_epochs300_pretrain100
-[INFO] Found matching checkpoint: ../Tranfer/XceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
-[INFO] Initializing architecture: model=XceptionNet, dataset=tinyimagenet
-Loading Tiny ImageNet data for XceptionNet...
-[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
-[DEBUG] Attempting to initialize XceptionNet with kwargs: dict_keys(['num_classes', 'one_batch'])
-[DEBUG] XceptionNet successfully initialized WITH one_batch.
-[INFO] Loading weights: ../Tranfer/XceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
-[INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 4.65s
-
-[INFO] BN running stats recalibrated over 100 batches (40 BN layers).
-[INFO] Loading whole collapsed model artifact...
-[INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_tinyimagenet_None_scorerall_epochs300_pretrain100
-[INFO] Found matching checkpoint: ../Tranfer/XceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
-[INFO] Whole-model load completed in 3.48s
-[INFO] BN running stats recalibrated over 100 batches (38 BN layers).
-[INFO] Calculating dynamic sparsity to match collapse...
-[INFO] Target unstructured sparsity calculated at: 22.02%
-[INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/XceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
-[INFO] Initializing architecture: model=XceptionNet, dataset=tinyimagenet
-Loading Tiny ImageNet data for XceptionNet...
-[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
-[DEBUG] Attempting to initialize XceptionNet with kwargs: dict_keys(['num_classes', 'one_batch'])
-[DEBUG] XceptionNet successfully initialized WITH one_batch.
-[INFO] Loading weights: ../Tranfer/XceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
-[INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 0.94s
-
-
-[INFO] Evaluating model accuracy, power draw, and energy consumption (10 rep(s))...
-
-[INFO] === Measurement rep 1/10 ===
-       -> Evaluating Baseline
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.8381, power=101.36W, energy=1101.70J, time=10.87s
-       -> Evaluating Original After Finetuning
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9177, power=103.17W, energy=1020.87J, time=9.90s
-       -> Evaluating Unstructured Pruned Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5715, power=100.24W, energy=1276.60J, time=12.74s
-       -> Evaluating Collapsed Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9276, power=97.97W, energy=1169.71J, time=11.94s
-[INFO] Saturated energy: power=191.465, J/img=0.024526768341615254, samples=2
-[INFO] Saturated energy: power=210.895, J/img=0.027122650048430497, samples=2
-[INFO] Saturated energy: power=186.89999999999998, J/img=0.02353079005454977, samples=2
-
-[INFO] === Measurement rep 2/10 ===
-       -> Evaluating Baseline
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.8392, power=100.79W, energy=1291.58J, time=12.81s
-       -> Evaluating Original After Finetuning
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9192, power=102.19W, energy=1063.90J, time=10.41s
-       -> Evaluating Unstructured Pruned Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5702, power=91.84W, energy=1354.30J, time=14.75s
-       -> Evaluating Collapsed Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9289, power=95.21W, energy=1268.90J, time=13.33s
-[INFO] Saturated energy: power=205.13, J/img=0.02627984852760065, samples=2
-[INFO] Saturated energy: power=203.99, J/img=0.026093042268447816, samples=2
-[INFO] Saturated energy: power=178.345, J/img=0.022760078076901565, samples=2
-
-[INFO] === Measurement rep 3/10 ===
-       -> Evaluating Baseline
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.8368, power=100.37W, energy=1123.42J, time=11.19s
-       -> Evaluating Original After Finetuning
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9187, power=106.93W, energy=1040.46J, time=9.73s
-       -> Evaluating Unstructured Pruned Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5720, power=109.42W, energy=1053.67J, time=9.63s
-       -> Evaluating Collapsed Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9284, power=107.82W, energy=1096.24J, time=10.17s
-[INFO] Saturated energy: power=199.92, J/img=0.025441726752519607, samples=2
-[INFO] Saturated energy: power=190.105, J/img=0.024024166070384927, samples=2
-[INFO] Saturated energy: power=189.135, J/img=0.023572373907394674, samples=2
-
-[INFO] === Measurement rep 4/10 ===
-       -> Evaluating Baseline
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.8381, power=108.90W, energy=994.54J, time=9.13s
-       -> Evaluating Original After Finetuning
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9183, power=110.33W, energy=994.04J, time=9.01s
-       -> Evaluating Unstructured Pruned Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5726, power=109.37W, energy=1078.09J, time=9.86s
-       -> Evaluating Collapsed Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9280, power=110.19W, energy=1054.08J, time=9.57s
-[INFO] Saturated energy: power=192.385, J/img=0.024358651603022252, samples=2
-[INFO] Saturated energy: power=206.66000000000003, J/img=0.026102612980008127, samples=2
-[INFO] Saturated energy: power=207.555, J/img=0.02579762672041269, samples=2
-
-[INFO] === Measurement rep 5/10 ===
-       -> Evaluating Baseline
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.8393, power=110.75W, energy=1094.01J, time=9.88s
-       -> Evaluating Original After Finetuning
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9181, power=107.68W, energy=1143.20J, time=10.62s
-       -> Evaluating Unstructured Pruned Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5717, power=110.57W, energy=1100.84J, time=9.96s
-       -> Evaluating Collapsed Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9292, power=110.35W, energy=1089.49J, time=9.87s
-[INFO] Saturated energy: power=211.82, J/img=0.027092317336474558, samples=2
-[INFO] Saturated energy: power=213.245, J/img=0.026968102954687125, samples=2
-[INFO] Saturated energy: power=196.37, J/img=0.024477647752684403, samples=2
-
-[INFO] === Measurement rep 6/10 ===
-       -> Evaluating Baseline
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.8376, power=108.28W, energy=1172.56J, time=10.83s
-       -> Evaluating Original After Finetuning
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9182, power=114.47W, energy=1078.16J, time=9.42s
-       -> Evaluating Unstructured Pruned Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5686, power=112.38W, energy=1053.68J, time=9.38s
-       -> Evaluating Collapsed Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9280, power=107.20W, energy=1074.92J, time=10.03s
-[INFO] Saturated energy: power=203.54000000000002, J/img=0.025793725422024728, samples=2
-[INFO] Saturated energy: power=193.26, J/img=0.024501382258546305, samples=2
-[INFO] Saturated energy: power=209.31, J/img=0.02600115932200266, samples=2
-
-[INFO] === Measurement rep 7/10 ===
-       -> Evaluating Baseline
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.8384, power=112.66W, energy=1029.22J, time=9.14s
-       -> Evaluating Original After Finetuning
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9188, power=115.07W, energy=1138.01J, time=9.89s
-       -> Evaluating Unstructured Pruned Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5702, power=112.78W, energy=1043.61J, time=9.25s
-       -> Evaluating Collapsed Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9292, power=107.50W, energy=1063.73J, time=9.90s
-[INFO] Saturated energy: power=197.67, J/img=0.025101944669991372, samples=2
-[INFO] Saturated energy: power=208.375, J/img=0.026388765862887544, samples=2
-[INFO] Saturated energy: power=187.555, J/img=0.02340558729802861, samples=2
-
-[INFO] === Measurement rep 8/10 ===
-       -> Evaluating Baseline
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.8386, power=112.74W, energy=1062.77J, time=9.43s
-       -> Evaluating Original After Finetuning
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9175, power=112.35W, energy=1094.98J, time=9.75s
-       -> Evaluating Unstructured Pruned Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5716, power=112.66W, energy=1129.13J, time=10.02s
-       -> Evaluating Collapsed Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9283, power=110.36W, energy=1037.51J, time=9.40s
-[INFO] Saturated energy: power=193.135, J/img=0.024486321740288048, samples=2
-[INFO] Saturated energy: power=221.57500000000002, J/img=0.028016104984405155, samples=2
-[INFO] Saturated energy: power=193.285, J/img=0.024048970955255346, samples=2
-
-[INFO] === Measurement rep 9/10 ===
-       -> Evaluating Baseline
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.8388, power=112.14W, energy=1158.38J, time=10.33s
-       -> Evaluating Original After Finetuning
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9182, power=110.81W, energy=1109.20J, time=10.01s
-       -> Evaluating Unstructured Pruned Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5715, power=109.97W, energy=1072.67J, time=9.75s
-       -> Evaluating Collapsed Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9275, power=109.58W, energy=1106.48J, time=10.10s
-[INFO] Saturated energy: power=204.87, J/img=0.026169127256845136, samples=2
-[INFO] Saturated energy: power=193.88, J/img=0.02445571088075638, samples=2
-[INFO] Saturated energy: power=185.47500000000002, J/img=0.02311676460592186, samples=2
-
-[INFO] === Measurement rep 10/10 ===
-       -> Evaluating Baseline
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.8402, power=112.01W, energy=1129.85J, time=10.09s
-       -> Evaluating Original After Finetuning
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9181, power=110.03W, energy=1149.18J, time=10.44s
-       -> Evaluating Unstructured Pruned Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5713, power=112.47W, energy=1111.63J, time=9.88s
-       -> Evaluating Collapsed Model
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.9267, power=109.41W, energy=1072.42J, time=9.80s
-[INFO] Saturated energy: power=206.53, J/img=0.026199396707628282, samples=2
-[INFO] Saturated energy: power=198.215, J/img=0.02506186815880239, samples=2
-[INFO] Saturated energy: power=194.87, J/img=0.024141561057799913, samples=2
-[INFO] Measuring dataloader floor (no forward passes)...
-[INFO] Loader floor: time=10.61s, energy=889.01J
-[RESULT] Accuracy Original:     0.9177 (test 0.4835) | Power: 103.17W | Energy: 1020.87J
-[RESULT] Accuracy Before (anchor): 0.8381 (test 0.4821)
-[RESULT] Accuracy Unstructured: 0.5715 (test 0.4931) | Power: 100.24W | Energy: 1276.60J
-[RESULT] Accuracy Collapsed:    0.9276 (test 0.5050) | Power: 97.97W | Energy: 1169.71J
-[INFO] 10 measurement reps completed; full per-rep values are rows in the CSV.
-[RESULT] Original     FLOPs=2.415e+10 | latency=9.58 ms/batch | throughput=6683.8 img/s | peak_mem=1030.1 MiB | feature_maps=827.4 MiB
-[RESULT] Unstructured FLOPs=2.415e+10 | latency=8.26 ms/batch | throughput=7743.5 img/s | peak_mem=1030.1 MiB | feature_maps=827.4 MiB
-[RESULT] Collapsed    FLOPs=2.116e+10 | latency=8.14 ms/batch | throughput=7862.4 img/s | peak_mem=957.3 MiB | feature_maps=793.6 MiB
-[RESULT] FLOPs Unstructured (theoretical/effective, kept for back-compat): 1.88e+10
-[RESULT] Storage (state_dict MiB): original=81.2, unstructured=81.2, collapsed=63.4
-
-[INFO] Extracting features and computing CKA...
-[INFO] Extracting features from 10 batches (Classifier-free extraction, quant=False)...
-[INFO] Feature extraction batch 1/10
-[INFO] Feature extraction batch 2/10
-[INFO] Feature extraction batch 3/10
-[INFO] Feature extraction batch 4/10
-[INFO] Feature extraction batch 5/10
-[INFO] Feature extraction batch 6/10
-[INFO] Feature extraction batch 7/10
-[INFO] Feature extraction batch 8/10
-[INFO] Feature extraction batch 9/10
-[INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 2048), time=0.78s
-[INFO] Computing CKA: features_x=(640, 2048), features_y=(640, 2048)
-[INFO] CKA complete: score=1.000000, time=0.00s
-[INFO] CKA self-check (expect ~1.0): 1.000000
-[INFO] Extracting features from 10 batches (Classifier-free extraction, quant=False)...
-[INFO] Feature extraction batch 1/10
-[INFO] Feature extraction batch 2/10
-[INFO] Feature extraction batch 3/10
-[INFO] Feature extraction batch 4/10
-[INFO] Feature extraction batch 5/10
-[INFO] Feature extraction batch 6/10
-[INFO] Feature extraction batch 7/10
-[INFO] Feature extraction batch 8/10
-[INFO] Feature extraction batch 9/10
-[INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 2048), time=0.98s
-[INFO] Extracting features from 10 batches (Classifier-free extraction, quant=False)...
-[INFO] Feature extraction batch 1/10
-[INFO] Feature extraction batch 2/10
-[INFO] Feature extraction batch 3/10
-[INFO] Feature extraction batch 4/10
-[INFO] Feature extraction batch 5/10
-[INFO] Feature extraction batch 6/10
-[INFO] Feature extraction batch 7/10
-[INFO] Feature extraction batch 8/10
-[INFO] Feature extraction batch 9/10
-[INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 2048), time=0.72s
-[INFO] Computing CKA: features_x=(640, 2048), features_y=(640, 2048)
-[INFO] CKA complete: score=0.638231, time=0.00s
-[INFO] Computing CKA: features_x=(640, 2048), features_y=(640, 2048)
-[INFO] CKA complete: score=0.843710, time=0.00s
-
-[INFO] Evaluating Adversarial Robustness...
-[INFO] Running FGSM attack (epsilon=0.005, quant=False)...
-       -> original Accuracy: 0.6250
-       -> unstructured Accuracy: 0.5781
-       -> collapsed Accuracy: 0.6562
-[INFO] Running PGD attack (epsilon=0.005, quant=False)...
-       -> original Accuracy: 0.6094
-       -> unstructured Accuracy: 0.5625
-       -> collapsed Accuracy: 0.6406
-[INFO] Running FGSM attack (epsilon=0.01, quant=False)...
-       -> original Accuracy: 0.4688
-       -> unstructured Accuracy: 0.3594
-       -> collapsed Accuracy: 0.5625
-[INFO] Running PGD attack (epsilon=0.01, quant=False)...
-       -> original Accuracy: 0.3750
-       -> unstructured Accuracy: 0.3125
-       -> collapsed Accuracy: 0.4531
-[INFO] Running FGSM attack (epsilon=0.02, quant=False)...
-       -> original Accuracy: 0.2812
-       -> unstructured Accuracy: 0.1250
-       -> collapsed Accuracy: 0.2812
-[INFO] Running PGD attack (epsilon=0.02, quant=False)...
-       -> original Accuracy: 0.1250
-       -> unstructured Accuracy: 0.0312
-       -> collapsed Accuracy: 0.0938
-[INFO] Running FGSM attack (epsilon=0.03, quant=False)...
-       -> original Accuracy: 0.1562
-       -> unstructured Accuracy: 0.0469
-       -> collapsed Accuracy: 0.2188
-[INFO] Running PGD attack (epsilon=0.03, quant=False)...
-       -> original Accuracy: 0.0156
-       -> unstructured Accuracy: 0.0000
-       -> collapsed Accuracy: 0.0469
-[INFO] Running FGSM attack (epsilon=0.05, quant=False)...
-       -> original Accuracy: 0.1094
-       -> unstructured Accuracy: 0.0312
-       -> collapsed Accuracy: 0.1875
-[INFO] Running PGD attack (epsilon=0.05, quant=False)...
-       -> original Accuracy: 0.0000
-       -> unstructured Accuracy: 0.0000
-       -> collapsed Accuracy: 0.0000
-
-[INFO] Full analysis: calibration (ECE/MCE), OOD AUROC, corruptions...
-[WARN] No OOD dataset configured for 'tinyimagenet'. Skipping OOD evaluation.
-[INFO] Appended 30 rows to robustness_curves_cka_results_XceptionNet_tinyimagenet_pre100_post300.csv
-[INFO] Appended 45 rows to calibration_cka_results_XceptionNet_tinyimagenet_pre100_post300.csv
-
-======================================================================
-Processing checkpoint 2/2 - fp16
-Path: ../Tranfer/XceptionNet_tinyimagenet_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt
-======================================================================
-[INFO] Processing checkpoint with precision: fp16
-[INFO] Parsing experiment directory... ../Tranfer/XceptionNet_tinyimagenet_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt
-[INFO] Initializing baseline model...
-[INFO] Initializing architecture: model=XceptionNet, dataset=tinyimagenet
-Loading Tiny ImageNet data for XceptionNet...
-[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
-[DEBUG] Attempting to initialize XceptionNet with kwargs: dict_keys(['num_classes', 'one_batch'])
-[DEBUG] XceptionNet successfully initialized WITH one_batch.
-[INFO] Loading weights: ../Tranfer/XceptionNet_tinyimagenet_None_scorerall_epochs300_pretrain100/checkpoints/final_JF_Control.pt
-[INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 0.90s
-
-[INFO] BN running stats recalibrated over 100 batches (40 BN layers).
-[INFO] Loading original post-finetuning model...
-[INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_tinyimagenet_None_scorerall_epochs300_pretrain100
-[INFO] Found matching checkpoint: ../Tranfer/XceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
-[INFO] Initializing architecture: model=XceptionNet, dataset=tinyimagenet
-Loading Tiny ImageNet data for XceptionNet...
-[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
-[DEBUG] Attempting to initialize XceptionNet with kwargs: dict_keys(['num_classes', 'one_batch'])
-[DEBUG] XceptionNet successfully initialized WITH one_batch.
-[INFO] Loading weights: ../Tranfer/XceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
-[INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 0.55s
-
-[INFO] BN running stats recalibrated over 100 batches (40 BN layers).
-[INFO] Loading whole collapsed model artifact...
-[INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_tinyimagenet_None_scorerall_epochs300_pretrain100
-[INFO] Found matching checkpoint: ../Tranfer/XceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
-[INFO] Whole-model load completed in 1.33s
-[INFO] BN running stats recalibrated over 100 batches (38 BN layers).
-[INFO] Calculating dynamic sparsity to match collapse...
-[INFO] Target unstructured sparsity calculated at: 22.02%
-[INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/XceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
-[INFO] Initializing architecture: model=XceptionNet, dataset=tinyimagenet
-Loading Tiny ImageNet data for XceptionNet...
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
-[DEBUG] Attempting to initialize XceptionNet with kwargs: dict_keys(['num_classes', 'one_batch'])
-[DEBUG] XceptionNet successfully initialized WITH one_batch.
-[INFO] Loading weights: ../Tranfer/XceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
-[INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 3.82s
-
-
-[INFO] Evaluating model accuracy, power draw, and energy consumption (10 rep(s))...
-
-[INFO] === Measurement rep 1/10 ===
-       -> Evaluating Baseline
-[INFO] Starting accuracy and energy evaluation (warmup pass first)...
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
-/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
-  with torch.cuda.amp.autocast():
 /old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
   with torch.cuda.amp.autocast():
