@@ -97,7 +97,7 @@ PY
             else
                 QUANT_FLAG="False"
             fi
-            command="qsub -q all.q -l ngpus=1 -v MODEL=\"$model\",DATASET=\"$dataset\",EPOCHS=\"$EPOCHS\",PRETRAIN=\"$PRETRAIN\",REPS=\"$REPS\",CORRUPTIONS_DIR=\"$CORRUPTIONS_DIR\",QUANT=\"$QUANT_FLAG\" submit_postprocess.pbs"
+            command="qsub -q UI-GPU -l ngpus=1 -v MODEL=\"$model\",DATASET=\"$dataset\",EPOCHS=\"$EPOCHS\",PRETRAIN=\"$PRETRAIN\",REPS=\"$REPS\",CORRUPTIONS_DIR=\"$CORRUPTIONS_DIR\",QUANT=\"$QUANT_FLAG\" submit_postprocess.pbs"
 
             echo "Executing: $command"
             eval "$command"
