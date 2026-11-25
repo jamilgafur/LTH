@@ -1,3 +1,5 @@
+/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:734: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
 [INFO] Searching for model checkpoints...
 [INFO] Found 1 'before' checkpoints.
 [INFO] Found 1 collapsed checkpoints.
@@ -7,7 +9,7 @@ Starting Comparison Post-Processing Pipeline
 Model: VGG16 | Dataset: tinyimagenet | Device: cuda
 Epochs Config (override): pre=300, post=100
 Output File: cka_results_VGG16_tinyimagenet_pre300_post100.csv
-CUDA device: Tesla V100S-PCIE-32GB
+CUDA device: NVIDIA GeForce RTX 2080 Ti
 ======================================================================
 [INFO] Will evaluate with both fp32 and fp16 precisions
 
@@ -25,7 +27,7 @@ Loading Tiny ImageNet data...
 [DEBUG] VGG16 successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 107
-[INFO] Weights loaded in 2.61s
+[INFO] Weights loaded in 3.40s
 
 [INFO] BN running stats recalibrated over 100 batches (15 BN layers).
 [INFO] Loading original post-finetuning model...
@@ -38,13 +40,13 @@ Loading Tiny ImageNet data...
 [DEBUG] VGG16 successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 107
-[INFO] Weights loaded in 4.67s
+[INFO] Weights loaded in 4.89s
 
 [INFO] BN running stats recalibrated over 100 batches (15 BN layers).
 [INFO] Loading whole collapsed model artifact...
 [INFO] Searching for checkpoint matching: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300
 [INFO] Found matching checkpoint: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
-[INFO] Whole-model load completed in 1.98s
+[INFO] Whole-model load completed in 4.20s
 [INFO] BN running stats recalibrated over 100 batches (13 BN layers).
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 22.53%
@@ -56,7 +58,7 @@ Loading Tiny ImageNet data...
 [DEBUG] VGG16 successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 107
-[INFO] Weights loaded in 4.04s
+[INFO] Weights loaded in 4.15s
 
 
 [INFO] Evaluating model accuracy, power draw, and energy consumption (10 rep(s))...
@@ -67,37 +69,37 @@ Loading Tiny ImageNet data...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.6956, power=64.53W, energy=573.04J, time=8.88s
+[INFO] Evaluation complete: acc=0.6947, power=68.48W, energy=777.79J, time=11.36s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4794, power=67.23W, energy=517.71J, time=7.70s
+[INFO] Evaluation complete: acc=0.4835, power=75.96W, energy=686.96J, time=9.04s
 
-[CRITICAL WARNING] 'original_after_model' suffered catastrophic forgetting (47.94%).
-[CRITICAL WARNING] Re-evaluating healthy 'model_before' (69.56%) on warm cache as the true baseline...
+[CRITICAL WARNING] 'original_after_model' suffered catastrophic forgetting (48.35%).
+[CRITICAL WARNING] Re-evaluating healthy 'model_before' (69.47%) on warm cache as the true baseline...
        -> Evaluating healthy 'model_before' (fallback baseline)
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.6942, power=63.81W, energy=487.81J, time=7.64s
+[INFO] Evaluation complete: acc=0.6935, power=75.93W, energy=673.29J, time=8.87s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4789, power=58.95W, energy=453.60J, time=7.69s
+[INFO] Evaluation complete: acc=0.4794, power=75.18W, energy=643.49J, time=8.56s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.6164, power=62.37W, energy=546.94J, time=8.77s
-[INFO] Saturated energy: power=208.515, J/img=0.029805624537931924, samples=2
-[INFO] Saturated energy: power=261.59000000000003, J/img=0.037080447698632876, samples=2
-[INFO] Saturated energy: power=256.805, J/img=0.03266606075493919, samples=2
+[INFO] Evaluation complete: acc=0.6141, power=70.61W, energy=600.73J, time=8.51s
+[INFO] Saturated energy: power=200.1966666666667, J/img=0.03515946611775768, samples=3
+[INFO] Saturated energy: power=176.04500000000002, J/img=0.030728882129407595, samples=2
+[INFO] Saturated energy: power=196.43666666666664, J/img=0.030090164021320615, samples=3
 
 [INFO] === Measurement rep 2/10 ===
        -> Evaluating Baseline
@@ -105,28 +107,28 @@ Loading Tiny ImageNet data...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.6962, power=61.83W, energy=493.22J, time=7.98s
+[INFO] Evaluation complete: acc=0.6937, power=72.56W, energy=705.97J, time=9.73s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4804, power=77.37W, energy=622.90J, time=8.05s
+[INFO] Evaluation complete: acc=0.4818, power=73.16W, energy=664.21J, time=9.08s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4772, power=61.64W, energy=479.88J, time=7.79s
+[INFO] Evaluation complete: acc=0.4792, power=71.38W, energy=655.42J, time=9.18s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.6173, power=63.81W, energy=481.29J, time=7.54s
-[INFO] Saturated energy: power=221.42, J/img=0.03188259691101583, samples=3
-[INFO] Saturated energy: power=254.335, J/img=0.03617751801453902, samples=2
-[INFO] Saturated energy: power=254.78, J/img=0.03234386739831779, samples=2
+[INFO] Evaluation complete: acc=0.6158, power=71.20W, energy=643.18J, time=9.03s
+[INFO] Saturated energy: power=163.095, J/img=0.028758710764619055, samples=2
+[INFO] Saturated energy: power=185.03, J/img=0.03222586009877821, samples=2
+[INFO] Saturated energy: power=200.64499999999998, J/img=0.030527963033980792, samples=2
 
 [INFO] === Measurement rep 3/10 ===
        -> Evaluating Baseline
@@ -134,28 +136,28 @@ Loading Tiny ImageNet data...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.6951, power=61.74W, energy=475.87J, time=7.71s
+[INFO] Evaluation complete: acc=0.6948, power=76.35W, energy=679.49J, time=8.90s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4792, power=64.17W, energy=495.09J, time=7.72s
+[INFO] Evaluation complete: acc=0.4828, power=75.91W, energy=701.28J, time=9.24s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4782, power=70.41W, energy=541.70J, time=7.69s
+[INFO] Evaluation complete: acc=0.4782, power=75.01W, energy=673.40J, time=8.98s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.6169, power=49.22W, energy=372.79J, time=7.57s
-[INFO] Saturated energy: power=206.24, J/img=0.029731506016276298, samples=2
-[INFO] Saturated energy: power=237.64, J/img=0.03389091689797009, samples=2
-[INFO] Saturated energy: power=256.31, J/img=0.032598675924143006, samples=2
+[INFO] Evaluation complete: acc=0.6155, power=72.56W, energy=636.10J, time=8.77s
+[INFO] Saturated energy: power=172.325, J/img=0.03009383847617971, samples=2
+[INFO] Saturated energy: power=174.66500000000002, J/img=0.03027474879880774, samples=2
+[INFO] Saturated energy: power=181.315, J/img=0.02760206734014738, samples=2
 
 [INFO] === Measurement rep 4/10 ===
        -> Evaluating Baseline
@@ -163,28 +165,28 @@ Loading Tiny ImageNet data...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.6937, power=61.90W, energy=589.71J, time=9.53s
+[INFO] Evaluation complete: acc=0.6926, power=77.31W, energy=695.16J, time=8.99s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4817, power=57.20W, energy=491.27J, time=8.59s
+[INFO] Evaluation complete: acc=0.4820, power=74.52W, energy=660.23J, time=8.86s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4783, power=58.79W, energy=520.71J, time=8.86s
+[INFO] Evaluation complete: acc=0.4784, power=72.48W, energy=667.05J, time=9.20s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.6186, power=45.47W, energy=384.30J, time=8.45s
-[INFO] Saturated energy: power=221.29, J/img=0.03198229520339264, samples=3
-[INFO] Saturated energy: power=253.38666666666666, J/img=0.036394221713460226, samples=3
-[INFO] Saturated energy: power=246.27, J/img=0.03147841809264682, samples=2
+[INFO] Evaluation complete: acc=0.6149, power=73.95W, energy=659.37J, time=8.92s
+[INFO] Saturated energy: power=173.95, J/img=0.03039369704408778, samples=2
+[INFO] Saturated energy: power=201.91333333333333, J/img=0.03512078988587572, samples=3
+[INFO] Saturated energy: power=200.9433333333333, J/img=0.03064407438039779, samples=3
 
 [INFO] === Measurement rep 5/10 ===
        -> Evaluating Baseline
@@ -192,28 +194,28 @@ Loading Tiny ImageNet data...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.6922, power=63.16W, energy=535.69J, time=8.48s
+[INFO] Evaluation complete: acc=0.6937, power=74.65W, energy=680.19J, time=9.11s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4824, power=57.62W, energy=519.49J, time=9.02s
+[INFO] Evaluation complete: acc=0.4822, power=72.82W, energy=666.63J, time=9.15s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4809, power=66.01W, energy=574.51J, time=8.70s
+[INFO] Evaluation complete: acc=0.4785, power=73.24W, energy=670.69J, time=9.16s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.6171, power=63.53W, energy=546.58J, time=8.60s
-[INFO] Saturated energy: power=208.465, J/img=0.03018800485768108, samples=2
-[INFO] Saturated energy: power=237.8, J/img=0.033928450352061386, samples=2
-[INFO] Saturated energy: power=266.52, J/img=0.03391438927381269, samples=2
+[INFO] Evaluation complete: acc=0.6140, power=72.01W, energy=619.30J, time=8.60s
+[INFO] Saturated energy: power=169.715, J/img=0.029463384946118734, samples=2
+[INFO] Saturated energy: power=183.475, J/img=0.03181964665917413, samples=2
+[INFO] Saturated energy: power=180.105, J/img=0.027430954062636344, samples=2
 
 [INFO] === Measurement rep 6/10 ===
        -> Evaluating Baseline
@@ -221,28 +223,28 @@ Loading Tiny ImageNet data...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.6985, power=53.96W, energy=425.19J, time=7.88s
+[INFO] Evaluation complete: acc=0.6944, power=76.76W, energy=693.38J, time=9.03s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4840, power=63.80W, energy=483.41J, time=7.58s
+[INFO] Evaluation complete: acc=0.4827, power=75.12W, energy=678.21J, time=9.03s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4803, power=61.40W, energy=466.79J, time=7.60s
+[INFO] Evaluation complete: acc=0.4814, power=75.44W, energy=658.91J, time=8.73s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.6162, power=75.54W, energy=566.31J, time=7.50s
-[INFO] Saturated energy: power=209.345, J/img=0.030217861577851373, samples=2
-[INFO] Saturated energy: power=259.72, J/img=0.03689665617035316, samples=2
-[INFO] Saturated energy: power=252.81, J/img=0.03209814278243651, samples=2
+[INFO] Evaluation complete: acc=0.6167, power=66.86W, energy=778.29J, time=11.64s
+[INFO] Saturated energy: power=157.335, J/img=0.027661645540020652, samples=2
+[INFO] Saturated energy: power=191.89, J/img=0.03372874843508172, samples=2
+[INFO] Saturated energy: power=172.4, J/img=0.02639637148206674, samples=2
 
 [INFO] === Measurement rep 7/10 ===
        -> Evaluating Baseline
@@ -250,28 +252,28 @@ Loading Tiny ImageNet data...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.6952, power=60.56W, energy=460.64J, time=7.61s
+[INFO] Evaluation complete: acc=0.6953, power=74.59W, energy=683.46J, time=9.16s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4818, power=61.07W, energy=464.22J, time=7.60s
+[INFO] Evaluation complete: acc=0.4806, power=75.52W, energy=686.98J, time=9.10s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4791, power=68.36W, energy=515.41J, time=7.54s
+[INFO] Evaluation complete: acc=0.4797, power=75.53W, energy=673.32J, time=8.92s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.6194, power=60.52W, energy=450.83J, time=7.45s
-[INFO] Saturated energy: power=206.925, J/img=0.029801150933163215, samples=2
-[INFO] Saturated energy: power=256.93, J/img=0.036487231859182186, samples=2
-[INFO] Saturated energy: power=236.76999999999998, J/img=0.030128862126334473, samples=2
+[INFO] Evaluation complete: acc=0.6151, power=73.35W, energy=645.41J, time=8.80s
+[INFO] Saturated energy: power=164.885, J/img=0.02877650938650274, samples=2
+[INFO] Saturated energy: power=174.03, J/img=0.03029130554948393, samples=2
+[INFO] Saturated energy: power=183.005, J/img=0.027967852956787186, samples=2
 
 [INFO] === Measurement rep 8/10 ===
        -> Evaluating Baseline
@@ -279,28 +281,28 @@ Loading Tiny ImageNet data...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.6950, power=72.42W, energy=630.30J, time=8.70s
+[INFO] Evaluation complete: acc=0.6954, power=76.52W, energy=683.41J, time=8.93s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4828, power=48.80W, energy=406.92J, time=8.34s
+[INFO] Evaluation complete: acc=0.4819, power=77.68W, energy=686.79J, time=8.84s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4790, power=57.78W, energy=472.95J, time=8.18s
+[INFO] Evaluation complete: acc=0.4792, power=76.51W, energy=686.09J, time=8.97s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.6161, power=61.41W, energy=489.10J, time=7.97s
-[INFO] Saturated energy: power=208.06, J/img=0.029978546418555796, samples=2
-[INFO] Saturated energy: power=259.775, J/img=0.03708359213394209, samples=2
-[INFO] Saturated energy: power=253.20999999999998, J/img=0.03213827142296659, samples=2
+[INFO] Evaluation complete: acc=0.6149, power=71.25W, energy=647.89J, time=9.09s
+[INFO] Saturated energy: power=175.66500000000002, J/img=0.03059954281752281, samples=2
+[INFO] Saturated energy: power=207.53500000000003, J/img=0.03602986473211466, samples=2
+[INFO] Saturated energy: power=206.85500000000002, J/img=0.03151165905422059, samples=2
 
 [INFO] === Measurement rep 9/10 ===
        -> Evaluating Baseline
@@ -308,28 +310,28 @@ Loading Tiny ImageNet data...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.6940, power=67.01W, energy=546.10J, time=8.15s
+[INFO] Evaluation complete: acc=0.6941, power=73.95W, energy=689.28J, time=9.32s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4803, power=72.07W, energy=548.85J, time=7.62s
+[INFO] Evaluation complete: acc=0.4820, power=75.20W, energy=686.31J, time=9.13s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4800, power=65.47W, energy=499.69J, time=7.63s
+[INFO] Evaluation complete: acc=0.4808, power=72.89W, energy=649.74J, time=8.91s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.6140, power=69.21W, energy=513.58J, time=7.42s
-[INFO] Saturated energy: power=206.38, J/img=0.02980895882045184, samples=2
-[INFO] Saturated energy: power=249.11, J/img=0.03545007058092066, samples=2
-[INFO] Saturated energy: power=261.74, J/img=0.03322614527818176, samples=2
+[INFO] Evaluation complete: acc=0.6146, power=70.88W, energy=633.73J, time=8.94s
+[INFO] Saturated energy: power=162.735, J/img=0.02849439767499765, samples=2
+[INFO] Saturated energy: power=204.865, J/img=0.035441071491606614, samples=2
+[INFO] Saturated energy: power=162.59, J/img=0.02483671840732393, samples=2
 
 [INFO] === Measurement rep 10/10 ===
        -> Evaluating Baseline
@@ -337,38 +339,38 @@ Loading Tiny ImageNet data...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.6945, power=66.68W, energy=508.75J, time=7.63s
+[INFO] Evaluation complete: acc=0.6979, power=68.24W, energy=788.70J, time=11.56s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4819, power=72.22W, energy=549.50J, time=7.61s
+[INFO] Evaluation complete: acc=0.4815, power=74.53W, energy=670.32J, time=8.99s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4778, power=62.05W, energy=475.72J, time=7.67s
+[INFO] Evaluation complete: acc=0.4788, power=74.22W, energy=691.35J, time=9.31s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation (warmup pass first)...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.6168, power=58.46W, energy=434.79J, time=7.44s
-[INFO] Saturated energy: power=208.325, J/img=0.030032940596820563, samples=2
-[INFO] Saturated energy: power=263.05, J/img=0.03738753757865181, samples=2
-[INFO] Saturated energy: power=260.515, J/img=0.03319622084911492, samples=2
+[INFO] Evaluation complete: acc=0.6155, power=69.79W, energy=605.38J, time=8.67s
+[INFO] Saturated energy: power=157.54000000000002, J/img=0.027575287754336993, samples=2
+[INFO] Saturated energy: power=203.745, J/img=0.03649910367572505, samples=2
+[INFO] Saturated energy: power=179.135, J/img=0.027362831481596798, samples=2
 [INFO] Measuring dataloader floor (no forward passes)...
-[INFO] Loader floor: time=7.07s, energy=264.99J
-[RESULT] Accuracy Original:     0.6942 (test 0.5019) | Power: 63.81W | Energy: 487.81J
-[RESULT] Accuracy Before (anchor): 0.6956 (test 0.5019)
-[RESULT] Accuracy Unstructured: 0.4789 (test 0.4875) | Power: 58.95W | Energy: 453.60J
-[RESULT] Accuracy Collapsed:    0.6164 (test 0.5092) | Power: 62.37W | Energy: 546.94J
+[INFO] Loader floor: time=22.50s, energy=1160.24J
+[RESULT] Accuracy Original:     0.6935 (test 0.5042) | Power: 75.93W | Energy: 673.29J
+[RESULT] Accuracy Before (anchor): 0.6947 (test 0.5042)
+[RESULT] Accuracy Unstructured: 0.4794 (test 0.4875) | Power: 75.18W | Energy: 643.49J
+[RESULT] Accuracy Collapsed:    0.6141 (test 0.5107) | Power: 70.61W | Energy: 600.73J
 [INFO] 10 measurement reps completed; full per-rep values are rows in the CSV.
-[RESULT] Original     FLOPs=8.198e+10 | latency=10.04 ms/batch | throughput=6377.2 img/s | peak_mem=999.0 MiB | feature_maps=844.5 MiB
-[RESULT] Unstructured FLOPs=8.198e+10 | latency=8.72 ms/batch | throughput=7341.0 img/s | peak_mem=999.0 MiB | feature_maps=844.5 MiB
-[RESULT] Collapsed    FLOPs=6.615e+10 | latency=7.77 ms/batch | throughput=8239.1 img/s | peak_mem=913.0 MiB | feature_maps=830.5 MiB
+[RESULT] Original     FLOPs=8.198e+10 | latency=12.35 ms/batch | throughput=5180.5 img/s | peak_mem=999.0 MiB | feature_maps=844.5 MiB
+[RESULT] Unstructured FLOPs=8.198e+10 | latency=10.78 ms/batch | throughput=5936.1 img/s | peak_mem=999.0 MiB | feature_maps=844.5 MiB
+[RESULT] Collapsed    FLOPs=6.615e+10 | latency=9.73 ms/batch | throughput=6578.7 img/s | peak_mem=913.0 MiB | feature_maps=830.5 MiB
 [RESULT] FLOPs Unstructured (theoretical/effective, kept for back-compat): 6.35e+10
 [RESULT] Storage (state_dict MiB): original=155.5, unstructured=155.5, collapsed=120.5
 
@@ -384,9 +386,9 @@ Loading Tiny ImageNet data...
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 4096), time=0.56s
+[INFO] Feature extraction complete: shape=(640, 4096), time=0.67s
 [INFO] Computing CKA: features_x=(640, 4096), features_y=(640, 4096)
-[INFO] CKA complete: score=1.000000, time=3.86s
+[INFO] CKA complete: score=1.000000, time=3.71s
 [INFO] CKA self-check (expect ~1.0): 1.000000
 [INFO] Extracting features from 10 batches (Classifier-free extraction, quant=False)...
 [INFO] Feature extraction batch 1/10
@@ -399,7 +401,7 @@ Loading Tiny ImageNet data...
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 4096), time=0.55s
+[INFO] Feature extraction complete: shape=(640, 4096), time=0.66s
 [INFO] Extracting features from 10 batches (Classifier-free extraction, quant=False)...
 [INFO] Feature extraction batch 1/10
 [INFO] Feature extraction batch 2/10
@@ -411,43 +413,43 @@ Loading Tiny ImageNet data...
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 4096), time=0.75s
+[INFO] Feature extraction complete: shape=(640, 4096), time=3.89s
 [INFO] Computing CKA: features_x=(640, 4096), features_y=(640, 4096)
-[INFO] CKA complete: score=0.659923, time=0.01s
+[INFO] CKA complete: score=0.661776, time=0.01s
 [INFO] Computing CKA: features_x=(640, 4096), features_y=(640, 4096)
-[INFO] CKA complete: score=0.821827, time=0.01s
+[INFO] CKA complete: score=0.822363, time=0.01s
 
 [INFO] Evaluating Adversarial Robustness...
 [INFO] Running FGSM attack (epsilon=0.005, quant=False)...
-       -> original Accuracy: 0.6094
+       -> original Accuracy: 0.5938
        -> unstructured Accuracy: 0.7031
        -> collapsed Accuracy: 0.6875
 [INFO] Running PGD attack (epsilon=0.005, quant=False)...
-       -> original Accuracy: 0.6094
+       -> original Accuracy: 0.5938
        -> unstructured Accuracy: 0.6875
        -> collapsed Accuracy: 0.6875
 [INFO] Running FGSM attack (epsilon=0.01, quant=False)...
        -> original Accuracy: 0.5312
        -> unstructured Accuracy: 0.5938
-       -> collapsed Accuracy: 0.6250
+       -> collapsed Accuracy: 0.5938
 [INFO] Running PGD attack (epsilon=0.01, quant=False)...
-       -> original Accuracy: 0.5000
+       -> original Accuracy: 0.5156
        -> unstructured Accuracy: 0.5625
-       -> collapsed Accuracy: 0.5625
+       -> collapsed Accuracy: 0.5156
 [INFO] Running FGSM attack (epsilon=0.02, quant=False)...
-       -> original Accuracy: 0.3438
+       -> original Accuracy: 0.3750
        -> unstructured Accuracy: 0.5000
-       -> collapsed Accuracy: 0.4375
+       -> collapsed Accuracy: 0.4219
 [INFO] Running PGD attack (epsilon=0.02, quant=False)...
-       -> original Accuracy: 0.1875
+       -> original Accuracy: 0.2031
        -> unstructured Accuracy: 0.3594
        -> collapsed Accuracy: 0.3125
 [INFO] Running FGSM attack (epsilon=0.03, quant=False)...
-       -> original Accuracy: 0.2031
+       -> original Accuracy: 0.2188
        -> unstructured Accuracy: 0.3906
        -> collapsed Accuracy: 0.2969
 [INFO] Running PGD attack (epsilon=0.03, quant=False)...
-       -> original Accuracy: 0.0469
+       -> original Accuracy: 0.0625
        -> unstructured Accuracy: 0.0625
        -> collapsed Accuracy: 0.0781
 [INFO] Running FGSM attack (epsilon=0.05, quant=False)...
@@ -478,7 +480,7 @@ Loading Tiny ImageNet data...
 [DEBUG] VGG16 successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 107
-[INFO] Weights loaded in 3.64s
+[INFO] Weights loaded in 4.13s
 
 [INFO] BN running stats recalibrated over 100 batches (15 BN layers).
 [INFO] Loading original post-finetuning model...
@@ -491,13 +493,13 @@ Loading Tiny ImageNet data...
 [DEBUG] VGG16 successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 107
-[INFO] Weights loaded in 5.70s
+[INFO] Weights loaded in 0.94s
 
 [INFO] BN running stats recalibrated over 100 batches (15 BN layers).
 [INFO] Loading whole collapsed model artifact...
 [INFO] Searching for checkpoint matching: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300
 [INFO] Found matching checkpoint: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
-[INFO] Whole-model load completed in 3.42s
+[INFO] Whole-model load completed in 0.63s
 [INFO] BN running stats recalibrated over 100 batches (13 BN layers).
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 22.53%
@@ -511,7 +513,7 @@ Loading Tiny ImageNet data...
 [DEBUG] VGG16 successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 107
-[INFO] Weights loaded in 3.49s
+[INFO] Weights loaded in 0.34s
 
 
 [INFO] Evaluating model accuracy, power draw, and energy consumption (10 rep(s))...
@@ -537,3 +539,1157 @@ Loading Tiny ImageNet data...
   with torch.cuda.amp.autocast():
 /old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
   with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1238: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1273: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1334: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1346: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:768: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/attacks.py:26: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/main.py:59: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/attacks.py:57: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:1714: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6943, power=61.71W, energy=634.83J, time=10.29s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4797, power=64.97W, energy=551.89J, time=8.50s
+
+[CRITICAL WARNING] 'original_after_model' suffered catastrophic forgetting (47.97%).
+[CRITICAL WARNING] Re-evaluating healthy 'model_before' (69.43%) on warm cache as the true baseline...
+       -> Evaluating healthy 'model_before' (fallback baseline)
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6949, power=63.16W, energy=586.56J, time=9.29s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4793, power=61.07W, energy=617.81J, time=10.12s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6155, power=59.98W, energy=779.67J, time=13.00s
+[INFO] Saturated energy: power=155.295, J/img=0.01759863615203515, samples=2
+[INFO] Saturated energy: power=166.22, J/img=0.01897497798991978, samples=2
+[INFO] Saturated energy: power=159.185, J/img=0.015960554173216224, samples=2
+
+[INFO] === Measurement rep 2/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6936, power=58.37W, energy=688.12J, time=11.79s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4837, power=61.58W, energy=729.27J, time=11.84s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4790, power=60.45W, energy=706.93J, time=11.69s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6150, power=59.66W, energy=687.94J, time=11.53s
+[INFO] Saturated energy: power=150.49, J/img=0.01824700897082095, samples=2
+[INFO] Saturated energy: power=190.04999999999998, J/img=0.021446639901935204, samples=3
+[INFO] Saturated energy: power=179.31, J/img=0.017883663322375735, samples=2
+
+[INFO] === Measurement rep 3/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6967, power=61.74W, energy=707.00J, time=11.45s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4828, power=58.80W, energy=685.95J, time=11.67s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4789, power=61.24W, energy=705.76J, time=11.53s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6153, power=60.99W, energy=682.55J, time=11.19s
+[INFO] Saturated energy: power=158.325, J/img=0.018030449098130747, samples=2
+[INFO] Saturated energy: power=157.335, J/img=0.01841518224419459, samples=2
+[INFO] Saturated energy: power=186.325, J/img=0.018856634030369326, samples=2
+
+[INFO] === Measurement rep 4/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6926, power=61.74W, energy=689.19J, time=11.16s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4817, power=62.65W, energy=683.92J, time=10.92s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4778, power=63.62W, energy=582.47J, time=9.16s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6157, power=62.36W, energy=546.17J, time=8.76s
+[INFO] Saturated energy: power=156.51500000000001, J/img=0.01771583800320931, samples=2
+[INFO] Saturated energy: power=172.05, J/img=0.019381425282252687, samples=2
+[INFO] Saturated energy: power=186.46499999999997, J/img=0.018444844163183503, samples=2
+
+[INFO] === Measurement rep 5/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6946, power=62.50W, energy=533.27J, time=8.53s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4812, power=62.18W, energy=537.00J, time=8.64s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4782, power=64.20W, energy=564.09J, time=8.79s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6165, power=61.65W, energy=602.39J, time=9.77s
+[INFO] Saturated energy: power=186.84333333333333, J/img=0.021328359174572386, samples=3
+[INFO] Saturated energy: power=163.915, J/img=0.019157778696822267, samples=2
+[INFO] Saturated energy: power=162.49, J/img=0.016948781804432943, samples=2
+
+[INFO] === Measurement rep 6/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6942, power=61.15W, energy=680.78J, time=11.13s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4807, power=63.40W, energy=708.30J, time=11.17s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4781, power=59.57W, energy=675.36J, time=11.34s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6168, power=59.33W, energy=645.86J, time=10.89s
+[INFO] Saturated energy: power=154.63, J/img=0.017455199339427054, samples=2
+[INFO] Saturated energy: power=172.875, J/img=0.0192794707133155, samples=2
+[INFO] Saturated energy: power=166.23, J/img=0.01642154596781002, samples=2
+
+[INFO] === Measurement rep 7/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6957, power=63.89W, energy=641.20J, time=10.04s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4811, power=66.07W, energy=561.58J, time=8.50s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4824, power=62.75W, energy=634.22J, time=10.11s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6168, power=63.48W, energy=632.61J, time=9.96s
+[INFO] Saturated energy: power=166.62, J/img=0.018894932660204106, samples=2
+[INFO] Saturated energy: power=179.49, J/img=0.020882672235528206, samples=2
+[INFO] Saturated energy: power=164.25, J/img=0.01681825193975653, samples=2
+
+[INFO] === Measurement rep 8/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6956, power=63.35W, energy=564.40J, time=8.91s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4829, power=63.51W, energy=554.40J, time=8.73s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4798, power=62.45W, energy=541.72J, time=8.67s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6172, power=61.67W, energy=558.20J, time=9.05s
+[INFO] Saturated energy: power=150.765, J/img=0.018508709481441607, samples=2
+[INFO] Saturated energy: power=192.95000000000002, J/img=0.02186668735718535, samples=3
+[INFO] Saturated energy: power=204.37666666666667, J/img=0.021708203663672262, samples=3
+
+[INFO] === Measurement rep 9/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6944, power=63.36W, energy=626.97J, time=9.90s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4836, power=64.11W, energy=543.55J, time=8.48s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4795, power=63.13W, energy=522.25J, time=8.27s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6142, power=62.12W, energy=542.55J, time=8.73s
+[INFO] Saturated energy: power=169.88, J/img=0.01925457496383636, samples=2
+[INFO] Saturated energy: power=179.83, J/img=0.020162832088026075, samples=2
+[INFO] Saturated energy: power=194.4533333333333, J/img=0.0212530744531352, samples=3
+
+[INFO] === Measurement rep 10/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6933, power=63.52W, energy=551.14J, time=8.68s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4816, power=65.83W, energy=589.37J, time=8.95s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4796, power=66.67W, energy=571.06J, time=8.57s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6164, power=62.97W, energy=558.22J, time=8.86s
+[INFO] Saturated energy: power=154.995, J/img=0.01740127658975241, samples=2
+[INFO] Saturated energy: power=167.16500000000002, J/img=0.018713682613060466, samples=2
+[INFO] Saturated energy: power=181.785, J/img=0.01960565486377117, samples=2
+[INFO] Measuring dataloader floor (no forward passes)...
+[INFO] Loader floor: time=8.60s, energy=452.10J
+[RESULT] Accuracy Original:     0.6949 (test 0.5038) | Power: 63.16W | Energy: 586.56J
+[RESULT] Accuracy Before (anchor): 0.6943 (test 0.5038)
+[RESULT] Accuracy Unstructured: 0.4793 (test 0.4877) | Power: 61.07W | Energy: 617.81J
+[RESULT] Accuracy Collapsed:    0.6155 (test 0.5093) | Power: 59.98W | Energy: 779.67J
+[INFO] 10 measurement reps completed; full per-rep values are rows in the CSV.
+[RESULT] Original     FLOPs=8.198e+10 | latency=8.64 ms/batch | throughput=7403.3 img/s | peak_mem=1007.9 MiB | feature_maps=422.3 MiB
+[RESULT] Unstructured FLOPs=8.198e+10 | latency=7.79 ms/batch | throughput=8216.4 img/s | peak_mem=1007.9 MiB | feature_maps=422.3 MiB
+[RESULT] Collapsed    FLOPs=6.615e+10 | latency=6.59 ms/batch | throughput=9707.0 img/s | peak_mem=921.1 MiB | feature_maps=415.3 MiB
+[RESULT] FLOPs Unstructured (theoretical/effective, kept for back-compat): 6.35e+10
+[RESULT] Storage (state_dict MiB): original=77.8, unstructured=77.8, collapsed=60.3
+
+[INFO] Extracting features and computing CKA...
+[INFO] Extracting features from 10 batches (Classifier-free extraction, quant=True)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(640, 4096), time=3.64s
+[INFO] Computing CKA: features_x=(640, 4096), features_y=(640, 4096)
+[INFO] CKA complete: score=1.000000, time=0.01s
+[INFO] CKA self-check (expect ~1.0): 1.000000
+[INFO] Extracting features from 10 batches (Classifier-free extraction, quant=True)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(640, 4096), time=1.95s
+[INFO] Extracting features from 10 batches (Classifier-free extraction, quant=True)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(640, 4096), time=0.60s
+[INFO] Computing CKA: features_x=(640, 4096), features_y=(640, 4096)
+[INFO] CKA complete: score=0.663368, time=0.01s
+[INFO] Computing CKA: features_x=(640, 4096), features_y=(640, 4096)
+[INFO] CKA complete: score=0.821303, time=0.01s
+
+[INFO] Evaluating Adversarial Robustness...
+[INFO] Running FGSM attack (epsilon=0.005, quant=True)...
+       -> original Accuracy: 0.6250
+       -> unstructured Accuracy: 0.7031
+       -> collapsed Accuracy: 0.6875
+[INFO] Running PGD attack (epsilon=0.005, quant=True)...
+       -> original Accuracy: 0.6094
+       -> unstructured Accuracy: 0.6875
+       -> collapsed Accuracy: 0.6875
+[INFO] Running FGSM attack (epsilon=0.01, quant=True)...
+       -> original Accuracy: 0.5469
+       -> unstructured Accuracy: 0.5938
+       -> collapsed Accuracy: 0.5625
+[INFO] Running PGD attack (epsilon=0.01, quant=True)...
+       -> original Accuracy: 0.5156
+       -> unstructured Accuracy: 0.5625
+       -> collapsed Accuracy: 0.5156
+[INFO] Running FGSM attack (epsilon=0.02, quant=True)...
+       -> original Accuracy: 0.3750
+       -> unstructured Accuracy: 0.5000
+       -> collapsed Accuracy: 0.4531
+[INFO] Running PGD attack (epsilon=0.02, quant=True)...
+       -> original Accuracy: 0.2188
+       -> unstructured Accuracy: 0.3750
+       -> collapsed Accuracy: 0.3438
+[INFO] Running FGSM attack (epsilon=0.03, quant=True)...
+       -> original Accuracy: 0.2812
+       -> unstructured Accuracy: 0.4219
+       -> collapsed Accuracy: 0.3750
+[INFO] Running PGD attack (epsilon=0.03, quant=True)...
+       -> original Accuracy: 0.1875
+       -> unstructured Accuracy: 0.0625
+       -> collapsed Accuracy: 0.2656
+[INFO] Running FGSM attack (epsilon=0.05, quant=True)...
+       -> original Accuracy: 0.2344
+       -> unstructured Accuracy: 0.1875
+       -> collapsed Accuracy: 0.3438
+[INFO] Running PGD attack (epsilon=0.05, quant=True)...
+       -> original Accuracy: 0.1875
+       -> unstructured Accuracy: 0.0312
+       -> collapsed Accuracy: 0.2656
+
+[INFO] Full analysis: calibration (ECE/MCE), OOD AUROC, corruptions...
+[WARN] No OOD dataset configured for 'tinyimagenet'. Skipping OOD evaluation.
+[INFO] Appended 30 rows to robustness_curves_cka_results_VGG16_tinyimagenet_pre300_post100.csv
+[INFO] Appended 45 rows to calibration_cka_results_VGG16_tinyimagenet_pre300_post100.csv
+
+======================================================================
+[INFO] Saving final results...
+[INFO] Results successfully saved to 'cka_results_VGG16_tinyimagenet_pre300_post100.csv'
+[INFO] Total successful experiments: 20
+[INFO] Total runtime: 26133.07s
+
+======================================================================
+FINAL RESULTS
+======================================================================
+    model       dataset                    gpu_name precision  pre_epochs  post_epochs                                                                              model_before  intermediate_epoch  rep  acc_before  acc_test_before  acc_original_after  acc_test_original_after  acc_unstructured  acc_test_unstructured  acc_collapsed  acc_test_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  flops_original  flops_unstructured  flops_collapsed  flops_unstructured_measured  latency_ms_original  latency_ms_unstructured  latency_ms_collapsed  throughput_imgs_original  throughput_imgs_unstructured  throughput_imgs_collapsed  peak_mem_mb_original  peak_mem_mb_unstructured  peak_mem_mb_collapsed  feature_maps_mb_original  feature_maps_mb_unstructured  feature_maps_mb_collapsed  storage_mb_original  storage_mb_unstructured  storage_mb_collapsed  cka_unstructured  cka_collapsed  acc_structural  acc_test_structural power_watts_structural energy_joules_structural flops_structural latency_ms_structural throughput_imgs_structural peak_mem_mb_structural feature_maps_mb_structural storage_mb_structural cka_structural params_structural sparsity_structural  gpu_util_original  gpu_clock_mhz_original  gpu_util_unstructured  gpu_clock_mhz_unstructured  gpu_util_collapsed  gpu_clock_mhz_collapsed gpu_util_structural gpu_clock_mhz_structural  eval_elapsed_s_original  eval_elapsed_s_unstructured  eval_elapsed_s_collapsed eval_elapsed_s_structural  n_power_samples_original  n_power_samples_unstructured  n_power_samples_collapsed n_power_samples_structural  loader_time_s  loader_joules  loader_n_samples  power_watts_saturated_original  power_watts_saturated_unstructured  power_watts_saturated_collapsed power_watts_saturated_structural  j_per_img_saturated_original  j_per_img_saturated_unstructured  j_per_img_saturated_collapsed j_per_img_saturated_structural  saturated_imgs_original  saturated_imgs_unstructured  saturated_imgs_collapsed saturated_imgs_structural  n_power_samples_saturated_original  n_power_samples_saturated_unstructured  n_power_samples_saturated_collapsed n_power_samples_saturated_structural  adv_acc_FGSM_eps0.005_original  adv_acc_FGSM_eps0.005_unstructured  adv_acc_FGSM_eps0.005_collapsed  adv_acc_PGD_eps0.005_original  adv_acc_PGD_eps0.005_unstructured  adv_acc_PGD_eps0.005_collapsed  adv_acc_FGSM_eps0.01_original  adv_acc_FGSM_eps0.01_unstructured  adv_acc_FGSM_eps0.01_collapsed  adv_acc_PGD_eps0.01_original  adv_acc_PGD_eps0.01_unstructured  adv_acc_PGD_eps0.01_collapsed  adv_acc_FGSM_eps0.02_original  adv_acc_FGSM_eps0.02_unstructured  adv_acc_FGSM_eps0.02_collapsed  adv_acc_PGD_eps0.02_original  adv_acc_PGD_eps0.02_unstructured  adv_acc_PGD_eps0.02_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed  adv_acc_FGSM_eps0.05_original  adv_acc_FGSM_eps0.05_unstructured  adv_acc_FGSM_eps0.05_collapsed  adv_acc_PGD_eps0.05_original  adv_acc_PGD_eps0.05_unstructured  adv_acc_PGD_eps0.05_collapsed  ece_original  mce_original  ece_unstructured  mce_unstructured  ece_collapsed  mce_collapsed
+0   VGG16  tinyimagenet  NVIDIA GeForce RTX 2080 Ti      fp32         300          100  ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    0     0.69473           0.5042             0.69349                   0.5042           0.47944                 0.4875        0.61413              0.5107                 75.93                  673.29                     75.18                      643.49                  70.61                   600.73    8.198396e+10        6.350894e+10     6.614627e+10                 8.198396e+10            12.354037                10.781530              9.728438               5180.492902                   5936.077903                6578.650847            999.026367                999.026367             912.977539                844.548828                    844.548828                 830.548828           155.510525               155.510525            120.482857          0.661776       0.822363             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               21.3                  1350.0                   21.9                      1350.0                19.7                   1350.0                None                     None                    8.867                        8.560                     8.508                      None                         9                             9                          9                       None         22.504        1160.24                23                          200.20                              176.05                           196.44                             None                      0.035159                          0.030729                       0.030090                           None              5761.200885                  5758.839937               6567.461252                      None                                   3                                       2                                    3                                 None                         0.59375                            0.703125                           0.6875                       0.593750                             0.6875                          0.6875                       0.531250                            0.59375                         0.59375                      0.515625                            0.5625                       0.515625                          0.375                                0.5                        0.421875                      0.203125                          0.359375                        0.31250                0.21875                   0.390625                0.296875                0.0625                    0.0625               0.078125                       0.062500                             0.1250                         0.12500                        0.0000                           0.00000                       0.000000      0.062495      0.136560          0.073513          0.160416       0.094247       0.194530
+1   VGG16  tinyimagenet  NVIDIA GeForce RTX 2080 Ti      fp32         300          100  ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    1     0.69371           0.5042             0.48183                   0.4502           0.47922                 0.4875        0.61580              0.5107                 73.16                  664.21                     71.38                      655.42                  71.20                   643.18    8.198396e+10        6.350894e+10     6.614627e+10                 8.198396e+10            12.400645                10.869902              9.533421               5161.021978                   5887.817344                6713.225221            999.026367                999.026367             912.977539                844.548828                    844.548828                 830.548828           155.510525               155.510525            120.482857          0.661776       0.822363             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               20.8                  1350.0                   20.6                      1350.0                17.3                   1350.0                None                     None                    9.079                        9.182                     9.033                      None                         9                            10                          9                       None         22.504        1160.24                23                          163.09                              185.03                           200.64                             None                      0.028759                          0.032226                       0.030528                           None              5717.433896                  5789.591335               6602.830693                      None                                   2                                       2                                    2                                 None                         0.59375                            0.703125                           0.6875                       0.593750                             0.6875                          0.6875                       0.531250                            0.59375                         0.59375                      0.515625                            0.5625                       0.515625                          0.375                                0.5                        0.421875                      0.203125                          0.359375                        0.31250                0.21875                   0.390625                0.296875                0.0625                    0.0625               0.078125                       0.062500                             0.1250                         0.12500                        0.0000                           0.00000                       0.000000      0.062495      0.136560          0.073513          0.160416       0.094247       0.194530
+2   VGG16  tinyimagenet  NVIDIA GeForce RTX 2080 Ti      fp32         300          100  ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    2     0.69483           0.5042             0.48275                   0.4502           0.47822                 0.4875        0.61545              0.5107                 75.91                  701.28                     75.01                      673.40                  72.56                   636.10    8.198396e+10        6.350894e+10     6.614627e+10                 8.198396e+10            12.379242                10.825373              9.514885               5169.945160                   5912.036560                6726.303222            999.026367                999.026367             912.977539                844.548828                    844.548828                 830.548828           155.510525               155.510525            120.482857          0.661776       0.822363             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               20.8                  1350.0                   20.8                      1350.0                18.9                   1350.0                None                     None                    9.238                        8.978                     8.767                      None                        10                             9                          9                       None         22.504        1160.24                23                          172.32                              174.67                           181.31                             None                      0.030094                          0.030275                       0.027602                           None              5768.317675                  5799.682629               6600.325213                      None                                   2                                       2                                    2                                 None                         0.59375                            0.703125                           0.6875                       0.593750                             0.6875                          0.6875                       0.531250                            0.59375                         0.59375                      0.515625                            0.5625                       0.515625                          0.375                                0.5                        0.421875                      0.203125                          0.359375                        0.31250                0.21875                   0.390625                0.296875                0.0625                    0.0625               0.078125                       0.062500                             0.1250                         0.12500                        0.0000                           0.00000                       0.000000      0.062495      0.136560          0.073513          0.160416       0.094247       0.194530
+3   VGG16  tinyimagenet  NVIDIA GeForce RTX 2080 Ti      fp32         300          100  ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    3     0.69257           0.5042             0.48196                   0.4502           0.47839                 0.4875        0.61486              0.5107                 74.52                  660.23                     72.48                      667.05                  73.95                   659.37    8.198396e+10        6.350894e+10     6.614627e+10                 8.198396e+10            12.387026                10.849787              9.519173               5166.696356                   5898.733210                6723.273224            999.026367                999.026367             912.977539                844.548828                    844.548828                 830.548828           155.510525               155.510525            120.482857          0.661776       0.822363             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               21.3                  1350.0                   20.1                      1350.0                18.9                   1350.0                None                     None                    8.860                        9.204                     8.917                      None                         9                            10                          9                       None         22.504        1160.24                23                          173.95                              201.91                           200.94                             None                      0.030394                          0.035121                       0.030644                           None              5752.701341                  5793.793475               6593.906673                      None                                   2                                       3                                    3                                 None                         0.59375                            0.703125                           0.6875                       0.593750                             0.6875                          0.6875                       0.531250                            0.59375                         0.59375                      0.515625                            0.5625                       0.515625                          0.375                                0.5                        0.421875                      0.203125                          0.359375                        0.31250                0.21875                   0.390625                0.296875                0.0625                    0.0625               0.078125                       0.062500                             0.1250                         0.12500                        0.0000                           0.00000                       0.000000      0.062495      0.136560          0.073513          0.160416       0.094247       0.194530
+4   VGG16  tinyimagenet  NVIDIA GeForce RTX 2080 Ti      fp32         300          100  ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    4     0.69370           0.5042             0.48223                   0.4502           0.47850                 0.4875        0.61400              0.5107                 72.82                  666.63                     73.24                      670.69                  72.01                   619.30    8.198396e+10        6.350894e+10     6.614627e+10                 8.198396e+10            12.350864                10.799360              9.506627               5181.823725                   5926.277092                6732.145776            999.026367                999.026367             912.977539                844.548828                    844.548828                 830.548828           155.510525               155.510525            120.482857          0.661776       0.822363             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               21.1                  1350.0                   20.8                      1350.0                19.3                   1350.0                None                     None                    9.154                        9.158                     8.601                      None                        10                            10                          9                       None         22.504        1160.24                23                          169.72                              183.47                           180.10                             None                      0.029463                          0.031820                       0.027431                           None              5786.146734                  5798.716941               6597.315494                      None                                   2                                       2                                    2                                 None                         0.59375                            0.703125                           0.6875                       0.593750                             0.6875                          0.6875                       0.531250                            0.59375                         0.59375                      0.515625                            0.5625                       0.515625                          0.375                                0.5                        0.421875                      0.203125                          0.359375                        0.31250                0.21875                   0.390625                0.296875                0.0625                    0.0625               0.078125                       0.062500                             0.1250                         0.12500                        0.0000                           0.00000                       0.000000      0.062495      0.136560          0.073513          0.160416       0.094247       0.194530
+5   VGG16  tinyimagenet  NVIDIA GeForce RTX 2080 Ti      fp32         300          100  ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    5     0.69436           0.5042             0.48271                   0.4502           0.48142                 0.4875        0.61670              0.5107                 75.12                  678.21                     75.44                      658.91                  66.86                   778.29    8.198396e+10        6.350894e+10     6.614627e+10                 8.198396e+10            12.426294                10.871122              9.628966               5150.368913                   5887.157036                6646.611638            999.026367                999.026367             912.977539                844.548828                    844.548828                 830.548828           155.510525               155.510525            120.482857          0.661776       0.822363             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               21.3                  1350.0                   21.4                      1350.0                14.2                   1350.0                None                     None                    9.028                        8.735                    11.641                      None                         9                             9                         12                       None         22.504        1160.24                23                          157.34                              191.89                           172.40                             None                      0.027662                          0.033729                       0.026396                           None              5714.453626                  5714.310703               6566.523045                      None                                   2                                       2                                    2                                 None                         0.59375                            0.703125                           0.6875                       0.593750                             0.6875                          0.6875                       0.531250                            0.59375                         0.59375                      0.515625                            0.5625                       0.515625                          0.375                                0.5                        0.421875                      0.203125                          0.359375                        0.31250                0.21875                   0.390625                0.296875                0.0625                    0.0625               0.078125                       0.062500                             0.1250                         0.12500                        0.0000                           0.00000                       0.000000      0.062495      0.136560          0.073513          0.160416       0.094247       0.194530
+6   VGG16  tinyimagenet  NVIDIA GeForce RTX 2080 Ti      fp32         300          100  ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    6     0.69526           0.5042             0.48062                   0.4502           0.47972                 0.4875        0.61506              0.5107                 75.52                  686.98                     75.53                      673.32                  73.35                   645.41    8.198396e+10        6.350894e+10     6.614627e+10                 8.198396e+10            12.400090                10.886395              9.554114               5161.252990                   5878.897351                6698.685214            999.026367                999.026367             912.977539                844.548828                    844.548828                 830.548828           155.510525               155.510525            120.482857          0.661776       0.822363             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               20.9                  1350.0                   20.8                      1350.0                18.6                   1350.0                None                     None                    9.097                        8.915                     8.800                      None                        10                             9                          9                       None         22.504        1160.24                23                          164.88                              174.03                           183.00                             None                      0.028777                          0.030291                       0.027968                           None              5767.246339                  5791.752199               6574.707381                      None                                   2                                       2                                    2                                 None                         0.59375                            0.703125                           0.6875                       0.593750                             0.6875                          0.6875                       0.531250                            0.59375                         0.59375                      0.515625                            0.5625                       0.515625                          0.375                                0.5                        0.421875                      0.203125                          0.359375                        0.31250                0.21875                   0.390625                0.296875                0.0625                    0.0625               0.078125                       0.062500                             0.1250                         0.12500                        0.0000                           0.00000                       0.000000      0.062495      0.136560          0.073513          0.160416       0.094247       0.194530
+7   VGG16  tinyimagenet  NVIDIA GeForce RTX 2080 Ti      fp32         300          100  ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    7     0.69537           0.5042             0.48185                   0.4502           0.47920                 0.4875        0.61486              0.5107                 77.68                  686.79                     76.51                      686.09                  71.25                   647.89    8.198396e+10        6.350894e+10     6.614627e+10                 8.198396e+10            12.384061                10.826730              9.519598               5167.933279                   5911.295671                6722.972691            999.026367                999.026367             912.977539                844.548828                    844.548828                 830.548828           155.510525               155.510525            120.482857          0.661776       0.822363             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               20.7                  1350.0                   21.2                      1350.0                18.5                   1350.0                None                     None                    8.842                        8.967                     9.093                      None                         9                             9                         10                       None         22.504        1160.24                23                          175.67                              207.54                           206.86                             None                      0.030600                          0.036030                       0.031512                           None              5768.481222                  5794.088414               6595.511926                      None                                   2                                       2                                    2                                 None                         0.59375                            0.703125                           0.6875                       0.593750                             0.6875                          0.6875                       0.531250                            0.59375                         0.59375                      0.515625                            0.5625                       0.515625                          0.375                                0.5                        0.421875                      0.203125                          0.359375                        0.31250                0.21875                   0.390625                0.296875                0.0625                    0.0625               0.078125                       0.062500                             0.1250                         0.12500                        0.0000                           0.00000                       0.000000      0.062495      0.136560          0.073513          0.160416       0.094247       0.194530
+8   VGG16  tinyimagenet  NVIDIA GeForce RTX 2080 Ti      fp32         300          100  ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    8     0.69408           0.5042             0.48204                   0.4502           0.48078                 0.4875        0.61464              0.5107                 75.20                  686.31                     72.89                      649.74                  70.88                   633.73    8.198396e+10        6.350894e+10     6.614627e+10                 8.198396e+10            12.410112                10.840525              9.940384               5157.084783                   5903.773237                6438.383060            999.026367                999.026367             912.977539                844.548828                    844.548828                 830.548828           155.510525               155.510525            120.482857          0.661776       0.822363             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               20.4                  1350.0                   21.1                      1350.0                18.7                   1350.0                None                     None                    9.126                        8.914                     8.941                      None                        10                             9                          9                       None         22.504        1160.24                23                          162.74                              204.87                           162.59                             None                      0.028494                          0.035441                       0.024837                           None              5745.573087                  5804.077165               6581.115348                      None                                   2                                       2                                    2                                 None                         0.59375                            0.703125                           0.6875                       0.593750                             0.6875                          0.6875                       0.531250                            0.59375                         0.59375                      0.515625                            0.5625                       0.515625                          0.375                                0.5                        0.421875                      0.203125                          0.359375                        0.31250                0.21875                   0.390625                0.296875                0.0625                    0.0625               0.078125                       0.062500                             0.1250                         0.12500                        0.0000                           0.00000                       0.000000      0.062495      0.136560          0.073513          0.160416       0.094247       0.194530
+9   VGG16  tinyimagenet  NVIDIA GeForce RTX 2080 Ti      fp32         300          100  ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    9     0.69787           0.5042             0.48146                   0.4502           0.47876                 0.4875        0.61546              0.5107                 74.53                  670.32                     74.22                      691.35                  69.79                   605.38    8.198396e+10        6.350894e+10     6.614627e+10                 8.198396e+10            12.369541                10.804360              9.502813               5173.999714                   5923.534542                6734.848080            999.026367                999.026367             912.977539                844.548828                    844.548828                 830.548828           155.510525               155.510525            120.482857          0.661776       0.822363             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               20.7                  1350.0                   20.3                      1350.0                19.3                   1350.0                None                     None                    8.994                        9.315                     8.675                      None                         9                            10                          9                       None         22.504        1160.24                23                          157.54                              203.75                           179.13                             None                      0.027575                          0.036499                       0.027363                           None              5752.227384                  5760.073982               6577.545369                      None                                   2                                       2                                    2                                 None                         0.59375                            0.703125                           0.6875                       0.593750                             0.6875                          0.6875                       0.531250                            0.59375                         0.59375                      0.515625                            0.5625                       0.515625                          0.375                                0.5                        0.421875                      0.203125                          0.359375                        0.31250                0.21875                   0.390625                0.296875                0.0625                    0.0625               0.078125                       0.062500                             0.1250                         0.12500                        0.0000                           0.00000                       0.000000      0.062495      0.136560          0.073513          0.160416       0.094247       0.194530
+10  VGG16  tinyimagenet  NVIDIA GeForce RTX 2080 Ti      fp16         300          100  ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    0     0.69433           0.5038             0.69486                   0.5038           0.47935                 0.4877        0.61549              0.5093                 63.16                  586.56                     61.07                      617.81                  59.98                   779.67    8.198396e+10        6.350894e+10     6.614627e+10                 8.198396e+10             8.644811                 7.789288              6.593202               7403.284792                   8216.412107                9706.968443           1007.876953               1007.876953             921.078125                422.274414                    422.274414                 415.274414            77.769131                77.769131             60.252632          0.663368       0.821303             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               13.4                  1350.0                   12.7                      1350.0                 8.0                   1350.0                None                     None                    9.286                       10.116                    12.999                      None                         9                            11                         13                       None          8.604         452.10                 9                          155.29                              166.22                           159.19                             None                      0.017599                          0.018975                       0.015961                           None              8889.619234                  8856.728821              10095.696146                      None                                   2                                       2                                    2                                 None                         0.62500                            0.703125                           0.6875                       0.609375                             0.6875                          0.6875                       0.546875                            0.59375                         0.56250                      0.515625                            0.5625                       0.515625                          0.375                                0.5                        0.453125                      0.218750                          0.375000                        0.34375                0.28125                   0.421875                0.375000                0.1875                    0.0625               0.265625                       0.234375                             0.1875                         0.34375                        0.1875                           0.03125                       0.265625      0.064730      0.137338          0.073481          0.159166       0.090306       0.177925
+11  VGG16  tinyimagenet  NVIDIA GeForce RTX 2080 Ti      fp16         300          100  ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    1     0.69358           0.5038             0.48367                   0.4477           0.47897                 0.4877        0.61496              0.5093                 61.58                  729.27                     60.45                      706.93                  59.66                   687.94    8.198396e+10        6.350894e+10     6.614627e+10                 8.198396e+10             8.660235                 7.178030              6.302018               7390.099549                   8916.094842               10155.477799           1007.876953               1007.876953             921.078125                422.274414                    422.274414                 415.274414            77.769131                77.769131             60.252632          0.663368       0.821303             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               11.2                  1350.0                   11.2                      1350.0                10.2                   1350.0                None                     None                   11.843                       11.695                    11.530                      None                        12                            12                         12                       None          8.604         452.10                 9                          150.49                              190.05                           179.31                             None                      0.018247                          0.021447                       0.017884                           None              8845.304701                  8970.589282              10101.467147                      None                                   2                                       3                                    2                                 None                         0.62500                            0.703125                           0.6875                       0.609375                             0.6875                          0.6875                       0.546875                            0.59375                         0.56250                      0.515625                            0.5625                       0.515625                          0.375                                0.5                        0.453125                      0.218750                          0.375000                        0.34375                0.28125                   0.421875                0.375000                0.1875                    0.0625               0.265625                       0.234375                             0.1875                         0.34375                        0.1875                           0.03125                       0.265625      0.064730      0.137338          0.073481          0.159166       0.090306       0.177925
+12  VGG16  tinyimagenet  NVIDIA GeForce RTX 2080 Ti      fp16         300          100  ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    2     0.69666           0.5038             0.48284                   0.4477           0.47895                 0.4877        0.61527              0.5093                 58.80                  685.95                     61.24                      705.76                  60.99                   682.55    8.198396e+10        6.350894e+10     6.614627e+10                 8.198396e+10             8.643146                 7.231050              6.351000               7404.711577                   8850.720607               10077.153206           1007.876953               1007.876953             921.078125                422.274414                    422.274414                 415.274414            77.769131                77.769131             60.252632          0.663368       0.821303             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               11.2                  1350.0                   11.3                      1350.0                10.2                   1350.0                None                     None                   11.666                       11.525                    11.191                      None                        12                            12                         12                       None          8.604         452.10                 9                          158.32                              157.34                           186.32                             None                      0.018030                          0.018415                       0.018857                           None              8847.271859                  8811.124692               9959.824092                      None                                   2                                       2                                    2                                 None                         0.62500                            0.703125                           0.6875                       0.609375                             0.6875                          0.6875                       0.546875                            0.59375                         0.56250                      0.515625                            0.5625                       0.515625                          0.375                                0.5                        0.453125                      0.218750                          0.375000                        0.34375                0.28125                   0.421875                0.375000                0.1875                    0.0625               0.265625                       0.234375                             0.1875                         0.34375                        0.1875                           0.03125                       0.265625      0.064730      0.137338          0.073481          0.159166       0.090306       0.177925
+13  VGG16  tinyimagenet  NVIDIA GeForce RTX 2080 Ti      fp16         300          100  ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    3     0.69258           0.5038             0.48172                   0.4477           0.47778                 0.4877        0.61566              0.5093                 62.65                  683.92                     63.62                      582.47                  62.36                   546.17    8.198396e+10        6.350894e+10     6.614627e+10                 8.198396e+10             8.644280                 7.125096              6.264986               7403.739729                   8982.335101               10215.506190           1007.876953               1007.876953             921.078125                422.274414                    422.274414                 415.274414            77.769131                77.769131             60.252632          0.663368       0.821303             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               12.1                  1350.0                   13.9                      1350.0                12.8                   1350.0                None                     None                   10.917                        9.156                     8.758                      None                        11                            10                          9                       None          8.604         452.10                 9                          156.52                              172.05                           186.46                             None                      0.017716                          0.019381                       0.018445                           None              8903.225118                  8947.512128              10198.955228                      None                                   2                                       2                                    2                                 None                         0.62500                            0.703125                           0.6875                       0.609375                             0.6875                          0.6875                       0.546875                            0.59375                         0.56250                      0.515625                            0.5625                       0.515625                          0.375                                0.5                        0.453125                      0.218750                          0.375000                        0.34375                0.28125                   0.421875                0.375000                0.1875                    0.0625               0.265625                       0.234375                             0.1875                         0.34375                        0.1875                           0.03125                       0.265625      0.064730      0.137338          0.073481          0.159166       0.090306       0.177925
+14  VGG16  tinyimagenet  NVIDIA GeForce RTX 2080 Ti      fp16         300          100  ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    4     0.69462           0.5038             0.48116                   0.4477           0.47820                 0.4877        0.61650              0.5093                 62.18                  537.00                     64.20                      564.09                  61.65                   602.39    8.198396e+10        6.350894e+10     6.614627e+10                 8.198396e+10             8.656522                 7.235586              7.542701               7393.269868                   8845.172124                8485.024312           1007.876953               1007.876953             921.078125                422.274414                    422.274414                 415.274414            77.769131                77.769131             60.252632          0.663368       0.821303             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               14.7                  1350.0                   14.6                      1350.0                11.8                   1350.0                None                     None                    8.637                        8.786                     9.770                      None                         9                             9                         10                       None          8.604         452.10                 9                          186.84                              163.91                           162.49                             None                      0.021328                          0.019158                       0.016949                           None              8844.602883                  8935.868718              10053.991822                      None                                   3                                       2                                    2                                 None                         0.62500                            0.703125                           0.6875                       0.609375                             0.6875                          0.6875                       0.546875                            0.59375                         0.56250                      0.515625                            0.5625                       0.515625                          0.375                                0.5                        0.453125                      0.218750                          0.375000                        0.34375                0.28125                   0.421875                0.375000                0.1875                    0.0625               0.265625                       0.234375                             0.1875                         0.34375                        0.1875                           0.03125                       0.265625      0.064730      0.137338          0.073481          0.159166       0.090306       0.177925
+15  VGG16  tinyimagenet  NVIDIA GeForce RTX 2080 Ti      fp16         300          100  ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    5     0.69422           0.5038             0.48066                   0.4477           0.47806                 0.4877        0.61680              0.5093                 63.40                  708.30                     59.57                      675.36                  59.33                   645.86    8.198396e+10        6.350894e+10     6.614627e+10                 8.198396e+10             8.662992                 7.010642              6.258448               7387.747789                   9128.979010               10226.177395           1007.876953               1007.876953             921.078125                422.274414                    422.274414                 415.274414            77.769131                77.769131             60.252632          0.663368       0.821303             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               11.7                  1350.0                   11.7                      1350.0                10.4                   1350.0                None                     None                   11.172                       11.338                    10.887                      None                        12                            12                         11                       None          8.604         452.10                 9                          154.63                              172.88                           166.23                             None                      0.017455                          0.019279                       0.016422                           None              8928.561317                  9044.627348              10199.782217                      None                                   2                                       2                                    2                                 None                         0.62500                            0.703125                           0.6875                       0.609375                             0.6875                          0.6875                       0.546875                            0.59375                         0.56250                      0.515625                            0.5625                       0.515625                          0.375                                0.5                        0.453125                      0.218750                          0.375000                        0.34375                0.28125                   0.421875                0.375000                0.1875                    0.0625               0.265625                       0.234375                             0.1875                         0.34375                        0.1875                           0.03125                       0.265625      0.064730      0.137338          0.073481          0.159166       0.090306       0.177925
+16  VGG16  tinyimagenet  NVIDIA GeForce RTX 2080 Ti      fp16         300          100  ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    6     0.69567           0.5038             0.48113                   0.4477           0.48241                 0.4877        0.61677              0.5093                 66.07                  561.58                     62.75                      634.22                  63.48                   632.61    8.198396e+10        6.350894e+10     6.614627e+10                 8.198396e+10             8.644677                 7.076280              6.282192               7403.399868                   9044.300146               10187.526915           1007.876953               1007.876953             921.078125                422.274414                    422.274414                 415.274414            77.769131                77.769131             60.252632          0.663368       0.821303             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               14.4                  1350.0                   13.0                      1350.0                11.4                   1350.0                None                     None                    8.500                       10.108                     9.965                      None                         9                            11                         10                       None          8.604         452.10                 9                          166.62                              179.49                           164.25                             None                      0.018895                          0.020883                       0.016818                           None              8926.216469                  9002.281313              10070.762594                      None                                   2                                       2                                    2                                 None                         0.62500                            0.703125                           0.6875                       0.609375                             0.6875                          0.6875                       0.546875                            0.59375                         0.56250                      0.515625                            0.5625                       0.515625                          0.375                                0.5                        0.453125                      0.218750                          0.375000                        0.34375                0.28125                   0.421875                0.375000                0.1875                    0.0625               0.265625                       0.234375                             0.1875                         0.34375                        0.1875                           0.03125                       0.265625      0.064730      0.137338          0.073481          0.159166       0.090306       0.177925
+17  VGG16  tinyimagenet  NVIDIA GeForce RTX 2080 Ti      fp16         300          100  ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    7     0.69565           0.5038             0.48292                   0.4477           0.47984                 0.4877        0.61721              0.5093                 63.51                  554.40                     62.45                      541.72                  61.67                   558.20    8.198396e+10        6.350894e+10     6.614627e+10                 8.198396e+10             8.647062                 7.175547              6.291338               7401.357445                   8919.180355               10172.717469           1007.876953               1007.876953             921.078125                422.274414                    422.274414                 415.274414            77.769131                77.769131             60.252632          0.663368       0.821303             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               13.2                  1350.0                   14.6                      1350.0                13.0                   1350.0                None                     None                    8.729                        8.674                     9.051                      None                         9                             9                         10                       None          8.604         452.10                 9                          150.76                              192.95                           204.38                             None                      0.018509                          0.021867                       0.021708                           None              8886.140366                  8902.889878              10086.177921                      None                                   2                                       3                                    3                                 None                         0.62500                            0.703125                           0.6875                       0.609375                             0.6875                          0.6875                       0.546875                            0.59375                         0.56250                      0.515625                            0.5625                       0.515625                          0.375                                0.5                        0.453125                      0.218750                          0.375000                        0.34375                0.28125                   0.421875                0.375000                0.1875                    0.0625               0.265625                       0.234375                             0.1875                         0.34375                        0.1875                           0.03125                       0.265625      0.064730      0.137338          0.073481          0.159166       0.090306       0.177925
+18  VGG16  tinyimagenet  NVIDIA GeForce RTX 2080 Ti      fp16         300          100  ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    8     0.69435           0.5038             0.48363                   0.4477           0.47953                 0.4877        0.61416              0.5093                 64.11                  543.55                     63.13                      522.25                  62.12                   542.55    8.198396e+10        6.350894e+10     6.614627e+10                 8.198396e+10             8.620293                 7.033686              6.234931               7424.341816                   9099.069333               10264.748379           1007.876953               1007.876953             921.078125                422.274414                    422.274414                 415.274414            77.769131                77.769131             60.252632          0.663368       0.821303             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               14.9                  1350.0                   15.2                      1350.0                12.9                   1350.0                None                     None                    8.479                        8.273                     8.733                      None                         9                             9                          9                       None          8.604         452.10                 9                          169.88                              179.83                           194.45                             None                      0.019255                          0.020163                       0.021253                           None              8880.150546                  8975.308822              10017.801041                      None                                   2                                       2                                    3                                 None                         0.62500                            0.703125                           0.6875                       0.609375                             0.6875                          0.6875                       0.546875                            0.59375                         0.56250                      0.515625                            0.5625                       0.515625                          0.375                                0.5                        0.453125                      0.218750                          0.375000                        0.34375                0.28125                   0.421875                0.375000                0.1875                    0.0625               0.265625                       0.234375                             0.1875                         0.34375                        0.1875                           0.03125                       0.265625      0.064730      0.137338          0.073481          0.159166       0.090306       0.177925
+19  VGG16  tinyimagenet  NVIDIA GeForce RTX 2080 Ti      fp16         300          100  ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    9     0.69325           0.5038             0.48164                   0.4477           0.47962                 0.4877        0.61636              0.5093                 65.83                  589.37                     66.67                      571.06                  62.97                   558.22    8.198396e+10        6.350894e+10     6.614627e+10                 8.198396e+10             8.504075                 6.953210              6.310877               7525.803635                   9204.382339               10141.221622           1007.876953               1007.876953             921.078125                422.274414                    422.274414                 415.274414            77.769131                77.769131             60.252632          0.663368       0.821303             NaN                  NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               14.3                  1350.0                   15.0                      1350.0                13.1                   1350.0                None                     None                    8.953                        8.566                     8.865                      None                         9                             9                          9                       None          8.604         452.10                 9                          155.00                              167.17                           181.78                             None                      0.017401                          0.018714                       0.019606                           None              8968.212708                  8989.928424              10023.382569                      None                                   2                                       2                                    2                                 None                         0.62500                            0.703125                           0.6875                       0.609375                             0.6875                          0.6875                       0.546875                            0.59375                         0.56250                      0.515625                            0.5625                       0.515625                          0.375                                0.5                        0.453125                      0.218750                          0.375000                        0.34375                0.28125                   0.421875                0.375000                0.1875                    0.0625               0.265625                       0.234375                             0.1875                         0.34375                        0.1875                           0.03125                       0.265625      0.064730      0.137338          0.073481          0.159166       0.090306       0.177925
+--- CKA strip/drift audit (Wed Nov 25 02:51:27 CST 2026) ---
+[INFO] Searching for checkpoint matching: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300
+[INFO] Found matching checkpoint: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Searching for checkpoint matching: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300
+[INFO] Found matching checkpoint: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
+Loading Tiny ImageNet data...
+/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:734: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+[INFO] Initializing architecture: model=VGG16, dataset=tinyimagenet
+Loading Tiny ImageNet data...
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
+[DEBUG] Attempting to initialize VGG16 with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] VGG16 successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 107
+[INFO] Weights loaded in 3.71s
+
+[INFO] BN running stats recalibrated over 100 batches (15 BN layers).
+[INFO] Initializing architecture: model=VGG16, dataset=tinyimagenet
+Loading Tiny ImageNet data...
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
+[DEBUG] Attempting to initialize VGG16 with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] VGG16 successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 107
+[INFO] Weights loaded in 3.03s
+
+[INFO] BN running stats recalibrated over 100 batches (15 BN layers).
+[INFO] BN running stats recalibrated over 100 batches (13 BN layers).
+[AUDIT] before: replaced 'before.classifier[-1]' (Linear) with Identity
+[AUDIT] before: features shape=(640, 4096) std=0.033 stable_rank=298.6
+[AUDIT] after: replaced 'after.classifier[-1]' (Linear) with Identity
+[AUDIT] after: features shape=(640, 4096) std=0.042 stable_rank=252.4
+[AUDIT] collapsed: replaced 'collapsed.classifier[-1]' (Linear) with Identity
+[AUDIT] collapsed: features shape=(640, 4096) std=0.056 stable_rank=339.7
+[AUDIT] after (pass 2): replaced 'after (pass 2).classifier[-1]' (Linear) with Identity
+[AUDIT] after (pass 2): features shape=(640, 4096) std=0.042 stable_rank=252.4
+[INFO] Computing CKA: features_x=(640, 4096), features_y=(640, 4096)
+[INFO] CKA complete: score=1.000000, time=0.08s
+CKA(after, after pass 2) = 1.0000  (two-pass determinism, expect 1.0)
+[INFO] Computing CKA: features_x=(640, 4096), features_y=(640, 4096)
+[INFO] CKA complete: score=0.781887, time=0.00s
+CKA(before, after)     = 0.7819  (drift reference)
+[INFO] Computing CKA: features_x=(640, 4096), features_y=(640, 4096)
+[INFO] CKA complete: score=0.787088, time=0.00s
+CKA(before, collapsed) = 0.7871  (CSV reports after vs collapsed)
+[INFO] Computing CKA: features_x=(640, 4096), features_y=(640, 4096)
+[INFO] CKA complete: score=0.822056, time=0.00s
+CKA(after, collapsed)  = 0.8221  (the CSV number)
+--- recalibration delta (Wed Nov 25 02:54:13 CST 2026) ---
+
+[INFO] ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+[INFO] Initializing architecture: model=VGG16, dataset=tinyimagenet
+Loading Tiny ImageNet data...
+/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:734: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
+[DEBUG] Attempting to initialize VGG16 with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] VGG16 successfully initialized WITH one_batch.
+[INFO] Searching for checkpoint matching: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300
+[INFO] Found matching checkpoint: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Searching for checkpoint matching: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300
+[INFO] Found matching checkpoint: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
+[INFO] Initializing architecture: model=VGG16, dataset=tinyimagenet
+Loading Tiny ImageNet data...
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
+[DEBUG] Attempting to initialize VGG16 with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] VGG16 successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 107
+[INFO] Weights loaded in 0.21s
+
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6925, power=64.32W, energy=547.49J, time=8.51s
+[INFO] BN running stats recalibrated over 100 batches (15 BN layers).
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6957, power=66.92W, energy=577.77J, time=8.63s
+[DELTA] control_before    train 0.6925 -> 0.6957 (+0.32 pp) | test 0.5082 -> 0.5046 (-0.36 pp)
+[INFO] Initializing architecture: model=VGG16, dataset=tinyimagenet
+Loading Tiny ImageNet data...
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
+[DEBUG] Attempting to initialize VGG16 with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] VGG16 successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 107
+[INFO] Weights loaded in 0.29s
+
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4818, power=66.06W, energy=561.52J, time=8.50s
+[INFO] BN running stats recalibrated over 100 batches (15 BN layers).
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4824, power=66.43W, energy=627.43J, time=9.44s
+[DELTA] control_continued train 0.4818 -> 0.4824 (+0.06 pp) | test 0.4495 -> 0.4499 (+0.04 pp)
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6143, power=63.42W, energy=513.00J, time=8.09s
+[INFO] BN running stats recalibrated over 100 batches (13 BN layers).
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.6174, power=64.73W, energy=540.64J, time=8.35s
+[DELTA] collapsed         train 0.6143 -> 0.6174 (+0.30 pp) | test 0.5108 -> 0.5109 (+0.01 pp)
+[INFO] Initializing architecture: model=VGG16, dataset=tinyimagenet
+Loading Tiny ImageNet data...
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:300: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:313: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Transfer2/utils.py:328: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
+[DEBUG] Attempting to initialize VGG16 with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] VGG16 successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 107
+[INFO] Weights loaded in 2.30s
+
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4794, power=64.78W, energy=543.43J, time=8.39s
+[INFO] BN running stats recalibrated over 100 batches (15 BN layers).
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.5002, power=65.99W, energy=568.18J, time=8.61s
+[DELTA] imp               train 0.4794 -> 0.5002 (+2.08 pp) | test 0.4877 -> 0.5016 (+1.39 pp)
+
+[OK] 4 artifact rows appended to recalibration_delta.csv
