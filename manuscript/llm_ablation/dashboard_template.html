@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>MoE LLM Ablation Dashboard</title>
+<style>
+  :root { --bg:#0f1420; --card:#171e2e; --ink:#e8edf6; --dim:#8b97ac; --acc:#4d9de0; }
+  body { margin:0; font:14px/1.5 system-ui, sans-serif; background:var(--bg); color:var(--ink); }
+  header { padding:18px 26px; border-bottom:1px solid #26304a; display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
+  h1 { font-size:18px; margin:0; } h2 { font-size:15px; margin:0 0 10px; }
+  select { background:var(--card); color:var(--ink); border:1px solid #31405f; border-radius:6px; padding:5px 8px; }
+  main { padding:22px 26px; display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  .card { background:var(--card); border:1px solid #26304a; border-radius:10px; padding:16px; }
+  .wide { grid-column:1 / -1; }
+  .dim { color:var(--dim); font-size:12px; }
+  .chart { width:100%; height:auto; }
+  .tick { fill:var(--dim); font-size:10px; }
+  table { border-collapse:collapse; width:100%; font-size:12px; }
+  th, td { text-align:left; padding:4px 8px; border-bottom:1px solid #26304a; }
+  .chip { display:inline-block; padding:2px 9px; margin:2px; border-radius:10px; font-size:12px; background:#222c44; }
+  pre { background:#0c111c; padding:10px; border-radius:8px; font-size:11px; white-space:pre-wrap; }
+  .legend span { margin-right:12px; font-size:11px; color:var(--dim); }
+  .swatch { display:inline-block; width:11px; height:11px; border-radius:3px; vertical-align:-1px; margin-right:4px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>MoE LLM Region Ablation</h1>
+  <label class="dim">run <select id="run"></select></label>
+  <label class="dim">activation metric <select id="metric">
+    <option>usage</option><option>gate_prob</option><option>output_norm</option>
+  </select></label>
+  <label class="dim">layer <select id="layer"></select></label>
+  <span class="dim" id="headline"></span>
+</header>
+<main>
+  <section class="card"><h2>Model &amp; ablated regions</h2><div id="model"></div>
+    <div class="legend"><span><span class="swatch" style="background:#2e7d5b"></span>kept expert</span>
+    <span><span class="swatch" style="background:#a33b3b"></span>removed expert</span>
+    <span><span class="swatch" style="background:#3a4358"></span>removed layer</span></div></section>
+  <section class="card"><h2>Input queries by domain</h2><div id="queries"></div></section>
+  <section class="card wide"><h2>Activations — expert intensity per layer</h2><div id="activations"></div></section>
+  <section class="card"><h2>Activations — queries x experts (selected layer)</h2><div id="queryact"></div></section>
+  <section class="card"><h2>Correlation — domain x expert (selected layer)</h2><div id="correlation"></div></section>
+  <section class="card wide"><h2>Top experts per domain</h2><div id="toptable"></div></section>
+  <section class="card wide"><h2>Generations: baseline vs ablated</h2><div id="samples"></div></section>
+</main>
+<script type="application/json" id="data">__DATA__</script>
+<script>
+const DATA = JSON.parse(document.getElementById("data").textContent);
+const $ = id => document.getElementById(id);
+const fmt = v => v == null ? "–" : (+v).toFixed(3);
+
+function lerpColor(t, a, b) { // t in [0,1], a/b hex
+  t = Math.max(0, Math.min(1, t));
+  const p = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const [ar, ag, ab] = p(a), [br, bg, bb] = p(b);
+  const c = (x, y) => Math.round(x + (y - x) * t).toString(16).padStart(2, "0");
+  return `#${c(ar, br)}${c(ag, bg)}${c(ab, bb)}`;
+}
+const heat = v => lerpColor(v, "#1b2437", "#4d9de0");
+function diverge(v) { // v in [-1,1]
+  return v < 0 ? lerpColor(-v, "#1b2437", "#c0504d") : lerpColor(v, "#1b2437", "#4d9de0");
+}
+
+function heatmap({ rows, cols, values, color = heat, cell = 34, labelW = 130, fmtV = fmt }) {
+  const w = labelW + cols.length * cell + 12, h = 28 + rows.length * cell + 8;
+  let s = `<svg viewBox="0 0 ${w} ${h}" class="chart">`;
+  cols.forEach((c, j) => s += `<text x="${labelW + j * cell + cell / 2}" y="16" class="tick" text-anchor="middle">${c}</text>`);
+  rows.forEach((r, i) => {
+    s += `<text x="${labelW - 8}" y="${28 + i * cell + cell / 2 + 4}" class="tick" text-anchor="end">${r}</text>`;
+    (values[i] || []).forEach((v, j) => {
+      s += `<rect x="${labelW + j * cell}" y="${28 + i * cell}" width="${cell - 2}" height="${cell - 2}" ` +
+        `rx="3" fill="${v == null ? "#1b2437" : color(v)}"><title>${r} / ${cols[j]}: ${fmtV(v)}</title></rect>`;
+    });
+  });
+  return s + "</svg>";
+}
+
+function renderModel(run) {
+  let s = `<svg viewBox="0 0 640 ${40 + run.layers.length * 46}" class="chart">`;
+  run.layers.forEach((l, i) => {
+    const y = 20 + i * 46;
+    const removed = l.removed_layer;
+    s += `<text x="72" y="${y + 22}" class="tick" text-anchor="end">layer ${l.index}</text>`;
+    s += `<rect x="80" y="${y}" width="540" height="36" rx="6" fill="${removed ? "#3a4358" : "#1b2437"}" opacity="${removed ? .55 : 1}"></rect>`;
+    l.kept_mask.forEach((kept, e) => {
+      const x = 92 + e * ((520 - 12) / l.experts);
+      s += `<rect x="${x}" y="${y + 6}" width="${(520 - 12) / l.experts - 6}" height="24" rx="4" ` +
+        `fill="${kept ? "#2e7d5b" : "#a33b3b"}" opacity="${removed ? .4 : 1}"><title>layer ${l.index} expert ${e}: ${kept ? "kept" : "removed"}</title></rect>`;
+    });
+  });
+  $("model").innerHTML = s + "</svg>";
+}
+
+function renderQueries(run) {
+  const byD = {};
+  run.queries.forEach(q => (byD[q.domain] = byD[q.domain] || []).push(q.text));
+  $("queries").innerHTML = Object.entries(byD).map(([d, qs]) =>
+    `<div style="margin-bottom:10px"><span class="chip">${d} · ${qs.length}</span>` +
+    qs.map(q => `<div class="dim" style="margin:2px 0 0 12px">• ${q.replace(/</g, "&lt;")}</div>`).join("") + "</div>"
+  ).join("");
+}
+
+function renderActivations(run, metric) {
+  const cols = Array.from({ length: run.layers[0].experts }, (_, i) => "E" + i);
+  const rows = run.layers.map(l => `layer ${l.index}`);
+  const values = run.layers.map(l => l[metric] || l.usage.map(() => null));
+  const max = Math.max(...values.flat().filter(v => v != null), 1e-9);
+  $("activations").innerHTML = heatmap({ rows, cols, values, fmtV: fmt, color: v => heat(v / max) });
+}
+
+function renderQueryAct(run, li) {
+  const l = run.layers[li];
+  const cols = Array.from({ length: l.experts }, (_, i) => "E" + i);
+  const rows = run.queries.map(q => `${q.domain}: ${q.text.slice(0, 22)}…`);
+  const values = run.queries.map(q => (q.usage[l.name] || []).map(v => v));
+  const max = Math.max(...values.flat(), 1e-9);
+  $("queryact").innerHTML = heatmap({ rows, cols, values, cell: 26, labelW: 170, color: v => heat(v / max) });
+}
+
+function renderCorrelation(run, li) {
+  const l = run.layers[li];
+  const cols = Array.from({ length: l.experts }, (_, i) => "E" + i);
+  const rows = run.domains;
+  const values = rows.map(d => l.corr[d] || cols.map(() => null));
+  $("correlation").innerHTML = heatmap({ rows, cols, values, color: diverge, fmtV: fmt });
+}
+
+function renderTopTable(run) {
+  const t = run.top_experts_per_domain;
+  $("toptable").innerHTML = "<table><tr><th>domain</th><th>layer</th><th>top experts</th><th>correlation</th></tr>" +
+    Object.entries(t).flatMap(([d, entries]) => entries.map(e =>
+      `<tr><td>${d}</td><td>${e.block}</td><td>${e.experts.join(", ")}</td><td>${e.corr.map(fmt).join(", ")}</td></tr>`
+    )).join("") + "</table>";
+}
+
+function renderSamples(run) {
+  const rows = run.samples.baseline.map((b, i) => {
+    const a = run.samples.ablated[i] || {};
+    return `<div style="margin-bottom:8px"><div class="dim">${(b.prompt || "").replace(/</g, "&lt;")}</div>` +
+      `<pre>baseline: ${(b.completion || "").replace(/</g, "&lt;")}\nablated : ${(a.completion || "").replace(/</g, "&lt;")}</pre></div>`;
+  });
+  $("samples").innerHTML = rows.join("");
+}
+
+function render() {
+  const run = DATA.runs[$("run").value];
+  const metric = $("metric").value;
+  const li = Math.min(+$("layer").value || 0, run.layers.length - 1);
+  $("headline").textContent =
+    `${run.model} · ${run.ablation} ablation · ppl ${fmt(run.baseline_ppl)} → ${fmt(run.ablated_ppl)} (Δ ${fmt(run.delta_ppl)})`;
+  renderModel(run);
+  renderQueries(run);
+  renderActivations(run, metric);
+  renderQueryAct(run, li);
+  renderCorrelation(run, li);
+  renderTopTable(run);
+  renderSamples(run);
+}
+
+$("run").innerHTML = Object.keys(DATA.runs).map(n => `<option>${n}</option>`).join("");
+$("layer").innerHTML = DATA.runs[Object.keys(DATA.runs)[0]].layers
+  .map((l, i) => `<option value="${i}">layer ${l.index}</option>`).join("");
+$("run").onchange = () => {
+  const run = DATA.runs[$("run").value];
+  $("layer").innerHTML = run.layers.map((l, i) => `<option value="${i}">layer ${l.index}</option>`).join("");
+  render();
+};
+$("metric").onchange = render;
+$("layer").onchange = render;
+render();
+</script>
+</body>
+</html>

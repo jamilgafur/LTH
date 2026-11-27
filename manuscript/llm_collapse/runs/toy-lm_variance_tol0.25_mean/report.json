@@ -1,0 +1,161 @@
+{
+  "config": {
+    "model": "toy-lm",
+    "span_policy": "variance",
+    "variance_tol": 0.25,
+    "collapse_width": 2,
+    "collapse_start": null,
+    "merge": "mean",
+    "finetune_steps": 30,
+    "finetune_lr": 0.0001,
+    "corpus": "data/corpus.txt",
+    "max_length": 128,
+    "eval_windows": 16,
+    "max_new_tokens": 8,
+    "seed": 42,
+    "stack": null,
+    "device": "cpu",
+    "dtype": "float32",
+    "out_dir": "runs",
+    "run_name": null,
+    "skip_existing": false
+  },
+  "load": {
+    "model": "toy-lm",
+    "dtype": "float32",
+    "device": "cpu",
+    "params": 365824
+  },
+  "baseline": {
+    "perplexity": {
+      "nll": 5.605697008103647,
+      "ppl": 271.97142567269054,
+      "tokens": 1042
+    },
+    "footprint": {
+      "params": 365824,
+      "layers": 6,
+      "params_per_layer": 60970.666666666664,
+      "size_mb": 1.46
+    },
+    "benchmark": {
+      "forward_ms": 4.605,
+      "tokens": 44
+    },
+    "samples": [
+      {
+        "prompt": "The quick brown fox jumps over the lazy ",
+        "completion": "The quick brown fox jumps over the lazy E\u00167\u0016[="
+      },
+      {
+        "prompt": "Water boils at one hundred degrees Celsi",
+        "completion": "Water boils at one hundred degrees Celsi7\u0628KZ"
+      }
+    ]
+  },
+  "heuristics": {
+    "global_median_var": 2.100008490681648,
+    "tol": 0.25,
+    "layers": {
+      "var": [
+        1.9981580942869186,
+        2.039847084879875,
+        2.080177643895149,
+        2.100008490681648,
+        2.126288366317749,
+        2.1891558825969697
+      ],
+      "mean": [
+        -0.010908425752131735,
+        -0.02211235800277791,
+        -0.040745546531979926,
+        -0.033166469816933386,
+        -0.039629244263051075,
+        -0.030069752829149365
+      ]
+    },
+    "spans": [
+      {
+        "span": [
+          0,
+          5
+        ],
+        "rel_var": 0.9905567778061403,
+        "redundancy": 0.9180035874247551,
+        "kl": 0.024983424972742797,
+        "score": 0.904165979245994,
+        "mergeable": true
+      }
+    ]
+  },
+  "collapse": {
+    "spans": [
+      [
+        0,
+        5
+      ]
+    ],
+    "merge": "mean",
+    "stack": "layers",
+    "reports": [
+      {
+        "stack": "layers",
+        "layers_before": 6,
+        "layers_after": 1,
+        "collapsed": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "merge": "mean",
+        "params_before": 365824,
+        "params_after": 115904
+      }
+    ],
+    "layers_collapsed": 6,
+    "skipped_spans": []
+  },
+  "finetune": {
+    "steps": 30,
+    "lr": 0.0001,
+    "initial_loss": 5.667332172393799,
+    "final_loss": 5.574319839477539
+  },
+  "collapsed": {
+    "perplexity": {
+      "nll": 5.536058597509784,
+      "ppl": 253.6761865281757,
+      "tokens": 1042
+    },
+    "footprint": {
+      "params": 115904,
+      "layers": 1,
+      "params_per_layer": 115904.0,
+      "size_mb": 0.46
+    },
+    "benchmark": {
+      "forward_ms": 0.476,
+      "tokens": 44
+    },
+    "samples": [
+      {
+        "prompt": "The quick brown fox jumps over the lazy ",
+        "completion": "The quick brown fox jumps over the lazy EKZ"
+      },
+      {
+        "prompt": "Water boils at one hundred degrees Celsi",
+        "completion": "Water boils at one hundred degrees Celsi7.y7s"
+      }
+    ]
+  },
+  "delta_ppl": -18.295239144514852,
+  "param_reduction": 0.6831700489853044,
+  "resource_reduction": {
+    "params": 0.6831700489853044,
+    "size_mb": 0.684931506849315,
+    "forward_ms": 0.8966340933767644
+  }
+}

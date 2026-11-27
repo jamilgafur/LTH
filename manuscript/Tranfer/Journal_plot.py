@@ -16,13 +16,21 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Local imports (Assumed available based on original file)
+import logging
+import sys
+
+# repo root on sys.path so `pyPrune` imports without installation
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+logging.basicConfig(level=logging.INFO)  # collapse progress is logged, not printed
+
 from pyPrune.models.Vgg16 import VGG16
 from pyPrune.models.RegNetX import RegNetX_400MF
 from pyPrune.models.ConvNetX import ConvNeXt
 from pyPrune.models.InceptionNet import InceptionNet
 from pyPrune.models.XceptionNet import XceptionNet
 from pyPrune.models.MobileNet import MobileNet
-from collapse import collapse_only
+from pyPrune.collapseMethods.CNNCollapse import collapse_only
 
 # =========================
 # Configuration & Journal Style

@@ -1,38 +1,32 @@
 # tests/test_pruning.py
-import unittest
-from unittest.mock import MagicMock, patch
+"""Smoke test for the iterative magnitude pruning API (pyPrune.pruneMethods)."""
 import torch
 import torch.nn as nn
-from pyPrune.pruning import IterativeMagnitudePruning
+from torch.utils.data import DataLoader, TensorDataset
 
-class TestIterativeMagnitudePruning(unittest.TestCase):
-    def setUp(self):
-        self.model = MagicMock(spec=nn.Module)
-        self.X_train = torch.randn(10, 3, 32, 32)
-        self.y_train = torch.randint(0, 10, (10,))
-        self.final_sparsity = 0.5
-        self.steps = 5
-        self.device = 'cpu'
-        self.save_dir = './test_pruning'
-        self.imp = IterativeMagnitudePruning(
-            model=self.model,
-            X_train=self.X_train,
-            y_train=self.y_train,
-            final_sparsity=self.final_sparsity,
-            steps=self.steps,
-            device=self.device,
-            save_dir=self.save_dir
-        )
+from pyPrune.pruneMethods.IterativePruner import IterativePruner
+from pyPrune.strategies.MagnitudePruningStrategy import MagnitudePruningStrategy
 
-    @patch('os.makedirs')
-    @patch('torch.save')
-    def test_initialization(self, mock_save, mock_makedirs):
-        self.assertEqual(self.imp.final_sparsity, self.final_sparsity)
-        self.assertEqual(self.imp.steps, self.steps)
-        self.assertEqual(self.imp.device, self.device)
-        self.assertTrue(mock_makedirs.called)
 
-    # Add other test methods here...
+def test_iterative_pruner_initializes(tmp_path):
+    model = nn.Sequential(nn.Flatten(), nn.Linear(64, 16), nn.ReLU(), nn.Linear(16, 3))
+    data = TensorDataset(torch.randn(4, 1, 8, 8), torch.randint(0, 3, (4,)))
+    loader = DataLoader(data, batch_size=2)
 
-if __name__ == '__main__':
-    unittest.main()
+    pruner = IterativePruner(
+        model=model,
+        train_loader=loader,
+        test_loader=loader,
+        optimizer=torch.optim.SGD(model.parameters(), lr=0.01),
+        criterion=nn.CrossEntropyLoss(),
+        strategy=MagnitudePruningStrategy(),
+        steps=[0.5],
+        pretrain_epochs=1,
+        finetune_epochs=1,
+        device="cpu",
+        save_dir=str(tmp_path),
+    )
+
+    assert pruner.steps == [0.5]  # the synthetic 0.0 pretrain step is consumed
+    assert pruner.initial_state  # prunable weights recorded
+    assert (tmp_path / "pruner.pkl").exists()

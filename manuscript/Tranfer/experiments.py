@@ -9,7 +9,16 @@ from datetime import datetime
 from copy import deepcopy
 from collections import OrderedDict
 import tempfile
-from collapse import collapse_only, _wrap_pools_safe
+import logging
+import sys
+from pathlib import Path
+
+# repo root on sys.path so `pyPrune` imports without installation
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+logging.basicConfig(level=logging.INFO)  # collapse progress is logged, not printed
+
+from pyPrune.collapseMethods.CNNCollapse import collapse_only, _wrap_pools_safe
 
 # Third-party libraries
 import torch
@@ -29,7 +38,7 @@ from plots import *
 from diagnostic import *
 from utils import *
 from filemanager import *
-from collapse import collapse_only
+from pyPrune.collapseMethods.CNNCollapse import collapse_only
 import os
 import glob
 import torch
