@@ -90,7 +90,6 @@ Fine-tuning afterwards recovers quality; the studies measure exactly how much
 │   ├── llm_collapse/             # LLM layer-collapse study (HF transformers
 │   │                             #   and MoE: Llama, MiMo, DeepSeek, Kimi, ...)
 │   ├── llm_ablation/             # MoE expert/region ablation study
-│   ├── sparse_matrix/            # sparse CNN analysis
 │   └── structured_study/         # structured pruning study
 ├── tests/                        # package tests
 ├── requirements.txt
